@@ -332,17 +332,17 @@
   .ilaria-table td.num { text-align: right; font-family: var(--mono); }
 
   @media print {
-    @page { margin: 8mm 6mm; size: A4 landscape; }
+    @page { margin: 6mm 5mm; size: A4 landscape; }
     .topbar, .print-btn-row, .ilaria-bar { display: none !important; }
-    .page { padding: 4px !important; max-width: 100% !important; }
-    body { background: #FFF; font-size: 10px; }
-    .ilaria-print-wrap { overflow: visible; }
-    .ilaria-table { font-size: 9px; min-width: unset; width: 100%; }
-    .ilaria-table th { font-size: 8px; padding: 4px 5px; }
-    .ilaria-table td { font-size: 9px; padding: 4px 5px; }
-    .print-header { margin-bottom: 8px; padding-bottom: 6px; }
-    .print-title { font-size: 13px; }
-    .print-sub { font-size: 9px; }
+    .page { padding: 2px !important; max-width: 100% !important; width: 100% !important; }
+    body { background: #FFF; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .ilaria-print-wrap { overflow: visible; width: 100%; }
+    .ilaria-table { font-size: 8.5px; min-width: unset; width: 100%; table-layout: fixed; }
+    .ilaria-table th { font-size: 7.5px; padding: 3px 4px; }
+    .ilaria-table td { font-size: 8.5px; padding: 3px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .print-header { margin-bottom: 6px; padding-bottom: 4px; }
+    .print-title { font-size: 12px; }
+    .print-sub { font-size: 8px; }
   }
 </style>
 </head>
@@ -1040,6 +1040,16 @@ function renderIlaria(mese) {
 
   <div class="ilaria-print-wrap">
   <table class="ilaria-table">
+    <colgroup>
+      <col style="width:28px">
+      <col style="width:72px">
+      <col style="width:100px">
+      <col style="width:90px">
+      <col style="width:48px">
+      <col style="width:72px">
+      <col style="width:52px">
+      <col style="width:100px">
+    </colgroup>
     <thead><tr>
       <th>N.</th>
       <th>Data</th>
