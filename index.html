@@ -285,7 +285,7 @@
   .print-chart-wrap { width: 100%; height: 140px; position: relative; margin: 8px 0; }
   canvas.print-chart { width: 100% !important; height: 140px !important; }
 
-  /* BARRA ILARIA */
+  /* BARRA RESOCONTO */
   .ilaria-bar {
     display: flex; align-items: center; justify-content: space-between;
     background: var(--text); border-radius: var(--radius-lg);
@@ -311,7 +311,7 @@
   }
   .btn-ilaria:hover { background: var(--accent2); }
 
-  /* TABELLA ILARIA STAMPA */
+  /* TABELLA RESOCONTO STAMPA */
   .ilaria-print-wrap { overflow-x: auto; }
   .ilaria-table {
     width: 100%; border-collapse: collapse;
@@ -332,11 +332,17 @@
   .ilaria-table td.num { text-align: right; font-family: var(--mono); }
 
   @media print {
+    @page { margin: 8mm 6mm; size: A4 landscape; }
     .topbar, .print-btn-row, .ilaria-bar { display: none !important; }
-    .page { padding: 0 !important; }
-    body { background: #FFF; }
-    .ilaria-table { font-size: 10px; min-width: unset; }
-    .ilaria-table th { font-size: 8px; }
+    .page { padding: 4px !important; max-width: 100% !important; }
+    body { background: #FFF; font-size: 10px; }
+    .ilaria-print-wrap { overflow: visible; }
+    .ilaria-table { font-size: 9px; min-width: unset; width: 100%; }
+    .ilaria-table th { font-size: 8px; padding: 4px 5px; }
+    .ilaria-table td { font-size: 9px; padding: 4px 5px; }
+    .print-header { margin-bottom: 8px; padding-bottom: 6px; }
+    .print-title { font-size: 13px; }
+    .print-sub { font-size: 9px; }
   }
 </style>
 </head>
@@ -372,7 +378,7 @@
   <div class="ilaria-bar">
     <div class="ilaria-label">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-      Resoconto Ilaria
+      Resoconto
     </div>
     <div class="ilaria-right">
       <select id="ilaria-mese" class="ilaria-select">
