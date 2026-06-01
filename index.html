@@ -285,10 +285,58 @@
   .print-chart-wrap { width: 100%; height: 140px; position: relative; margin: 8px 0; }
   canvas.print-chart { width: 100% !important; height: 140px !important; }
 
+  /* BARRA ILARIA */
+  .ilaria-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--text); border-radius: var(--radius-lg);
+    padding: 10px 14px; margin-bottom: 12px; gap: 10px;
+  }
+  .ilaria-label {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; font-family: var(--mono); color: #FFF; white-space: nowrap;
+  }
+  .ilaria-right { display: flex; align-items: center; gap: 6px; }
+  .ilaria-select {
+    padding: 5px 8px; border-radius: var(--radius); border: 0.5px solid rgba(255,255,255,.25);
+    background: rgba(255,255,255,.1); color: #FFF;
+    font-size: 12px; font-family: var(--font); cursor: pointer;
+    max-width: 130px;
+  }
+  .ilaria-select option { background: #1A1A18; color: #FFF; }
+  .btn-ilaria {
+    padding: 5px 12px; border-radius: var(--radius); border: none;
+    background: var(--accent); color: #FFF;
+    font-size: 12px; font-family: var(--font); font-weight: 500;
+    cursor: pointer; white-space: nowrap; transition: all .15s;
+  }
+  .btn-ilaria:hover { background: var(--accent2); }
+
+  /* TABELLA ILARIA STAMPA */
+  .ilaria-print-wrap { overflow-x: auto; }
+  .ilaria-table {
+    width: 100%; border-collapse: collapse;
+    font-size: 11px; min-width: 580px;
+  }
+  .ilaria-table th {
+    padding: 6px 8px; text-align: left; background: var(--text); color: #FFF;
+    font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: .06em;
+    white-space: nowrap;
+  }
+  .ilaria-table td { padding: 6px 8px; border-bottom: 0.5px solid var(--border); font-size: 11px; }
+  .ilaria-table tr:last-child td { border-bottom: none; }
+  .ilaria-table .tot-row td {
+    font-weight: 600; background: var(--bg2);
+    border-top: 1px solid var(--border2); font-family: var(--mono);
+  }
+  .ilaria-table td.green { color: var(--green); font-weight: 500; }
+  .ilaria-table td.num { text-align: right; font-family: var(--mono); }
+
   @media print {
-    .topbar, .print-btn-row { display: none !important; }
+    .topbar, .print-btn-row, .ilaria-bar { display: none !important; }
     .page { padding: 0 !important; }
     body { background: #FFF; }
+    .ilaria-table { font-size: 10px; min-width: unset; }
+    .ilaria-table th { font-size: 8px; }
   }
 </style>
 </head>
@@ -321,6 +369,18 @@
 
 <!-- STORICO -->
 <div class="page" id="page-storico">
+  <div class="ilaria-bar">
+    <div class="ilaria-label">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Resoconto Ilaria
+    </div>
+    <div class="ilaria-right">
+      <select id="ilaria-mese" class="ilaria-select">
+        <option value="">Seleziona mese…</option>
+      </select>
+      <button class="btn-ilaria" onclick="apriIlaria()">Stampa →</button>
+    </div>
+  </div>
   <div class="filter-bar" id="storico-filters"></div>
   <div class="summary-bar" id="storico-summary"></div>
   <div class="storico-container" id="storico-list">
@@ -346,6 +406,13 @@
 <!-- STAMPA REPORT PDF -->
 <div class="page" id="page-stampa">
   <div id="stampa-content">
+    <div class="loading">Caricamento...</div>
+  </div>
+</div>
+
+<!-- RESOCONTO ILARIA -->
+<div class="page" id="page-ilaria">
+  <div id="ilaria-content">
     <div class="loading">Caricamento...</div>
   </div>
 </div>
@@ -597,6 +664,16 @@ function renderDetail(lottoId) {
 function renderStorico() {
   const filters = document.getElementById('storico-filters');
   const mesi = [...new Set(allUscite.map(u => u.data_uscita?.substring(0,7)).filter(Boolean))].sort().reverse();
+
+  // Popola dropdown Ilaria
+  const sel = document.getElementById('ilaria-mese');
+  const nomiMese = ['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+  sel.innerHTML = '<option value="">Seleziona mese…</option>' +
+    mesi.map(m => {
+      const [y,mo] = m.split('-');
+      return `<option value="${m}">${nomiMese[parseInt(mo)]} ${y}</option>`;
+    }).join('');
+
   let fhtml = `<div class="chip active" onclick="filterStorico('tutti',this)">Tutti</div>`;
   fhtml += mesi.slice(0,6).map(m => {
     const [y,mo] = m.split('-');
@@ -919,6 +996,87 @@ function drawMortChart(canvasId, dati, colore = '#A03030') {
       ctx.fillText(d.morti, x + barW/2, y - 3);
     }
   });
+}
+
+// ── RESOCONTO ILARIA ──
+function apriIlaria() {
+  const mese = document.getElementById('ilaria-mese').value;
+  if(!mese) { alert('Seleziona prima un mese.'); return; }
+  showPage('ilaria');
+  renderIlaria(mese);
+}
+
+function renderIlaria(mese) {
+  const nomiMese = ['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+  const [y, mo] = mese.split('-');
+  const nomeMese = `${nomiMese[parseInt(mo)]} ${y}`;
+
+  // Filtra uscite del mese, ordine cronologico
+  let rows = allUscite
+    .filter(u => u.data_uscita?.startsWith(mese))
+    .sort((a,b) => a.data_uscita.localeCompare(b.data_uscita));
+
+  // Totali
+  const totCapi = rows.reduce((s,u) => s+(u.capi||0), 0);
+  const totKg   = rows.reduce((s,u) => s+(u.kg_totali||0), 0);
+  const totLiq  = rows.reduce((s,u) => s+(u.liquidazione||0), 0);
+
+  let html = `
+  <div class="print-btn-row">
+    <button class="btn-back-print" onclick="showPage('storico')">← Storico</button>
+    <button class="btn-do-print" onclick="window.print()">🖨 Stampa PDF</button>
+  </div>
+
+  <div class="print-header">
+    <div class="print-title">SOC. AGR. LE CORTI SRL</div>
+    <div class="print-sub">Resoconto uscite — ${nomeMese} · Generato il ${new Date().toLocaleDateString('it-IT')}</div>
+  </div>
+
+  <div class="ilaria-print-wrap">
+  <table class="ilaria-table">
+    <thead><tr>
+      <th>N.</th>
+      <th>Data</th>
+      <th>Soccida</th>
+      <th>Destinazione</th>
+      <th class="num">Capi</th>
+      <th class="num">Kg</th>
+      <th class="num">€/Kg</th>
+      <th class="num">Liquidazione €</th>
+    </tr></thead>
+    <tbody>`;
+
+  rows.forEach((u, i) => {
+    const lotto = allLotti.find(l => l.id === u.lotto_id);
+    const socNome = lotto ? (allSoccide.find(s => s.id === lotto.soccida_id)?.nome || '—') : '—';
+    html += `<tr>
+      <td>${i+1}</td>
+      <td style="white-space:nowrap;font-family:var(--mono)">${fmtDateFull(u.data_uscita)}</td>
+      <td>${socNome}</td>
+      <td>${u.macello || '—'}</td>
+      <td class="num">${fmt(u.capi)}</td>
+      <td class="num">${fmt(u.kg_totali)}</td>
+      <td class="num">${u.prezzo_kg ? fmt(u.prezzo_kg,3) : '—'}</td>
+      <td class="num ${u.liquidazione ? 'green' : ''}">${u.liquidazione ? fmt(u.liquidazione)+' €' : '—'}</td>
+    </tr>`;
+  });
+
+  // Riga totali
+  html += `<tr class="tot-row">
+    <td colspan="4">TOTALE</td>
+    <td class="num">${fmt(totCapi)}</td>
+    <td class="num">${fmt(totKg)}</td>
+    <td class="num">—</td>
+    <td class="num green">${totLiq > 0 ? fmt(totLiq)+' €' : '—'}</td>
+  </tr>`;
+
+  html += `</tbody></table></div>`;
+
+  if(!rows.length) {
+    html += `<div class="empty" style="margin-top:16px">Nessuna uscita registrata per ${nomeMese}.</div>`;
+  }
+
+  document.getElementById('ilaria-content').innerHTML = html;
 }
 
 // Start
