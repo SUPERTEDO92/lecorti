@@ -332,16 +332,25 @@
   .ilaria-table td.num { text-align: right; font-family: var(--mono); }
 
   @media print {
-    @page { margin: 6mm 5mm; size: A4 landscape; }
+    @page { margin: 0; size: A4 landscape; }
+    html, body { width: 297mm; height: 210mm; margin: 0; padding: 0; }
     .topbar, .print-btn-row, .ilaria-bar { display: none !important; }
-    .page { padding: 2px !important; max-width: 100% !important; width: 100% !important; }
+    .page { padding: 6mm !important; max-width: 297mm !important; width: 297mm !important; }
     body { background: #FFF; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .ilaria-print-wrap { overflow: visible; width: 100%; }
     .ilaria-table { font-size: 8.5px; min-width: unset; width: 100%; table-layout: fixed; }
-    .ilaria-table th { font-size: 7.5px; padding: 3px 4px; }
-    .ilaria-table td { font-size: 8.5px; padding: 3px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .print-header { margin-bottom: 6px; padding-bottom: 4px; }
-    .print-title { font-size: 12px; }
+    .ilaria-table colgroup col:nth-child(1) { width: 22px; }
+    .ilaria-table colgroup col:nth-child(2) { width: 60px; }
+    .ilaria-table colgroup col:nth-child(3) { width: 90px; }
+    .ilaria-table colgroup col:nth-child(4) { width: 80px; }
+    .ilaria-table colgroup col:nth-child(5) { width: 36px; }
+    .ilaria-table colgroup col:nth-child(6) { width: 60px; }
+    .ilaria-table colgroup col:nth-child(7) { width: 44px; }
+    .ilaria-table colgroup col:nth-child(8) { width: 90px; }
+    .ilaria-table th { font-size: 7px; padding: 3px 3px; }
+    .ilaria-table td { font-size: 8px; padding: 3px 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .print-header { margin-bottom: 5mm; padding-bottom: 3mm; }
+    .no-print { display: none !important; }
     .print-sub { font-size: 8px; }
   }
 </style>
@@ -1031,6 +1040,9 @@ function renderIlaria(mese) {
   <div class="print-btn-row">
     <button class="btn-back-print" onclick="showPage('storico')">← Storico</button>
     <button class="btn-do-print" onclick="window.print()">🖨 Stampa PDF</button>
+  </div>
+  <div style="background:#FDF3E0;border:0.5px solid #F0C870;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:11px;color:#9A6010;display:flex;align-items:center;gap:8px;" class="no-print">
+    <span>⚠️</span> Prima di stampare seleziona <strong>orientamento orizzontale</strong> nelle impostazioni di stampa.
   </div>
 
   <div class="print-header">
