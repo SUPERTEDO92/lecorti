@@ -192,6 +192,104 @@
 
   /* SCROLL */
   .scroll-area { overflow-y: auto; }
+
+  /* BOTTONI AZIONE LOTTO */
+  .action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .btn-izs {
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 11px 14px; border-radius: var(--radius-lg); border: none;
+    background: var(--red); color: #FFF;
+    font-size: 12px; font-family: var(--font); font-weight: 500;
+    cursor: pointer; transition: all .15s;
+  }
+  .btn-izs:hover { background: #8A2020; }
+  .btn-print {
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 11px 14px; border-radius: var(--radius-lg);
+    border: 0.5px solid var(--border2);
+    background: #FFF; color: var(--text);
+    font-size: 12px; font-family: var(--font); font-weight: 500;
+    cursor: pointer; transition: all .15s;
+  }
+  .btn-print:hover { background: var(--bg2); border-color: var(--text); }
+
+  /* PAGINA ANALISI IZS */
+  .izs-header {
+    background: var(--red); color: #FFF;
+    border-radius: var(--radius-lg); padding: 14px 16px; margin-bottom: 12px;
+  }
+  .izs-title { font-size: 15px; font-weight: 500; font-family: var(--mono); }
+  .izs-sub { font-size: 11px; color: rgba(255,255,255,.65); margin-top: 3px; }
+  .referto-card {
+    background: #FFF; border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 8px;
+  }
+  .referto-head {
+    padding: 8px 14px; background: #FEF2F2;
+    border-bottom: 0.5px solid #FCCFCF;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .referto-data { font-size: 11px; font-family: var(--mono); color: var(--red); font-weight: 500; }
+  .referto-lotto { font-size: 10px; font-family: var(--mono); color: var(--text2); background: var(--bg2); padding: 2px 7px; border-radius: 10px; }
+  .referto-body { padding: 10px 14px; }
+  .referto-patologia { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+  .referto-note { font-size: 11px; color: var(--text2); }
+  .referto-empty { text-align: center; padding: 32px 20px; color: var(--text3); font-size: 12px; background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); }
+
+  /* GRAFICO MORTALITÀ */
+  .chart-card {
+    background: #FFF; border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg); padding: 14px; margin-bottom: 12px;
+  }
+  .chart-title { font-size: 10px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--text2); margin-bottom: 12px; }
+  .chart-wrap { position: relative; width: 100%; height: 160px; }
+  canvas.mort-chart { width: 100% !important; height: 160px !important; }
+
+  /* PAGINA STAMPA */
+  .print-page {
+    background: #FFF; min-height: 100vh;
+    padding: 24px 20px; max-width: 480px; margin: 0 auto;
+  }
+  .print-header {
+    border-bottom: 2px solid var(--text); padding-bottom: 12px; margin-bottom: 16px;
+  }
+  .print-title { font-family: var(--mono); font-size: 18px; font-weight: 500; }
+  .print-sub { font-size: 11px; color: var(--text2); margin-top: 3px; }
+  .print-section { margin-bottom: 16px; }
+  .print-section-title {
+    font-size: 10px; font-family: var(--mono); text-transform: uppercase;
+    letter-spacing: .1em; color: var(--text2); border-bottom: 0.5px solid var(--border);
+    padding-bottom: 5px; margin-bottom: 8px;
+  }
+  .print-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .print-table th { text-align: left; padding: 4px 6px; color: var(--text2); font-weight: 500; font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: .05em; border-bottom: 0.5px solid var(--border); }
+  .print-table td { padding: 5px 6px; border-bottom: 0.5px solid var(--bg2); vertical-align: top; }
+  .print-table tr:last-child td { border-bottom: none; }
+  .print-stat-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 12px; }
+  .print-stat { background: var(--bg); border-radius: var(--radius); padding: 8px 10px; }
+  .print-stat-label { font-size: 9px; font-family: var(--mono); color: var(--text2); text-transform: uppercase; }
+  .print-stat-val { font-size: 14px; font-weight: 500; margin-top: 2px; }
+  .print-btn-row { display: flex; gap: 8px; margin-bottom: 16px; }
+  .btn-back-print {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 12px; color: var(--text2); cursor: pointer;
+    background: none; border: none; font-family: var(--font); padding: 0;
+  }
+  .btn-back-print:hover { color: var(--text); }
+  .btn-do-print {
+    margin-left: auto; padding: 7px 16px; border-radius: var(--radius);
+    background: var(--text); color: #FFF; border: none;
+    font-size: 12px; font-family: var(--font); cursor: pointer;
+  }
+  .btn-do-print:hover { background: #333; }
+  .print-chart-wrap { width: 100%; height: 140px; position: relative; margin: 8px 0; }
+  canvas.print-chart { width: 100% !important; height: 140px !important; }
+
+  @media print {
+    .topbar, .print-btn-row { display: none !important; }
+    .page { padding: 0 !important; }
+    body { background: #FFF; }
+  }
 </style>
 </head>
 <body>
@@ -237,6 +335,21 @@
   </div>
 </div>
 
+<!-- ANALISI E REFERTI IZS -->
+<div class="page" id="page-analisi">
+  <button class="back-btn" onclick="showPage('detail', currentLottoId)">← Dettaglio lotto</button>
+  <div id="analisi-content">
+    <div class="loading">Caricamento...</div>
+  </div>
+</div>
+
+<!-- STAMPA REPORT PDF -->
+<div class="page" id="page-stampa">
+  <div id="stampa-content">
+    <div class="loading">Caricamento...</div>
+  </div>
+</div>
+
 <script>
 const SUPABASE_URL = 'https://wfvqgxkxmgcxchcsljzh.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmdnFneGt4bWdjeGNoY3NsanpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMTE1NTAsImV4cCI6MjA5NTg4NzU1MH0.hIhbdVFeCTDJ9bBBqetef87VTCtocMflYUQ_7kvxJF8';
@@ -252,6 +365,32 @@ async function sb(table, query='') {
 let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [];
 let storicoFilter = 'tutti';
 let currentPage = 'home';
+let currentLottoId = null;
+
+// ── DATI MOCK — sostituire con query Supabase quando pronti ──
+const mockSanitario = {
+  // lotto_id → array referti
+  1: [
+    { data_referto: '2026-04-15', patologia: 'Circovirus PCV2 — antigene rilevato', note_trattamento: 'Florfenicolo 3gg', lotto: '02/26' },
+    { data_referto: '2026-05-03', patologia: 'Actinobacillus pleuropneumoniae sierotipo 2', note_trattamento: 'Amoxicillina IM', lotto: '02/26' },
+    { data_referto: '2026-05-18', patologia: 'Streptococcus suis — isolamento positivo', note_trattamento: null, lotto: '02/26' },
+  ],
+  2: [
+    { data_referto: '2026-05-10', patologia: 'Mycoplasma hyopneumoniae — PCR positivo', note_trattamento: 'Doxiciclina in acqua 5gg', lotto: '01/26' },
+  ],
+};
+const mockMortalita = {
+  // lotto_id → array eventi mortalità con giorno_stalla e capi_morti
+  1: [
+    {gg:2,morti:2},{gg:3,morti:1},{gg:4,morti:3},{gg:5,morti:1},{gg:7,morti:1},
+    {gg:12,morti:3},{gg:13,morti:2},{gg:16,morti:3},{gg:18,morti:1},{gg:22,morti:1},
+    {gg:23,morti:1},{gg:25,morti:1},{gg:26,morti:3},{gg:27,morti:2},{gg:32,morti:1},
+    {gg:37,morti:3},{gg:38,morti:4},{gg:40,morti:1},
+  ],
+  2: [
+    {gg:5,morti:1},{gg:10,morti:2},{gg:15,morti:1},{gg:20,morti:1},{gg:28,morti:2},
+  ],
+};
 
 // Init
 document.getElementById('today-date').textContent = new Date().toLocaleDateString('it-IT', {day:'2-digit',month:'2-digit',year:'numeric'});
@@ -278,7 +417,10 @@ function showPage(name, lottoId) {
   document.querySelectorAll('.nav-btn').forEach(b => {
     if(b.getAttribute('onclick')?.includes(`'${navName}'`)) b.classList.add('active');
   });
-  if(name === 'detail' && lottoId) renderDetail(lottoId);
+  if(name === 'detail' && lottoId) { currentLottoId = lottoId; renderDetail(lottoId); }
+  if(name === 'analisi' && lottoId) { currentLottoId = lottoId; renderAnalisi(lottoId); }
+  if(name === 'analisi' && !lottoId && currentLottoId) renderAnalisi(currentLottoId);
+  if(name === 'stampa' && lottoId) { currentLottoId = lottoId; renderStampa(lottoId); }
   window.scrollTo(0,0);
 }
 
@@ -398,6 +540,17 @@ function renderDetail(lottoId) {
       <div class="stat-label">Lettera DOP</div>
       <div class="stat-val" style="font-size:16px">${lotto.lettera_dop || '—'}</div>
     </div>
+  </div>`;
+
+  html += `<div class="action-row">
+    <button class="btn-izs" onclick="showPage('analisi',${lottoId})">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4m5 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+      Analisi e Referti IZS
+    </button>
+    <button class="btn-print" onclick="showPage('stampa',${lottoId})">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Stampa report PDF
+    </button>
   </div>`;
 
   if(uscite.length) {
@@ -548,6 +701,224 @@ function renderTrasferimenti() {
       </div>`).join('');
   });
   document.getElementById('trasf-list').innerHTML = html;
+}
+
+// ── ANALISI E REFERTI IZS ──
+function renderAnalisi(lottoId) {
+  const lotto = allLotti.find(l => l.id === lottoId);
+  const soc = lotto ? allSoccide.find(s => s.id === lotto.soccida_id) : null;
+  const referti = mockSanitario[lottoId] || [];
+  const mortalita = mockMortalita[lottoId] || [];
+
+  let html = `
+  <div class="izs-header">
+    <div class="izs-title">Analisi e Referti IZS</div>
+    <div class="izs-sub">${soc?.nome || '—'} · Lotto ${lotto?.codice || '—'}</div>
+  </div>`;
+
+  // Referti IZS
+  html += `<div class="print-section-title" style="margin-bottom:8px">Referti IZS</div>`;
+  if(referti.length) {
+    html += referti.map(r => `
+      <div class="referto-card">
+        <div class="referto-head">
+          <span class="referto-data">${fmtDateFull(r.data_referto)}</span>
+          <span class="referto-lotto">Lotto ${r.lotto}</span>
+        </div>
+        <div class="referto-body">
+          <div class="referto-patologia">${r.patologia}</div>
+          ${r.note_trattamento ? `<div class="referto-note">↳ ${r.note_trattamento}</div>` : ''}
+        </div>
+      </div>`).join('');
+  } else {
+    html += `<div class="referto-empty">Nessun referto positivo registrato.</div>`;
+  }
+
+  // Grafico mortalità
+  html += `<div style="height:12px"></div>
+  <div class="print-section-title" style="margin-bottom:8px">Mortalità giornaliera</div>
+  <div class="chart-card">
+    <div class="chart-title">Capi morti per giorno in stalla</div>
+    <div class="chart-wrap">
+      <canvas class="mort-chart" id="chart-analisi"></canvas>
+    </div>
+  </div>`;
+
+  document.getElementById('analisi-content').innerHTML = html;
+
+  // Disegna grafico dopo che il DOM è aggiornato
+  requestAnimationFrame(() => drawMortChart('chart-analisi', mortalita, '#A03030'));
+}
+
+// ── STAMPA REPORT PDF ──
+function renderStampa(lottoId) {
+  const lotto = allLotti.find(l => l.id === lottoId);
+  if(!lotto) return;
+  const soc = allSoccide.find(s => s.id === lotto.soccida_id);
+  const uscite = allUscite.filter(u => u.lotto_id === lottoId).sort((a,b) => a.data_uscita.localeCompare(b.data_uscita));
+  const referti = mockSanitario[lottoId] || [];
+  const mortalita = mockMortalita[lottoId] || [];
+
+  const oggi = new Date();
+  const ingresso = new Date(lotto.data_ingresso);
+  const gg = Math.floor((oggi - ingresso) / 86400000);
+  const capiUsciti = uscite.reduce((s,u) => s+(u.capi||0), 0);
+  const presenti = (lotto.capi_entrati||0) - capiUsciti;
+  const totaleMorti = mortalita.reduce((s,m) => s+(m.morti||0), 0);
+  const totaleLiquidato = uscite.reduce((s,u) => s+(u.liquidazione||0), 0);
+
+  let html = `
+  <div class="print-btn-row">
+    <button class="btn-back-print" onclick="showPage('detail',${lottoId})">← Dettaglio</button>
+    <button class="btn-do-print" onclick="window.print()">🖨 Stampa PDF</button>
+  </div>
+
+  <div class="print-header">
+    <div class="print-title">SOC. AGR. LE CORTI SRL</div>
+    <div class="print-sub">${soc?.nome || '—'} · Lotto ${lotto.codice} · ${lotto.provenienza || ''} · Generato il ${oggi.toLocaleDateString('it-IT')}</div>
+  </div>
+
+  <div class="print-section">
+    <div class="print-section-title">Dati ingresso</div>
+    <div class="print-stat-row">
+      <div class="print-stat"><div class="print-stat-label">Data ingresso</div><div class="print-stat-val">${fmtDateFull(lotto.data_ingresso)}</div></div>
+      <div class="print-stat"><div class="print-stat-label">Capi entrati</div><div class="print-stat-val">${fmt(lotto.capi_entrati)}</div></div>
+      <div class="print-stat"><div class="print-stat-label">Media kg/capo</div><div class="print-stat-val">${lotto.media_ingresso ? fmt(lotto.media_ingresso,1) : '—'}</div></div>
+      <div class="print-stat"><div class="print-stat-label">Lettera DOP</div><div class="print-stat-val">${lotto.lettera_dop || '—'}</div></div>
+      <div class="print-stat"><div class="print-stat-label">Giorni stalla</div><div class="print-stat-val">${gg}</div></div>
+      <div class="print-stat"><div class="print-stat-label">Presenti stimati</div><div class="print-stat-val">${fmt(presenti)}</div></div>
+    </div>
+  </div>`;
+
+  // Uscite
+  if(uscite.length) {
+    html += `<div class="print-section">
+      <div class="print-section-title">Uscite al macello</div>
+      <table class="print-table">
+        <thead><tr>
+          <th>Data</th><th>DDT</th><th>Macello</th><th>Capi</th><th>Kg tot.</th><th>Media</th><th>GG</th><th>Incr.</th><th>Liquid.</th>
+        </tr></thead>
+        <tbody>`;
+    html += uscite.map(u => `<tr>
+      <td>${fmtDate(u.data_uscita)}</td>
+      <td>${u.numero_ddt || '—'}</td>
+      <td>${u.macello || '—'}</td>
+      <td>${fmt(u.capi)}</td>
+      <td>${fmt(u.kg_totali)}</td>
+      <td>${u.kg_totali && u.capi ? fmt(u.kg_totali/u.capi,1) : '—'}</td>
+      <td>${u.giorni_permanenza || '—'}</td>
+      <td>${u.incremento ? fmt(u.incremento,3) : '—'}</td>
+      <td>${u.liquidazione ? fmt(u.liquidazione)+' €' : '—'}</td>
+    </tr>`).join('');
+    html += `</tbody></table>`;
+    if(totaleLiquidato > 0) {
+      html += `<div style="text-align:right;margin-top:6px;font-size:12px;font-weight:500;color:var(--green)">Totale liquidato: ${fmt(totaleLiquidato)} €</div>`;
+    }
+    html += `</div>`;
+  }
+
+  // Riepilogo numeri
+  html += `<div class="print-section">
+    <div class="print-section-title">Riepilogo lotto</div>
+    <div class="print-stat-row">
+      <div class="print-stat"><div class="print-stat-label">Capi entrati</div><div class="print-stat-val">${fmt(lotto.capi_entrati)}</div></div>
+      <div class="print-stat"><div class="print-stat-label">Capi usciti</div><div class="print-stat-val">${fmt(capiUsciti)}</div></div>
+      <div class="print-stat"><div class="print-stat-label">Presenti</div><div class="print-stat-val">${fmt(presenti)}</div></div>
+      <div class="print-stat"><div class="print-stat-label">Mortalità</div><div class="print-stat-val">${fmt(totaleMorti)}</div></div>
+      <div class="print-stat"><div class="print-stat-label">Data ingresso</div><div class="print-stat-val" style="font-size:12px">${fmtDateFull(lotto.data_ingresso)}</div></div>
+      <div class="print-stat"><div class="print-stat-label">Giorni tot.</div><div class="print-stat-val">${gg}</div></div>
+    </div>
+  </div>`;
+
+  // Grafico mortalità
+  if(mortalita.length) {
+    html += `<div class="print-section">
+      <div class="print-section-title">Andamento mortalità</div>
+      <div class="print-chart-wrap">
+        <canvas class="print-chart" id="chart-stampa"></canvas>
+      </div>
+    </div>`;
+  }
+
+  // Referti sanitari
+  if(referti.length) {
+    html += `<div class="print-section">
+      <div class="print-section-title">Referti IZS — patologie rilevate</div>
+      <table class="print-table">
+        <thead><tr><th>Data</th><th>Patologia</th><th>Trattamento</th></tr></thead>
+        <tbody>`;
+    html += referti.map(r => `<tr>
+      <td style="white-space:nowrap">${fmtDateFull(r.data_referto)}</td>
+      <td>${r.patologia}</td>
+      <td>${r.note_trattamento || '—'}</td>
+    </tr>`).join('');
+    html += `</tbody></table></div>`;
+  }
+
+  document.getElementById('stampa-content').innerHTML = html;
+
+  if(mortalita.length) {
+    requestAnimationFrame(() => drawMortChart('chart-stampa', mortalita, '#1A1A18'));
+  }
+}
+
+// ── GRAFICO MORTALITÀ (canvas puro, no dipendenze) ──
+function drawMortChart(canvasId, dati, colore = '#A03030') {
+  const canvas = document.getElementById(canvasId);
+  if(!canvas || !dati.length) return;
+
+  const W = canvas.offsetWidth || 400;
+  const H = canvas.offsetHeight || 160;
+  canvas.width = W * window.devicePixelRatio;
+  canvas.height = H * window.devicePixelRatio;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+  const pad = { top: 16, right: 16, bottom: 32, left: 32 };
+  const cW = W - pad.left - pad.right;
+  const cH = H - pad.top - pad.bottom;
+
+  const maxGg = Math.max(...dati.map(d => d.gg));
+  const maxMorti = Math.max(...dati.map(d => d.morti), 1);
+
+  // Griglia orizzontale
+  ctx.strokeStyle = '#E8E5DF';
+  ctx.lineWidth = 0.5;
+  for(let i = 0; i <= 4; i++) {
+    const y = pad.top + cH - (i / 4) * cH;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + cW, y); ctx.stroke();
+    const val = Math.round((i / 4) * maxMorti);
+    ctx.fillStyle = '#9C9C96'; ctx.font = '9px IBM Plex Mono, monospace';
+    ctx.textAlign = 'right'; ctx.fillText(val, pad.left - 4, y + 3);
+  }
+
+  // Label asse X
+  ctx.fillStyle = '#9C9C96'; ctx.font = '9px IBM Plex Mono, monospace'; ctx.textAlign = 'center';
+  const labelStep = Math.ceil(maxGg / 6);
+  for(let g = 0; g <= maxGg; g += labelStep) {
+    const x = pad.left + (g / maxGg) * cW;
+    ctx.fillText('gg' + g, x, H - pad.bottom + 12);
+  }
+
+  // Barre
+  const barW = Math.max(4, Math.min(18, cW / dati.length - 2));
+  dati.forEach(d => {
+    const x = pad.left + (d.gg / maxGg) * cW - barW / 2;
+    const barH = (d.morti / maxMorti) * cH;
+    const y = pad.top + cH - barH;
+    ctx.fillStyle = colore + '22'; // trasparente
+    ctx.fillRect(x, y, barW, barH);
+    ctx.strokeStyle = colore;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x, y, barW, barH);
+    // label valore
+    if(d.morti > 0) {
+      ctx.fillStyle = colore;
+      ctx.font = 'bold 9px IBM Plex Mono, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(d.morti, x + barW/2, y - 3);
+    }
+  });
 }
 
 // Start
