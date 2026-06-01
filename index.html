@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Le Corti — Gestionale</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F5F3EE;
+    --bg2: #EDEAE3;
+    --bg3: #E3DFD6;
+    --text: #1A1A18;
+    --text2: #6B6B66;
+    --text3: #9C9C96;
+    --accent: #C17B2A;
+    --accent2: #E8A84A;
+    --green: #2A7A4A;
+    --green-bg: #E8F5EE;
+    --amber: #9A6010;
+    --amber-bg: #FDF3E0;
+    --red: #A03030;
+    --red-bg: #FCEAEA;
+    --border: #D4D0C8;
+    --border2: #C4C0B8;
+    --font: 'IBM Plex Sans', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+    --radius: 6px;
+    --radius-lg: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
+
+  /* TOPBAR */
+  .topbar {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--text); color: #F5F3EE;
+    padding: 0 20px; height: 48px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .topbar-logo { font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: .08em; }
+  .topbar-date { font-size: 11px; color: #999; margin-left: auto; font-family: var(--mono); }
+  .topbar-nav { display: flex; gap: 4px; }
+  .nav-btn {
+    padding: 5px 12px; border-radius: var(--radius); border: none;
+    font-size: 12px; font-family: var(--font); cursor: pointer;
+    background: transparent; color: #AAA; transition: all .15s;
+  }
+  .nav-btn:hover { color: #FFF; background: rgba(255,255,255,.1); }
+  .nav-btn.active { background: rgba(255,255,255,.15); color: #FFF; }
+
+  /* LAYOUT */
+  .page { display: none; padding: 20px; max-width: 480px; margin: 0 auto; }
+  .page.visible { display: block; }
+
+  /* CARDS SOCCIDE */
+  .soccide-list { display: flex; flex-direction: column; gap: 2px; margin-top: 12px; }
+  .soccida-card {
+    background: #FFF; border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg); padding: 12px 14px;
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer; transition: all .12s;
+  }
+  .soccida-card:hover { border-color: var(--border2); background: var(--bg2); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot-green { background: var(--green); }
+  .dot-amber { background: var(--accent); }
+  .dot-gray { background: var(--text3); }
+  .soc-main { flex: 1; min-width: 0; }
+  .soc-nome { font-size: 13px; font-weight: 500; }
+  .soc-meta { font-size: 11px; color: var(--text2); margin-top: 1px; }
+  .soc-badge {
+    font-size: 10px; font-family: var(--mono); padding: 2px 7px;
+    border-radius: 20px; font-weight: 500;
+  }
+  .badge-green { background: var(--green-bg); color: var(--green); }
+  .badge-amber { background: var(--amber-bg); color: var(--amber); }
+  .badge-gray { background: var(--bg3); color: var(--text2); }
+  .soc-arrow { color: var(--text3); font-size: 16px; }
+
+  /* SECTION LABELS */
+  .section-sep {
+    font-size: 10px; font-family: var(--mono); font-weight: 500;
+    color: var(--text3); text-transform: uppercase; letter-spacing: .1em;
+    padding: 16px 0 6px;
+  }
+
+  /* DETAIL PAGE */
+  .back-btn {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--text2); cursor: pointer;
+    background: none; border: none; font-family: var(--font);
+    padding: 0; margin-bottom: 14px;
+  }
+  .back-btn:hover { color: var(--text); }
+  .detail-header {
+    background: var(--text); color: #F5F3EE;
+    border-radius: var(--radius-lg); padding: 14px 16px; margin-bottom: 12px;
+  }
+  .detail-title { font-size: 17px; font-weight: 500; font-family: var(--mono); }
+  .detail-sub { font-size: 11px; color: #AAA; margin-top: 3px; }
+
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px; }
+  .stat-box { background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 10px 12px; }
+  .stat-box.hl { background: var(--green-bg); border-color: #B8DECA; }
+  .stat-label { font-size: 10px; color: var(--text2); font-family: var(--mono); text-transform: uppercase; letter-spacing: .05em; }
+  .stat-val { font-size: 20px; font-weight: 500; color: var(--text); margin-top: 2px; }
+  .stat-val.green { color: var(--green); }
+  .stat-unit { font-size: 11px; color: var(--text2); font-weight: 300; }
+
+  /* USCITE */
+  .uscite-container { background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 12px; }
+  .uscite-header { padding: 9px 14px; border-bottom: 0.5px solid var(--border); background: var(--bg2); }
+  .uscite-header-text { font-size: 10px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--text2); }
+  .uscita-row { padding: 8px 14px; border-bottom: 0.5px solid var(--border); }
+  .uscita-row:last-child { border-bottom: none; }
+  .uscita-date { font-size: 11px; font-weight: 500; color: var(--text); font-family: var(--mono); margin-bottom: 4px; }
+  .uscita-line { display: flex; gap: 0; }
+  .uc { flex: 1; min-width: 0; }
+  .uc-label { font-size: 9px; color: var(--text3); font-family: var(--mono); text-transform: uppercase; }
+  .uc-val { font-size: 12px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .uc-val.green { color: var(--green); }
+  .uc-val.muted { color: var(--text2); font-weight: 400; }
+
+  /* TOTALE BAR */
+  .totale-bar {
+    background: var(--bg2); border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg); padding: 10px 14px;
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px;
+  }
+  .tot-label { font-size: 11px; color: var(--text2); }
+  .tot-val { font-size: 15px; font-weight: 500; color: var(--green); font-family: var(--mono); }
+
+  /* PRESENTI BAR */
+  .presenti-bar {
+    background: var(--green-bg); border: 0.5px solid #B8DECA;
+    border-radius: var(--radius-lg); padding: 12px 14px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .presenti-num { font-size: 26px; font-weight: 500; color: var(--green); font-family: var(--mono); }
+  .presenti-label { font-size: 12px; color: var(--green); }
+  .presenti-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+  /* STORICO */
+  .filter-bar { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 2px; margin-bottom: 10px; }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  .chip {
+    font-size: 11px; font-family: var(--mono); padding: 4px 10px;
+    border-radius: 20px; border: 0.5px solid var(--border2);
+    background: #FFF; color: var(--text2); white-space: nowrap; cursor: pointer;
+    transition: all .1s;
+  }
+  .chip.active { background: var(--text); color: #FFF; border-color: var(--text); }
+  .storico-container { background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  .month-sep { padding: 7px 14px; background: var(--bg2); border-bottom: 0.5px solid var(--border); }
+  .month-sep-text { font-size: 10px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--text2); }
+  .storico-row { padding: 7px 14px; border-bottom: 0.5px solid var(--border); }
+  .storico-row:last-child { border-bottom: none; }
+  .storico-top { display: flex; justify-content: space-between; margin-bottom: 3px; }
+  .storico-soccida { font-size: 12px; font-weight: 500; }
+  .storico-macello { font-size: 11px; color: var(--text2); }
+  .storico-line { display: flex; gap: 0; }
+  .sc { flex: 1; }
+  .sc-label { font-size: 9px; color: var(--text3); font-family: var(--mono); text-transform: uppercase; }
+  .sc-val { font-size: 12px; font-weight: 500; }
+  .sc-val.green { color: var(--green); }
+
+  .summary-bar {
+    display: grid; grid-template-columns: repeat(4,1fr);
+    gap: 6px; margin-bottom: 12px;
+  }
+  .sum-box { background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius); padding: 8px 10px; text-align: center; }
+  .sum-label { font-size: 9px; font-family: var(--mono); color: var(--text3); text-transform: uppercase; }
+  .sum-val { font-size: 13px; font-weight: 500; margin-top: 1px; }
+  .sum-val.green { color: var(--green); }
+
+  /* TRASFERIMENTI */
+  .trasfrow { padding: 8px 14px; border-bottom: 0.5px solid var(--border); }
+  .trasfrow:last-child { border-bottom: none; }
+  .trasf-top { display: flex; justify-content: space-between; margin-bottom: 3px; }
+  .trasf-da { font-size: 12px; font-weight: 500; }
+  .trasf-a { font-size: 11px; color: var(--text2); }
+  .trasf-line { display: flex; gap: 0; }
+  .tc { flex: 1; }
+  .tc-label { font-size: 9px; color: var(--text3); font-family: var(--mono); text-transform: uppercase; }
+  .tc-val { font-size: 12px; font-weight: 500; }
+
+  /* LOADING */
+  .loading { text-align: center; padding: 40px 20px; color: var(--text2); font-size: 13px; font-family: var(--mono); }
+  .empty { text-align: center; padding: 30px; color: var(--text3); font-size: 12px; }
+
+  /* SCROLL */
+  .scroll-area { overflow-y: auto; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-logo">LE CORTI</span>
+  <div class="topbar-nav">
+    <button class="nav-btn active" onclick="showPage('home')">Soccide</button>
+    <button class="nav-btn" onclick="showPage('storico')">Storico</button>
+    <button class="nav-btn" onclick="showPage('trasferimenti')">Trasferimenti</button>
+  </div>
+  <span class="topbar-date" id="today-date"></span>
+</div>
+
+<!-- HOME -->
+<div class="page visible" id="page-home">
+  <div id="soccide-list-container">
+    <div class="loading">Caricamento...</div>
+  </div>
+</div>
+
+<!-- DETAIL -->
+<div class="page" id="page-detail">
+  <button class="back-btn" onclick="showPage('home')">← Soccide</button>
+  <div id="detail-content">
+    <div class="loading">Caricamento...</div>
+  </div>
+</div>
+
+<!-- STORICO -->
+<div class="page" id="page-storico">
+  <div class="filter-bar" id="storico-filters"></div>
+  <div class="summary-bar" id="storico-summary"></div>
+  <div class="storico-container" id="storico-list">
+    <div class="loading">Caricamento...</div>
+  </div>
+</div>
+
+<!-- TRASFERIMENTI -->
+<div class="page" id="page-trasferimenti">
+  <div class="storico-container" id="trasf-list">
+    <div class="loading">Caricamento...</div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://wfvqgxkxmgcxchcsljzh.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmdnFneGt4bWdjeGNoY3NsanpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMTE1NTAsImV4cCI6MjA5NTg4NzU1MH0.hIhbdVFeCTDJ9bBBqetef87VTCtocMflYUQ_7kvxJF8';
+
+async function sb(table, query='') {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}${query}`, {
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+  });
+  return r.json();
+}
+
+// State
+let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [];
+let storicoFilter = 'tutti';
+let currentPage = 'home';
+
+// Init
+document.getElementById('today-date').textContent = new Date().toLocaleDateString('it-IT', {day:'2-digit',month:'2-digit',year:'numeric'});
+
+async function loadAll() {
+  [allSoccide, allLotti, allUscite, allTrasferimenti] = await Promise.all([
+    sb('soccide', '?order=nome'),
+    sb('lotti', '?order=data_ingresso.desc'),
+    sb('uscite', '?order=data_uscita.desc'),
+    sb('trasferimenti', '?order=data_trasferimento.desc'),
+  ]);
+  renderHome();
+  renderStorico();
+  renderTrasferimenti();
+}
+
+function showPage(name, lottoId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('visible'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  currentPage = name;
+  document.getElementById(`page-${name}`).classList.add('visible');
+  const navMap = {home:'home',storico:'storico',trasferimenti:'trasferimenti'};
+  const navName = navMap[name] || name;
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    if(b.getAttribute('onclick')?.includes(`'${navName}'`)) b.classList.add('active');
+  });
+  if(name === 'detail' && lottoId) renderDetail(lottoId);
+  window.scrollTo(0,0);
+}
+
+function fmt(n, dec=0) {
+  if(n == null || n === '') return '—';
+  return Number(n).toLocaleString('it-IT', {minimumFractionDigits:dec, maximumFractionDigits:dec});
+}
+function fmtDate(d) {
+  if(!d) return '—';
+  const p = d.split('-');
+  return `${p[2]}/${p[1]}`;
+}
+function fmtDateFull(d) {
+  if(!d) return '—';
+  const p = d.split('-');
+  return `${p[2]}/${p[1]}/${p[0]}`;
+}
+
+// HOME
+function renderHome() {
+  const container = document.getElementById('soccide-list-container');
+  const activeLotti = allLotti.filter(l => l.attivo);
+  const socWithLotti = allSoccide.filter(s => activeLotti.some(l => l.soccida_id === s.id));
+
+  const ingrasso = socWithLotti.filter(s => s.tipo === 'ingrasso' || s.tipo === 'mista');
+  const svezzamento = socWithLotti.filter(s => s.tipo === 'svezzamento');
+
+  let html = '';
+
+  if(ingrasso.length) {
+    html += `<div class="section-sep">In ingrasso</div><div class="soccide-list">`;
+    html += ingrasso.map(s => renderSoccidaCard(s, activeLotti)).join('');
+    html += `</div>`;
+  }
+  if(svezzamento.length) {
+    html += `<div class="section-sep">Da svezzamento</div><div class="soccide-list">`;
+    html += svezzamento.map(s => renderSoccidaCard(s, activeLotti)).join('');
+    html += `</div>`;
+  }
+  if(!html) html = `<div class="empty">Nessuna soccida attiva.<br>Inserisci i dati nel database.</div>`;
+  container.innerHTML = html;
+}
+
+function renderSoccidaCard(soc, activeLotti) {
+  const lotti = activeLotti.filter(l => l.soccida_id === soc.id);
+  const lotto = lotti[0];
+  if(!lotto) return '';
+  const uscite = allUscite.filter(u => u.lotto_id === lotto.id);
+  const capiUsciti = uscite.reduce((s,u) => s + (u.capi||0), 0);
+  const presenti = (lotto.capi_entrati||0) - capiUsciti;
+  const oggi = new Date();
+  const ingresso = new Date(lotto.data_ingresso);
+  const gg = Math.floor((oggi - ingresso) / 86400000);
+  const prevPeso = lotto.media_ingresso && lotto.incremento_giornaliero
+    ? Math.round(lotto.media_ingresso + gg * lotto.incremento_giornaliero) : null;
+
+  const liquidato = uscite.some(u => u.liquidazione);
+  const dot = presenti > 50 ? 'dot-green' : presenti > 10 ? 'dot-amber' : 'dot-gray';
+  const badge = presenti > 50 ? 'badge-green' : presenti > 0 ? 'badge-amber' : 'badge-gray';
+  const badgeText = presenti > 50 ? 'attivo' : presenti > 0 ? 'in uscita' : 'concluso';
+
+  return `<div class="soccida-card" onclick="showPage('detail',${lotto.id})">
+    <div class="dot ${dot}"></div>
+    <div class="soc-main">
+      <div class="soc-nome">${soc.nome}</div>
+      <div class="soc-meta">${lotto.codice} · ${fmt(presenti)} capi${lotto.lettera_dop ? ' · ' + lotto.lettera_dop : ''}${prevPeso ? ' · ~' + prevPeso + ' kg' : ''}</div>
+    </div>
+    <span class="soc-badge ${badge}">${badgeText}</span>
+    <span class="soc-arrow">›</span>
+  </div>`;
+}
+
+// DETAIL
+function renderDetail(lottoId) {
+  const lotto = allLotti.find(l => l.id === lottoId);
+  if(!lotto) return;
+  const soc = allSoccide.find(s => s.id === lotto.soccida_id);
+  const uscite = allUscite.filter(u => u.lotto_id === lottoId).sort((a,b) => a.data_uscita.localeCompare(b.data_uscita));
+
+  const oggi = new Date();
+  const ingresso = new Date(lotto.data_ingresso);
+  const gg = Math.floor((oggi - ingresso) / 86400000);
+  const capiUsciti = uscite.reduce((s,u) => s+(u.capi||0), 0);
+  const presenti = (lotto.capi_entrati||0) - capiUsciti;
+  const prevPeso = lotto.media_ingresso && lotto.incremento_giornaliero
+    ? Math.round(lotto.media_ingresso + gg * lotto.incremento_giornaliero) : null;
+  const totaleLiquidato = uscite.reduce((s,u) => s+(u.liquidazione||0), 0);
+
+  let html = `
+  <div class="detail-header">
+    <div class="detail-title">${soc?.nome || '—'}</div>
+    <div class="detail-sub">Lotto ${lotto.codice} · ${lotto.provenienza || ''} · ingresso ${fmtDateFull(lotto.data_ingresso)}</div>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-box">
+      <div class="stat-label">Capi entrati</div>
+      <div class="stat-val">${fmt(lotto.capi_entrati)} <span class="stat-unit">capi</span></div>
+    </div>
+    <div class="stat-box hl">
+      <div class="stat-label">Presenti stimati</div>
+      <div class="stat-val green">${fmt(presenti)} <span class="stat-unit">capi</span></div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Giorni in stalla</div>
+      <div class="stat-val">${gg} <span class="stat-unit">gg</span></div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Previsione peso</div>
+      <div class="stat-val">${prevPeso ? prevPeso : '—'} <span class="stat-unit">kg</span></div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Prezzo acquisto</div>
+      <div class="stat-val">${lotto.prezzo_acquisto ? fmt(lotto.prezzo_acquisto,3) : '—'} <span class="stat-unit">€/kg</span></div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Lettera DOP</div>
+      <div class="stat-val" style="font-size:16px">${lotto.lettera_dop || '—'}</div>
+    </div>
+  </div>`;
+
+  if(uscite.length) {
+    html += `<div class="uscite-container">
+      <div class="uscite-header"><span class="uscite-header-text">Uscite effettuate</span></div>`;
+    html += uscite.map(u => `
+      <div class="uscita-row">
+        <div class="uscita-date">${fmtDate(u.data_uscita)}${u.numero_ddt ? ' · DDT ' + u.numero_ddt : ''} · ${u.macello || '—'}</div>
+        <div class="uscita-line">
+          <div class="uc"><div class="uc-label">capi</div><div class="uc-val">${fmt(u.capi)}</div></div>
+          <div class="uc"><div class="uc-label">kg</div><div class="uc-val">${fmt(u.kg_totali)}</div></div>
+          <div class="uc"><div class="uc-label">media</div><div class="uc-val">${u.kg_totali && u.capi ? fmt(u.kg_totali/u.capi,1) : '—'}</div></div>
+          <div class="uc"><div class="uc-label">incr.</div><div class="uc-val">${u.incremento ? fmt(u.incremento,2) : '—'}</div></div>
+          <div class="uc"><div class="uc-label">gg</div><div class="uc-val">${u.giorni_permanenza || '—'}</div></div>
+          <div class="uc"><div class="uc-label">liquid.</div><div class="uc-val green">${u.liquidazione ? fmt(u.liquidazione) + ' €' : '—'}</div></div>
+        </div>
+      </div>`).join('');
+    html += `</div>`;
+
+    if(totaleLiquidato > 0) {
+      html += `<div class="totale-bar">
+        <span class="tot-label">Totale liquidato lotto</span>
+        <span class="tot-val">${fmt(totaleLiquidato)} €</span>
+      </div>`;
+    }
+  } else {
+    html += `<div class="empty">Nessuna uscita registrata.</div>`;
+  }
+
+  html += `<div class="presenti-bar">
+    <div>
+      <div class="presenti-num">${fmt(presenti)}</div>
+      <div class="presenti-label">presenti</div>
+    </div>
+    <div style="margin-left:8px">
+      <div class="presenti-sub">${fmt(capiUsciti)} usciti · ${fmt((lotto.capi_entrati||0) - capiUsciti - presenti)} mortalità stimata</div>
+    </div>
+  </div>`;
+
+  document.getElementById('detail-content').innerHTML = html;
+}
+
+// STORICO
+function renderStorico() {
+  const filters = document.getElementById('storico-filters');
+  const mesi = [...new Set(allUscite.map(u => u.data_uscita?.substring(0,7)).filter(Boolean))].sort().reverse();
+  let fhtml = `<div class="chip active" onclick="filterStorico('tutti',this)">Tutti</div>`;
+  fhtml += mesi.slice(0,6).map(m => {
+    const [y,mo] = m.split('-');
+    const mn = ['','Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'][parseInt(mo)];
+    return `<div class="chip" onclick="filterStorico('${m}',this)">${mn} ${y}</div>`;
+  }).join('');
+  filters.innerHTML = fhtml;
+  renderStoricoList();
+}
+
+function filterStorico(val, el) {
+  storicoFilter = val;
+  document.querySelectorAll('#storico-filters .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderStoricoList();
+}
+
+function renderStoricoList() {
+  let rows = allUscite.filter(u => u.data_uscita);
+  if(storicoFilter !== 'tutti') rows = rows.filter(u => u.data_uscita?.startsWith(storicoFilter));
+  rows = [...rows].sort((a,b) => b.data_uscita.localeCompare(a.data_uscita));
+
+  // Summary
+  const totCapi = rows.reduce((s,u) => s+(u.capi||0), 0);
+  const totKg = rows.reduce((s,u) => s+(u.kg_totali||0), 0);
+  const totLiq = rows.reduce((s,u) => s+(u.liquidazione||0), 0);
+  document.getElementById('storico-summary').innerHTML = `
+    <div class="sum-box"><div class="sum-label">carichi</div><div class="sum-val">${rows.length}</div></div>
+    <div class="sum-box"><div class="sum-label">capi</div><div class="sum-val">${fmt(totCapi)}</div></div>
+    <div class="sum-box"><div class="sum-label">kg</div><div class="sum-val">${fmt(totKg)}</div></div>
+    <div class="sum-box"><div class="sum-label">liquidato</div><div class="sum-val green">${totLiq > 0 ? fmt(totLiq/1000,0)+'k €' : '—'}</div></div>`;
+
+  if(!rows.length) {
+    document.getElementById('storico-list').innerHTML = `<div class="empty">Nessuna uscita registrata.</div>`;
+    return;
+  }
+
+  // Group by month
+  const byMonth = {};
+  rows.forEach(u => {
+    const m = u.data_uscita.substring(0,7);
+    if(!byMonth[m]) byMonth[m] = [];
+    byMonth[m].push(u);
+  });
+
+  let html = '';
+  Object.keys(byMonth).sort().reverse().forEach(m => {
+    const [y,mo] = m.split('-');
+    const mn = ['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'][parseInt(mo)];
+    html += `<div class="month-sep"><span class="month-sep-text">${mn} ${y}</span></div>`;
+    html += byMonth[m].map(u => {
+      const soc = allLotti.find(l => l.id === u.lotto_id);
+      const socNome = soc ? (allSoccide.find(s => s.id === soc.soccida_id)?.nome || '—') : u.soccida_nome || '—';
+      const media = u.kg_totali && u.capi ? fmt(u.kg_totali/u.capi,1) : '—';
+      return `<div class="storico-row">
+        <div class="storico-top">
+          <span class="storico-soccida">${fmtDate(u.data_uscita)} · ${socNome}</span>
+          <span class="storico-macello">${u.macello || '—'}</span>
+        </div>
+        <div class="storico-line">
+          <div class="sc"><div class="sc-label">capi</div><div class="sc-val">${fmt(u.capi)}</div></div>
+          <div class="sc"><div class="sc-label">kg</div><div class="sc-val">${fmt(u.kg_totali)}</div></div>
+          <div class="sc"><div class="sc-label">media</div><div class="sc-val">${media}</div></div>
+          <div class="sc"><div class="sc-label">€/kg</div><div class="sc-val">${u.prezzo_kg ? fmt(u.prezzo_kg,3) : '—'}</div></div>
+          <div class="sc"><div class="sc-label">liquid.</div><div class="sc-val green">${u.liquidazione ? fmt(u.liquidazione) + ' €' : '—'}</div></div>
+        </div>
+      </div>`;
+    }).join('');
+  });
+  document.getElementById('storico-list').innerHTML = html;
+}
+
+// TRASFERIMENTI
+function renderTrasferimenti() {
+  if(!allTrasferimenti.length) {
+    document.getElementById('trasf-list').innerHTML = `<div class="empty">Nessun trasferimento registrato.</div>`;
+    return;
+  }
+  const byMonth = {};
+  allTrasferimenti.filter(t => t.data_trasferimento).forEach(t => {
+    const m = t.data_trasferimento.substring(0,7);
+    if(!byMonth[m]) byMonth[m] = [];
+    byMonth[m].push(t);
+  });
+  let html = '';
+  Object.keys(byMonth).sort().reverse().forEach(m => {
+    const [y,mo] = m.split('-');
+    const mn = ['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'][parseInt(mo)];
+    html += `<div class="month-sep"><span class="month-sep-text">${mn} ${y}</span></div>`;
+    html += byMonth[m].map(t => `
+      <div class="trasfrow">
+        <div class="trasf-top">
+          <span class="trasf-da">${fmtDate(t.data_trasferimento)} · ${t.soccida_partenza}</span>
+          <span class="trasf-a">→ ${t.soccida_destinazione}</span>
+        </div>
+        <div class="trasf-line">
+          <div class="tc"><div class="tc-label">lotto</div><div class="tc-val">${t.lotto_codice || '—'}</div></div>
+          <div class="tc"><div class="tc-label">capi</div><div class="tc-val">${fmt(t.capi)}</div></div>
+          <div class="tc"><div class="tc-label">kg</div><div class="tc-val">${t.kg ? fmt(t.kg) : '—'}</div></div>
+          <div class="tc"><div class="tc-label">lettera</div><div class="tc-val">${t.lettera_dop || '—'}</div></div>
+        </div>
+      </div>`).join('');
+  });
+  document.getElementById('trasf-list').innerHTML = html;
+}
+
+// Start
+loadAll();
+</script>
+</body>
+</html>
