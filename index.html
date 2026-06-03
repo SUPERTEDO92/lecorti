@@ -49,6 +49,15 @@
   .nav-btn:hover { color: #FFF; background: rgba(255,255,255,.1); }
   .nav-btn.active { background: rgba(255,255,255,.15); color: #FFF; }
 
+  /* BOTTONE ARCHIVIO IN TOPBAR */
+  .btn-archivio-top {
+    padding: 4px 10px; border-radius: var(--radius); border: 0.5px solid rgba(255,255,255,.2);
+    font-size: 11px; font-family: var(--mono); cursor: pointer;
+    background: transparent; color: #BBB; transition: all .15s;
+    display: flex; align-items: center; gap: 5px; white-space: nowrap;
+  }
+  .btn-archivio-top:hover { background: rgba(255,255,255,.1); color: #FFF; border-color: rgba(255,255,255,.4); }
+
   /* LAYOUT */
   .page { display: none; padding: 20px; max-width: 480px; margin: 0 auto; }
   .page.visible { display: block; }
@@ -99,7 +108,6 @@
   }
   .detail-title { font-size: 17px; font-weight: 500; font-family: var(--mono); }
   .detail-sub { font-size: 11px; color: #AAA; margin-top: 3px; }
-
   .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px; }
   .stat-box { background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 10px 12px; }
   .stat-box.hl { background: var(--green-bg); border-color: #B8DECA; }
@@ -137,10 +145,34 @@
     background: var(--green-bg); border: 0.5px solid #B8DECA;
     border-radius: var(--radius-lg); padding: 12px 14px;
     display: flex; align-items: center; gap: 12px;
+    margin-bottom: 16px;
   }
   .presenti-num { font-size: 26px; font-weight: 500; color: var(--green); font-family: var(--mono); }
   .presenti-label { font-size: 12px; color: var(--green); }
   .presenti-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+  /* BOTTONE CHIUDI LOTTO */
+  .btn-chiudi-lotto {
+    width: 100%; padding: 14px 16px;
+    border-radius: var(--radius-lg); border: none;
+    font-size: 13px; font-family: var(--font); font-weight: 500;
+    cursor: pointer; transition: all .15s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    margin-bottom: 20px;
+    color: #FFF;
+  }
+  .btn-chiudi-lotto:hover { filter: brightness(1.12); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,.15); }
+  .btn-chiudi-lotto:active { transform: translateY(0); }
+
+  /* Colori lotto */
+  .lotto-color-0 { background: #2A7A4A; } /* verde */
+  .lotto-color-1 { background: #C17B2A; } /* ambra */
+  .lotto-color-2 { background: #3B6EA8; } /* blu */
+  .lotto-color-3 { background: #8B4A8B; } /* viola */
+  .lotto-color-4 { background: #A03030; } /* rosso */
+  .lotto-color-5 { background: #4A7A8A; } /* teal */
+  .lotto-color-6 { background: #7A6A2A; } /* ocra */
+  .lotto-color-7 { background: #2A6A7A; } /* azzurro */
 
   /* STORICO */
   .filter-bar { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 2px; margin-bottom: 10px; }
@@ -165,7 +197,6 @@
   .sc-label { font-size: 9px; color: var(--text3); font-family: var(--mono); text-transform: uppercase; }
   .sc-val { font-size: 12px; font-weight: 500; }
   .sc-val.green { color: var(--green); }
-
   .summary-bar {
     display: grid; grid-template-columns: repeat(4,1fr);
     gap: 6px; margin-bottom: 12px;
@@ -189,9 +220,6 @@
   /* LOADING */
   .loading { text-align: center; padding: 40px 20px; color: var(--text2); font-size: 13px; font-family: var(--mono); }
   .empty { text-align: center; padding: 30px; color: var(--text3); font-size: 12px; }
-
-  /* SCROLL */
-  .scroll-area { overflow-y: auto; }
 
   /* BOTTONI AZIONE LOTTO */
   .action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
@@ -331,6 +359,143 @@
   .ilaria-table td.green { color: var(--green); font-weight: 500; }
   .ilaria-table td.num { text-align: right; font-family: var(--mono); }
 
+  /* ═══════════════════════════════════════
+     MODAL ARCHIVIO LOTTI CHIUSI
+  ═══════════════════════════════════════ */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(26,26,24,.55); backdrop-filter: blur(3px);
+    align-items: flex-end; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-sheet {
+    background: var(--bg); border-radius: 16px 16px 0 0;
+    width: 100%; max-width: 480px;
+    max-height: 85vh; display: flex; flex-direction: column;
+    animation: slideUp .22s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(40px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+  .modal-handle {
+    width: 36px; height: 4px; background: var(--border2);
+    border-radius: 2px; margin: 10px auto 0;
+    flex-shrink: 0;
+  }
+  .modal-header {
+    padding: 12px 16px 10px;
+    border-bottom: 0.5px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .modal-title { font-size: 14px; font-weight: 500; font-family: var(--mono); }
+  .modal-subtitle { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .modal-close {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--bg3); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text2); font-size: 16px; line-height: 1;
+    flex-shrink: 0;
+  }
+  .modal-close:hover { background: var(--border2); color: var(--text); }
+  .modal-body { overflow-y: auto; padding: 12px 16px 24px; flex: 1; }
+
+  /* Lotti archiviati */
+  .archivio-empty {
+    text-align: center; padding: 48px 20px;
+    color: var(--text3); font-size: 12px;
+  }
+  .archivio-empty svg { margin-bottom: 12px; opacity: .4; }
+  .archivio-card {
+    background: #FFF; border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg); margin-bottom: 8px; overflow: hidden;
+  }
+  .archivio-card-header {
+    padding: 10px 14px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .archivio-color-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  }
+  .archivio-card-title { font-size: 13px; font-weight: 500; flex: 1; }
+  .archivio-card-codice {
+    font-size: 10px; font-family: var(--mono); color: var(--text2);
+    background: var(--bg2); padding: 2px 7px; border-radius: 10px;
+  }
+  .archivio-card-dates {
+    font-size: 10px; color: var(--text3); margin-top: 1px;
+    font-family: var(--mono);
+  }
+  .archivio-kpi {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    border-top: 0.5px solid var(--border);
+  }
+  .archivio-kpi-item {
+    padding: 8px 10px; border-right: 0.5px solid var(--border);
+  }
+  .archivio-kpi-item:last-child { border-right: none; }
+  .archivio-kpi-label {
+    font-size: 9px; color: var(--text3); font-family: var(--mono);
+    text-transform: uppercase; letter-spacing: .05em;
+  }
+  .archivio-kpi-val { font-size: 13px; font-weight: 500; color: var(--text); margin-top: 1px; }
+  .archivio-kpi-val.green { color: var(--green); }
+  .archivio-kpi-val.amber { color: var(--amber); }
+
+  /* DIALOG CONFERMA CHIUSURA */
+  .confirm-overlay {
+    display: none; position: fixed; inset: 0; z-index: 300;
+    background: rgba(26,26,24,.6); backdrop-filter: blur(4px);
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  .confirm-overlay.open { display: flex; }
+  .confirm-box {
+    background: #FFF; border-radius: var(--radius-lg);
+    width: 100%; max-width: 340px; overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    animation: popIn .18s ease;
+  }
+  @keyframes popIn {
+    from { transform: scale(.93); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+  }
+  .confirm-header {
+    padding: 16px 16px 10px;
+  }
+  .confirm-icon {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; margin-bottom: 10px;
+  }
+  .confirm-title { font-size: 15px; font-weight: 500; line-height: 1.3; }
+  .confirm-body { padding: 0 16px 12px; }
+  .confirm-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
+  .confirm-lotto-info {
+    background: var(--bg); border-radius: var(--radius);
+    padding: 10px 12px; margin-top: 10px;
+    font-size: 11px; font-family: var(--mono); color: var(--text2);
+    line-height: 1.7;
+  }
+  .confirm-footer {
+    display: flex; gap: 8px; padding: 12px 16px;
+    border-top: 0.5px solid var(--border);
+  }
+  .confirm-cancel {
+    flex: 1; padding: 10px; border-radius: var(--radius);
+    border: 0.5px solid var(--border2); background: #FFF;
+    font-size: 13px; font-family: var(--font); cursor: pointer;
+    color: var(--text2);
+  }
+  .confirm-cancel:hover { background: var(--bg2); }
+  .confirm-ok {
+    flex: 1.5; padding: 10px; border-radius: var(--radius);
+    border: none; font-size: 13px; font-family: var(--font);
+    font-weight: 500; cursor: pointer; color: #FFF;
+    transition: filter .15s;
+  }
+  .confirm-ok:hover { filter: brightness(1.1); }
+
   @media print {
     @page { margin: 0; size: A4 landscape; }
     html, body { width: 297mm; height: 210mm; margin: 0; padding: 0; }
@@ -352,11 +517,13 @@
     .print-header { margin-bottom: 5mm; padding-bottom: 3mm; }
     .no-print { display: none !important; }
     .print-sub { font-size: 8px; }
+    .modal-overlay, .confirm-overlay { display: none !important; }
   }
 </style>
 </head>
 <body>
 
+<!-- TOPBAR -->
 <div class="topbar">
   <span class="topbar-logo">LE CORTI</span>
   <div class="topbar-nav">
@@ -364,6 +531,10 @@
     <button class="nav-btn" onclick="showPage('storico')">Storico</button>
     <button class="nav-btn" onclick="showPage('trasferimenti')">Trasferimenti</button>
   </div>
+  <button class="btn-archivio-top no-print" onclick="openArchivio()" title="Storico lotti chiusi">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+    Cicli chiusi
+  </button>
   <span class="topbar-date" id="today-date"></span>
 </div>
 
@@ -432,6 +603,49 @@
   </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════
+     MODAL ARCHIVIO LOTTI CHIUSI
+════════════════════════════════════════════════ -->
+<div class="modal-overlay no-print" id="modal-archivio" onclick="closeArchivioOnBg(event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">📦 Cicli Chiusi</div>
+        <div class="modal-subtitle" id="archivio-subtitle">Storico lotti archiviati</div>
+      </div>
+      <button class="modal-close" onclick="closeArchivio()">×</button>
+    </div>
+    <div class="modal-body" id="archivio-body">
+      <div class="loading">Caricamento...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     DIALOG CONFERMA CHIUSURA LOTTO
+════════════════════════════════════════════════ -->
+<div class="confirm-overlay no-print" id="confirm-chiusura">
+  <div class="confirm-box">
+    <div class="confirm-header">
+      <div class="confirm-icon" id="confirm-icon" style="background:#E8F5EE">🔒</div>
+      <div class="confirm-title">Vuoi chiudere e archiviare questo lotto?</div>
+    </div>
+    <div class="confirm-body">
+      <div class="confirm-desc">
+        Il lotto verrà rimosso dalla vista <strong>Soccide</strong> e spostato nell'archivio <em>Cicli Chiusi</em>. L'operazione può essere annullata dal database Supabase.
+      </div>
+      <div class="confirm-lotto-info" id="confirm-lotto-info">
+        —
+      </div>
+    </div>
+    <div class="confirm-footer">
+      <button class="confirm-cancel" onclick="closeConfirm()">Annulla</button>
+      <button class="confirm-ok" id="confirm-ok-btn" onclick="eseguiChiusura()">Sì, archivia lotto</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const SUPABASE_URL = 'https://wfvqgxkxmgcxchcsljzh.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmdnFneGt4bWdjeGNoY3NsanpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMTE1NTAsImV4cCI6MjA5NTg4NzU1MH0.hIhbdVFeCTDJ9bBBqetef87VTCtocMflYUQ_7kvxJF8';
@@ -443,15 +657,45 @@ async function sb(table, query='') {
   return r.json();
 }
 
+async function sbPatch(table, id, body) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
+    method: 'PATCH',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    },
+    body: JSON.stringify(body)
+  });
+  return r.ok;
+}
+
+// ══ PALETTE COLORI LOTTO (si assegna per indice id % 8) ══
+const LOTTO_COLORS = [
+  { bg: '#2A7A4A', light: '#E8F5EE', name: 'verde' },
+  { bg: '#C17B2A', light: '#FDF3E0', name: 'ambra' },
+  { bg: '#3B6EA8', light: '#E8F0FB', name: 'blu' },
+  { bg: '#8B4A8B', light: '#F5E8F5', name: 'viola' },
+  { bg: '#A03030', light: '#FCEAEA', name: 'rosso' },
+  { bg: '#4A7A8A', light: '#E8F3F5', name: 'teal' },
+  { bg: '#7A6A2A', light: '#F5F0E0', name: 'ocra' },
+  { bg: '#2A6A7A', light: '#E0F0F5', name: 'azzurro' },
+];
+
+function lottoColor(lottoId) {
+  return LOTTO_COLORS[lottoId % LOTTO_COLORS.length];
+}
+
 // State
 let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [];
 let storicoFilter = 'tutti';
 let currentPage = 'home';
 let currentLottoId = null;
+let pendingChiusuraLottoId = null;
 
 // ── DATI MOCK — sostituire con query Supabase quando pronti ──
 const mockSanitario = {
-  // lotto_id → array referti
   1: [
     { data_referto: '2026-04-15', patologia: 'Circovirus PCV2 — antigene rilevato', note_trattamento: 'Florfenicolo 3gg', lotto: '02/26' },
     { data_referto: '2026-05-03', patologia: 'Actinobacillus pleuropneumoniae sierotipo 2', note_trattamento: 'Amoxicillina IM', lotto: '02/26' },
@@ -461,8 +705,8 @@ const mockSanitario = {
     { data_referto: '2026-05-10', patologia: 'Mycoplasma hyopneumoniae — PCR positivo', note_trattamento: 'Doxiciclina in acqua 5gg', lotto: '01/26' },
   ],
 };
+
 const mockMortalita = {
-  // lotto_id → array eventi mortalità con giorno_stalla e capi_morti
   1: [
     {gg:2,morti:2},{gg:3,morti:1},{gg:4,morti:3},{gg:5,morti:1},{gg:7,morti:1},
     {gg:12,morti:3},{gg:13,morti:2},{gg:16,morti:3},{gg:18,morti:1},{gg:22,morti:1},
@@ -521,17 +765,15 @@ function fmtDateFull(d) {
   return `${p[2]}/${p[1]}/${p[0]}`;
 }
 
-// HOME
+// ══ HOME ══
 function renderHome() {
   const container = document.getElementById('soccide-list-container');
   const activeLotti = allLotti.filter(l => l.attivo);
   const socWithLotti = allSoccide.filter(s => activeLotti.some(l => l.soccida_id === s.id));
-
   const ingrasso = socWithLotti.filter(s => s.tipo === 'ingrasso' || s.tipo === 'mista');
   const svezzamento = socWithLotti.filter(s => s.tipo === 'svezzamento');
 
   let html = '';
-
   if(ingrasso.length) {
     html += `<div class="section-sep">In ingrasso</div><div class="soccide-list">`;
     html += ingrasso.map(s => renderSoccidaCard(s, activeLotti)).join('');
@@ -558,12 +800,9 @@ function renderSoccidaCard(soc, activeLotti) {
   const gg = Math.floor((oggi - ingresso) / 86400000);
   const prevPeso = lotto.media_ingresso && lotto.incremento_giornaliero
     ? Math.round(lotto.media_ingresso + gg * lotto.incremento_giornaliero) : null;
-
-  const liquidato = uscite.some(u => u.liquidazione);
   const dot = presenti > 50 ? 'dot-green' : presenti > 10 ? 'dot-amber' : 'dot-gray';
   const badge = presenti > 50 ? 'badge-green' : presenti > 0 ? 'badge-amber' : 'badge-gray';
   const badgeText = presenti > 50 ? 'attivo' : presenti > 0 ? 'in uscita' : 'concluso';
-
   return `<div class="soccida-card" onclick="showPage('detail',${lotto.id})">
     <div class="dot ${dot}"></div>
     <div class="soc-main">
@@ -575,13 +814,12 @@ function renderSoccidaCard(soc, activeLotti) {
   </div>`;
 }
 
-// DETAIL
+// ══ DETAIL ══
 function renderDetail(lottoId) {
   const lotto = allLotti.find(l => l.id === lottoId);
   if(!lotto) return;
   const soc = allSoccide.find(s => s.id === lotto.soccida_id);
   const uscite = allUscite.filter(u => u.lotto_id === lottoId).sort((a,b) => a.data_uscita.localeCompare(b.data_uscita));
-
   const oggi = new Date();
   const ingresso = new Date(lotto.data_ingresso);
   const gg = Math.floor((oggi - ingresso) / 86400000);
@@ -590,13 +828,13 @@ function renderDetail(lottoId) {
   const prevPeso = lotto.media_ingresso && lotto.incremento_giornaliero
     ? Math.round(lotto.media_ingresso + gg * lotto.incremento_giornaliero) : null;
   const totaleLiquidato = uscite.reduce((s,u) => s+(u.liquidazione||0), 0);
+  const color = lottoColor(lottoId);
 
   let html = `
-  <div class="detail-header">
+  <div class="detail-header" style="background:${color.bg}">
     <div class="detail-title">${soc?.nome || '—'}</div>
     <div class="detail-sub">Lotto ${lotto.codice} · ${lotto.provenienza || ''} · ingresso ${fmtDateFull(lotto.data_ingresso)}</div>
   </div>
-
   <div class="stat-grid">
     <div class="stat-box">
       <div class="stat-label">Capi entrati</div>
@@ -651,7 +889,6 @@ function renderDetail(lottoId) {
         </div>
       </div>`).join('');
     html += `</div>`;
-
     if(totaleLiquidato > 0) {
       html += `<div class="totale-bar">
         <span class="tot-label">Totale liquidato lotto</span>
@@ -672,15 +909,22 @@ function renderDetail(lottoId) {
     </div>
   </div>`;
 
+  // ── BOTTONE CHIUDI & ARCHIVIA ──
+  html += `<button class="btn-chiudi-lotto lotto-color-${lottoId % 8}" onclick="aprireConfirmChiusura(${lottoId})">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>
+    Chiudi lotto e archivia
+  </button>`;
+
   document.getElementById('detail-content').innerHTML = html;
 }
 
-// STORICO
+// ══ STORICO ══
 function renderStorico() {
   const filters = document.getElementById('storico-filters');
   const mesi = [...new Set(allUscite.map(u => u.data_uscita?.substring(0,7)).filter(Boolean))].sort().reverse();
-
-  // Popola dropdown Ilaria
   const sel = document.getElementById('ilaria-mese');
   const nomiMese = ['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
   sel.innerHTML = '<option value="">Seleziona mese…</option>' +
@@ -688,7 +932,6 @@ function renderStorico() {
       const [y,mo] = m.split('-');
       return `<option value="${m}">${nomiMese[parseInt(mo)]} ${y}</option>`;
     }).join('');
-
   let fhtml = `<div class="chip active" onclick="filterStorico('tutti',this)">Tutti</div>`;
   fhtml += mesi.slice(0,6).map(m => {
     const [y,mo] = m.split('-');
@@ -710,8 +953,6 @@ function renderStoricoList() {
   let rows = allUscite.filter(u => u.data_uscita);
   if(storicoFilter !== 'tutti') rows = rows.filter(u => u.data_uscita?.startsWith(storicoFilter));
   rows = [...rows].sort((a,b) => b.data_uscita.localeCompare(a.data_uscita));
-
-  // Summary
   const totCapi = rows.reduce((s,u) => s+(u.capi||0), 0);
   const totKg = rows.reduce((s,u) => s+(u.kg_totali||0), 0);
   const totLiq = rows.reduce((s,u) => s+(u.liquidazione||0), 0);
@@ -720,20 +961,16 @@ function renderStoricoList() {
     <div class="sum-box"><div class="sum-label">capi</div><div class="sum-val">${fmt(totCapi)}</div></div>
     <div class="sum-box"><div class="sum-label">kg</div><div class="sum-val">${fmt(totKg)}</div></div>
     <div class="sum-box"><div class="sum-label">liquidato</div><div class="sum-val green">${totLiq > 0 ? fmt(totLiq/1000,0)+'k €' : '—'}</div></div>`;
-
   if(!rows.length) {
     document.getElementById('storico-list').innerHTML = `<div class="empty">Nessuna uscita registrata.</div>`;
     return;
   }
-
-  // Group by month
   const byMonth = {};
   rows.forEach(u => {
     const m = u.data_uscita.substring(0,7);
     if(!byMonth[m]) byMonth[m] = [];
     byMonth[m].push(u);
   });
-
   let html = '';
   Object.keys(byMonth).sort().reverse().forEach(m => {
     const [y,mo] = m.split('-');
@@ -761,7 +998,7 @@ function renderStoricoList() {
   document.getElementById('storico-list').innerHTML = html;
 }
 
-// TRASFERIMENTI
+// ══ TRASFERIMENTI ══
 function renderTrasferimenti() {
   if(!allTrasferimenti.length) {
     document.getElementById('trasf-list').innerHTML = `<div class="empty">Nessun trasferimento registrato.</div>`;
@@ -795,7 +1032,190 @@ function renderTrasferimenti() {
   document.getElementById('trasf-list').innerHTML = html;
 }
 
-// ── ANALISI E REFERTI IZS ──
+// ══════════════════════════════════════════════════
+// ARCHIVIO LOTTI CHIUSI
+// ══════════════════════════════════════════════════
+
+function openArchivio() {
+  document.getElementById('modal-archivio').classList.add('open');
+  renderArchivio();
+}
+
+function closeArchivio() {
+  document.getElementById('modal-archivio').classList.remove('open');
+}
+
+function closeArchivioOnBg(e) {
+  if(e.target === document.getElementById('modal-archivio')) closeArchivio();
+}
+
+function renderArchivio() {
+  const lottiChiusi = allLotti.filter(l => !l.attivo);
+  const subtitle = document.getElementById('archivio-subtitle');
+  subtitle.textContent = `${lottiChiusi.length} lotto${lottiChiusi.length !== 1 ? 'i' : ''} archiviato${lottiChiusi.length !== 1 ? 'i' : ''}`;
+
+  if(!lottiChiusi.length) {
+    document.getElementById('archivio-body').innerHTML = `
+      <div class="archivio-empty">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+        </svg>
+        <div>Nessun lotto archiviato.<br>I cicli chiusi appariranno qui.</div>
+      </div>`;
+    return;
+  }
+
+  const html = lottiChiusi.map(lotto => {
+    const soc = allSoccide.find(s => s.id === lotto.soccida_id);
+    const uscite = allUscite.filter(u => u.lotto_id === lotto.id);
+    const color = lottoColor(lotto.id);
+
+    // Calcoli KPI
+    const totCapi = uscite.reduce((s,u) => s+(u.capi||0), 0);
+    const totKg = uscite.reduce((s,u) => s+(u.kg_totali||0), 0);
+    const totLiq = uscite.reduce((s,u) => s+(u.liquidazione||0), 0);
+    const mediaKg = totCapi > 0 ? (totKg / totCapi) : null;
+
+    // Durata ciclo
+    let durataGg = '—';
+    if(lotto.data_ingresso && lotto.data_chiusura) {
+      const d1 = new Date(lotto.data_ingresso);
+      const d2 = new Date(lotto.data_chiusura);
+      durataGg = Math.floor((d2 - d1) / 86400000) + ' gg';
+    }
+
+    const mortalita = mockMortalita[lotto.id] || [];
+    const totMorti = mortalita.reduce((s,m) => s+(m.morti||0), 0);
+    const percMort = lotto.capi_entrati > 0 ? ((totMorti / lotto.capi_entrati) * 100).toFixed(1) + '%' : '—';
+
+    return `<div class="archivio-card">
+      <div class="archivio-card-header" style="background:${color.light}">
+        <div class="archivio-color-dot" style="background:${color.bg}"></div>
+        <div style="flex:1">
+          <div class="archivio-card-title">${soc?.nome || '—'}</div>
+          <div class="archivio-card-dates">
+            ${fmtDateFull(lotto.data_ingresso)} → ${fmtDateFull(lotto.data_chiusura) || 'n/d'}
+          </div>
+        </div>
+        <span class="archivio-card-codice">${lotto.codice}</span>
+      </div>
+      <div class="archivio-kpi">
+        <div class="archivio-kpi-item">
+          <div class="archivio-kpi-label">Durata</div>
+          <div class="archivio-kpi-val">${durataGg}</div>
+        </div>
+        <div class="archivio-kpi-item">
+          <div class="archivio-kpi-label">Media kg</div>
+          <div class="archivio-kpi-val">${mediaKg ? fmt(mediaKg,1) : '—'}</div>
+        </div>
+        <div class="archivio-kpi-item">
+          <div class="archivio-kpi-label">Mortalità</div>
+          <div class="archivio-kpi-val amber">${percMort}</div>
+        </div>
+        <div class="archivio-kpi-item">
+          <div class="archivio-kpi-label">Liquidato</div>
+          <div class="archivio-kpi-val green">${totLiq > 0 ? fmt(totLiq/1000,0)+'k €' : '—'}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('archivio-body').innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════
+// CHIUSURA LOTTO — DIALOG CONFERMA
+// ══════════════════════════════════════════════════
+
+function aprireConfirmChiusura(lottoId) {
+  const lotto = allLotti.find(l => l.id === lottoId);
+  const soc = lotto ? allSoccide.find(s => s.id === lotto.soccida_id) : null;
+  const uscite = allUscite.filter(u => u.lotto_id === lottoId);
+  const capiUsciti = uscite.reduce((s,u) => s+(u.capi||0), 0);
+  const presenti = (lotto?.capi_entrati||0) - capiUsciti;
+  const totaleLiquidato = uscite.reduce((s,u) => s+(u.liquidazione||0), 0);
+  const color = lottoColor(lottoId);
+
+  pendingChiusuraLottoId = lottoId;
+
+  // Icona con colore lotto
+  document.getElementById('confirm-icon').style.background = color.light;
+  document.getElementById('confirm-ok-btn').style.background = color.bg;
+
+  // Info riepilogative
+  document.getElementById('confirm-lotto-info').innerHTML = `
+    <strong>${soc?.nome || '—'}</strong> · Lotto ${lotto?.codice || '—'}<br>
+    Capi entrati: ${fmt(lotto?.capi_entrati)} · Presenti stimati: ${fmt(presenti)}<br>
+    Liquidato: ${totaleLiquidato > 0 ? fmt(totaleLiquidato) + ' €' : '—'}
+  `;
+
+  document.getElementById('confirm-chiusura').classList.add('open');
+}
+
+function closeConfirm() {
+  document.getElementById('confirm-chiusura').classList.remove('open');
+  pendingChiusuraLottoId = null;
+}
+
+async function eseguiChiusura() {
+  if(!pendingChiusuraLottoId) return;
+  const lottoId = pendingChiusuraLottoId;
+  const oggi = new Date().toISOString().split('T')[0];
+
+  // Disabilita bottone durante salvataggio
+  const btn = document.getElementById('confirm-ok-btn');
+  btn.textContent = 'Archiviazione…';
+  btn.disabled = true;
+
+  const ok = await sbPatch('lotti', lottoId, {
+    attivo: false,
+    data_chiusura: oggi
+  });
+
+  btn.disabled = false;
+  closeConfirm();
+
+  if(ok) {
+    // Aggiorna stato locale
+    const lotto = allLotti.find(l => l.id === lottoId);
+    if(lotto) { lotto.attivo = false; lotto.data_chiusura = oggi; }
+
+    // Mostra feedback
+    showToast('✓ Lotto archiviato correttamente');
+
+    // Torna alla home e aggiorna
+    renderHome();
+    showPage('home');
+  } else {
+    showToast('⚠ Errore durante l\'archiviazione. Riprova.', true);
+    btn.textContent = 'Sì, archivia lotto';
+  }
+}
+
+// ══ TOAST FEEDBACK ══
+function showToast(msg, isError = false) {
+  let toast = document.getElementById('toast-msg');
+  if(!toast) {
+    toast = document.createElement('div');
+    toast.id = 'toast-msg';
+    toast.style.cssText = `
+      position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+      background:var(--text); color:#FFF; font-size:12px; font-family:var(--mono);
+      padding:10px 18px; border-radius:20px; z-index:400;
+      box-shadow:0 4px 20px rgba(0,0,0,.25);
+      transition:opacity .3s; white-space:nowrap;
+    `;
+    document.body.appendChild(toast);
+  }
+  if(isError) toast.style.background = 'var(--red)';
+  else toast.style.background = 'var(--text)';
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 3000);
+}
+
+// ══ ANALISI E REFERTI IZS ══
 function renderAnalisi(lottoId) {
   const lotto = allLotti.find(l => l.id === lottoId);
   const soc = lotto ? allSoccide.find(s => s.id === lotto.soccida_id) : null;
@@ -808,7 +1228,6 @@ function renderAnalisi(lottoId) {
     <div class="izs-sub">${soc?.nome || '—'} · Lotto ${lotto?.codice || '—'}</div>
   </div>`;
 
-  // Referti IZS
   html += `<div class="print-section-title" style="margin-bottom:8px">Referti IZS</div>`;
   if(referti.length) {
     html += referti.map(r => `
@@ -826,7 +1245,6 @@ function renderAnalisi(lottoId) {
     html += `<div class="referto-empty">Nessun referto positivo registrato.</div>`;
   }
 
-  // Grafico mortalità
   html += `<div style="height:12px"></div>
   <div class="print-section-title" style="margin-bottom:8px">Mortalità giornaliera</div>
   <div class="chart-card">
@@ -837,12 +1255,10 @@ function renderAnalisi(lottoId) {
   </div>`;
 
   document.getElementById('analisi-content').innerHTML = html;
-
-  // Disegna grafico dopo che il DOM è aggiornato
   requestAnimationFrame(() => drawMortChart('chart-analisi', mortalita, '#A03030'));
 }
 
-// ── STAMPA REPORT PDF ──
+// ══ STAMPA REPORT PDF ══
 function renderStampa(lottoId) {
   const lotto = allLotti.find(l => l.id === lottoId);
   if(!lotto) return;
@@ -850,7 +1266,6 @@ function renderStampa(lottoId) {
   const uscite = allUscite.filter(u => u.lotto_id === lottoId).sort((a,b) => a.data_uscita.localeCompare(b.data_uscita));
   const referti = mockSanitario[lottoId] || [];
   const mortalita = mockMortalita[lottoId] || [];
-
   const oggi = new Date();
   const ingresso = new Date(lotto.data_ingresso);
   const gg = Math.floor((oggi - ingresso) / 86400000);
@@ -864,12 +1279,10 @@ function renderStampa(lottoId) {
     <button class="btn-back-print" onclick="showPage('detail',${lottoId})">← Dettaglio</button>
     <button class="btn-do-print" onclick="window.print()">🖨 Stampa PDF</button>
   </div>
-
   <div class="print-header">
     <div class="print-title">SOC. AGR. LE CORTI SRL</div>
     <div class="print-sub">${soc?.nome || '—'} · Lotto ${lotto.codice} · ${lotto.provenienza || ''} · Generato il ${oggi.toLocaleDateString('it-IT')}</div>
   </div>
-
   <div class="print-section">
     <div class="print-section-title">Dati ingresso</div>
     <div class="print-stat-row">
@@ -882,7 +1295,6 @@ function renderStampa(lottoId) {
     </div>
   </div>`;
 
-  // Uscite
   if(uscite.length) {
     html += `<div class="print-section">
       <div class="print-section-title">Uscite al macello</div>
@@ -909,7 +1321,6 @@ function renderStampa(lottoId) {
     html += `</div>`;
   }
 
-  // Riepilogo numeri
   html += `<div class="print-section">
     <div class="print-section-title">Riepilogo lotto</div>
     <div class="print-stat-row">
@@ -922,7 +1333,6 @@ function renderStampa(lottoId) {
     </div>
   </div>`;
 
-  // Grafico mortalità
   if(mortalita.length) {
     html += `<div class="print-section">
       <div class="print-section-title">Andamento mortalità</div>
@@ -932,7 +1342,6 @@ function renderStampa(lottoId) {
     </div>`;
   }
 
-  // Referti sanitari
   if(referti.length) {
     html += `<div class="print-section">
       <div class="print-section-title">Referti IZS — patologie rilevate</div>
@@ -948,34 +1357,27 @@ function renderStampa(lottoId) {
   }
 
   document.getElementById('stampa-content').innerHTML = html;
-
   if(mortalita.length) {
     requestAnimationFrame(() => drawMortChart('chart-stampa', mortalita, '#1A1A18'));
   }
 }
 
-// ── GRAFICO MORTALITÀ (canvas puro, no dipendenze) ──
+// ══ GRAFICO MORTALITÀ ══
 function drawMortChart(canvasId, dati, colore = '#A03030') {
   const canvas = document.getElementById(canvasId);
   if(!canvas || !dati.length) return;
-
   const W = canvas.offsetWidth || 400;
   const H = canvas.offsetHeight || 160;
   canvas.width = W * window.devicePixelRatio;
   canvas.height = H * window.devicePixelRatio;
   const ctx = canvas.getContext('2d');
   ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-
   const pad = { top: 16, right: 16, bottom: 32, left: 32 };
   const cW = W - pad.left - pad.right;
   const cH = H - pad.top - pad.bottom;
-
   const maxGg = Math.max(...dati.map(d => d.gg));
   const maxMorti = Math.max(...dati.map(d => d.morti), 1);
-
-  // Griglia orizzontale
-  ctx.strokeStyle = '#E8E5DF';
-  ctx.lineWidth = 0.5;
+  ctx.strokeStyle = '#E8E5DF'; ctx.lineWidth = 0.5;
   for(let i = 0; i <= 4; i++) {
     const y = pad.top + cH - (i / 4) * cH;
     ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + cW, y); ctx.stroke();
@@ -983,131 +1385,102 @@ function drawMortChart(canvasId, dati, colore = '#A03030') {
     ctx.fillStyle = '#9C9C96'; ctx.font = '9px IBM Plex Mono, monospace';
     ctx.textAlign = 'right'; ctx.fillText(val, pad.left - 4, y + 3);
   }
-
-  // Label asse X
   ctx.fillStyle = '#9C9C96'; ctx.font = '9px IBM Plex Mono, monospace'; ctx.textAlign = 'center';
   const labelStep = Math.ceil(maxGg / 6);
   for(let g = 0; g <= maxGg; g += labelStep) {
     const x = pad.left + (g / maxGg) * cW;
     ctx.fillText('gg' + g, x, H - pad.bottom + 12);
   }
-
-  // Barre
   const barW = Math.max(4, Math.min(18, cW / dati.length - 2));
   dati.forEach(d => {
     const x = pad.left + (d.gg / maxGg) * cW - barW / 2;
     const barH = (d.morti / maxMorti) * cH;
     const y = pad.top + cH - barH;
-    ctx.fillStyle = colore + '22'; // trasparente
+    ctx.fillStyle = colore + '22';
     ctx.fillRect(x, y, barW, barH);
-    ctx.strokeStyle = colore;
-    ctx.lineWidth = 1;
-    ctx.strokeRect(x, y, barW, barH);
-    // label valore
-    if(d.morti > 0) {
-      ctx.fillStyle = colore;
-      ctx.font = 'bold 9px IBM Plex Mono, monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText(d.morti, x + barW/2, y - 3);
-    }
+    ctx.fillStyle = colore;
+    ctx.fillRect(x, y, barW, Math.min(3, barH));
   });
 }
 
-// ── RESOCONTO ILARIA ──
+// ══ RESOCONTO ILARIA ══
 function apriIlaria() {
   const mese = document.getElementById('ilaria-mese').value;
-  if(!mese) { alert('Seleziona prima un mese.'); return; }
+  if(!mese) { showToast('Seleziona prima un mese'); return; }
   showPage('ilaria');
   renderIlaria(mese);
 }
 
 function renderIlaria(mese) {
-  const nomiMese = ['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
   const [y, mo] = mese.split('-');
-  const nomeMese = `${nomiMese[parseInt(mo)]} ${y}`;
-
-  // Filtra uscite del mese, ordine cronologico
-  let rows = allUscite
-    .filter(u => u.data_uscita?.startsWith(mese))
-    .sort((a,b) => a.data_uscita.localeCompare(b.data_uscita));
-
-  // Totali
-  const totCapi = rows.reduce((s,u) => s+(u.capi||0), 0);
-  const totKg   = rows.reduce((s,u) => s+(u.kg_totali||0), 0);
-  const totLiq  = rows.reduce((s,u) => s+(u.liquidazione||0), 0);
+  const nomiMese = ['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+  const nomeMese = nomiMese[parseInt(mo)] + ' ' + y;
+  const rows = allUscite.filter(u => u.data_uscita?.startsWith(mese));
 
   let html = `
   <div class="print-btn-row">
     <button class="btn-back-print" onclick="showPage('storico')">← Storico</button>
     <button class="btn-do-print" onclick="window.print()">🖨 Stampa PDF</button>
   </div>
-  <div style="background:#FDF3E0;border:0.5px solid #F0C870;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:11px;color:#9A6010;display:flex;align-items:center;gap:8px;" class="no-print">
-    <span>⚠️</span> Prima di stampare seleziona <strong>orientamento orizzontale</strong> nelle impostazioni di stampa.
-  </div>
-
   <div class="print-header">
     <div class="print-title">SOC. AGR. LE CORTI SRL</div>
-    <div class="print-sub">Resoconto uscite — ${nomeMese} · Generato il ${new Date().toLocaleDateString('it-IT')}</div>
+    <div class="print-sub">Resoconto mensile · ${nomeMese} · Generato il ${new Date().toLocaleDateString('it-IT')}</div>
   </div>
-
   <div class="ilaria-print-wrap">
   <table class="ilaria-table">
     <colgroup>
-      <col style="width:28px">
-      <col style="width:72px">
-      <col style="width:100px">
-      <col style="width:90px">
-      <col style="width:48px">
-      <col style="width:72px">
-      <col style="width:52px">
-      <col style="width:100px">
+      <col/><col/><col/><col/><col/><col/><col/><col/>
     </colgroup>
-    <thead><tr>
-      <th>N.</th>
-      <th>Data</th>
-      <th>Soccida</th>
-      <th>Destinazione</th>
-      <th class="num">Capi</th>
-      <th class="num">Kg</th>
-      <th class="num">€/Kg</th>
-      <th class="num">Liquidazione €</th>
-    </tr></thead>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Data</th>
+        <th>Soccida</th>
+        <th>Macello</th>
+        <th>Capi</th>
+        <th>Kg tot.</th>
+        <th>Media kg</th>
+        <th>DDT</th>
+        <th>Increm.</th>
+        <th>Liquidato</th>
+      </tr>
+    </thead>
     <tbody>`;
 
+  let totCapi=0, totKg=0, totLiq=0;
   rows.forEach((u, i) => {
-    const lotto = allLotti.find(l => l.id === u.lotto_id);
-    const socNome = lotto ? (allSoccide.find(s => s.id === lotto.soccida_id)?.nome || '—') : '—';
+    const soc = allLotti.find(l => l.id === u.lotto_id);
+    const socNome = soc ? (allSoccide.find(s => s.id === soc.soccida_id)?.nome || '—') : u.soccida_nome || '—';
+    const media = u.kg_totali && u.capi ? fmt(u.kg_totali/u.capi,1) : '—';
+    totCapi += (u.capi||0); totKg += (u.kg_totali||0); totLiq += (u.liquidazione||0);
     html += `<tr>
       <td>${i+1}</td>
-      <td style="white-space:nowrap;font-family:var(--mono)">${fmtDateFull(u.data_uscita)}</td>
+      <td>${fmtDate(u.data_uscita)}</td>
       <td>${socNome}</td>
       <td>${u.macello || '—'}</td>
       <td class="num">${fmt(u.capi)}</td>
       <td class="num">${fmt(u.kg_totali)}</td>
-      <td class="num">${u.prezzo_kg ? fmt(u.prezzo_kg,3) : '—'}</td>
-      <td class="num ${u.liquidazione ? 'green' : ''}">${u.liquidazione ? fmt(u.liquidazione)+' €' : '—'}</td>
+      <td class="num">${media}</td>
+      <td>${u.numero_ddt || '—'}</td>
+      <td class="num">${u.incremento ? fmt(u.incremento,3) : '—'}</td>
+      <td class="num green">${u.liquidazione ? fmt(u.liquidazione)+' €' : '—'}</td>
     </tr>`;
   });
 
-  // Riga totali
   html += `<tr class="tot-row">
     <td colspan="4">TOTALE</td>
     <td class="num">${fmt(totCapi)}</td>
     <td class="num">${fmt(totKg)}</td>
-    <td class="num">—</td>
+    <td class="num">${totCapi > 0 ? fmt(totKg/totCapi,1) : '—'}</td>
+    <td></td><td></td>
     <td class="num green">${totLiq > 0 ? fmt(totLiq)+' €' : '—'}</td>
   </tr>`;
 
   html += `</tbody></table></div>`;
-
-  if(!rows.length) {
-    html += `<div class="empty" style="margin-top:16px">Nessuna uscita registrata per ${nomeMese}.</div>`;
-  }
-
   document.getElementById('ilaria-content').innerHTML = html;
 }
 
-// Start
+// ── START ──
 loadAll();
 </script>
 </body>
