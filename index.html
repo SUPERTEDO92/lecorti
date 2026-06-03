@@ -369,8 +369,150 @@
 
 <!-- HOME -->
 <div class="page visible" id="page-home">
+  <div style="padding:12px 0 4px">
+    <button onclick="showPage('inserimento')" style="width:100%;padding:13px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Inserimento dati
+    </button>
+  </div>
   <div id="soccide-list-container">
     <div class="loading">Caricamento...</div>
+  </div>
+</div>
+
+<!-- INSERIMENTO -->
+<div class="page" id="page-inserimento">
+  <button class="back-btn" onclick="showPage('home')">← Soccide</button>
+
+  <!-- TAB SELECTOR -->
+  <div style="display:flex;gap:6px;margin-bottom:16px;">
+    <button id="tab-uscita" onclick="switchTab('uscita')"
+      style="flex:1;padding:10px;border-radius:var(--radius-lg);border:0.5px solid var(--accent);background:var(--accent);color:#FFF;font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;">
+      🚛 Uscita macello
+    </button>
+    <button id="tab-trasf" onclick="switchTab('trasf')"
+      style="flex:1;padding:10px;border-radius:var(--radius-lg);border:0.5px solid var(--border);background:#FFF;color:var(--text2);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;">
+      🔄 Trasferimento
+    </button>
+  </div>
+
+  <div id="toast-ins" style="display:none;padding:10px 14px;border-radius:var(--radius);margin-bottom:12px;font-size:13px;"></div>
+
+  <!-- FORM USCITA -->
+  <div id="form-uscita">
+    <div style="background:#FFF;border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:12px;">
+
+      <div style="padding:9px 14px;background:var(--bg2);border-bottom:0.5px solid var(--border);">
+        <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--text2);">Soccida e lotto</div>
+      </div>
+      <div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px;">
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">SOCCIDA</div>
+          <select id="u-soccida" onchange="aggiornaLottiUscita()" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text);">
+            <option value="">— seleziona soccida —</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">LOTTO</div>
+          <select id="u-lotto" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text);">
+            <option value="">— seleziona prima soccida —</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="padding:9px 14px;background:var(--bg2);border-top:0.5px solid var(--border);border-bottom:0.5px solid var(--border);">
+        <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--text2);">Dati uscita</div>
+      </div>
+      <div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px;">
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">DATA USCITA</div>
+          <input type="date" id="u-data" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+        </div>
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">N° DDT</div>
+          <input type="text" id="u-ddt" placeholder="es. 12" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+        </div>
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">MACELLO</div>
+          <input type="text" id="u-macello" placeholder="es. ANNONI" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+        </div>
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">N° CAPI</div>
+          <input type="number" id="u-capi" placeholder="es. 125" oninput="calcolaMediaUscita()" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+        </div>
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">KG TOTALI</div>
+          <input type="number" id="u-kg" placeholder="es. 22500" oninput="calcolaMediaUscita()" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+        </div>
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">€/KG (opzionale)</div>
+          <input type="number" step="0.001" id="u-prezzo" placeholder="es. 1.761" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+        </div>
+        <div id="u-media-row" style="display:none;padding:8px 10px;background:var(--green-bg);border-radius:var(--radius);font-size:12px;color:var(--green);font-family:var(--mono);">
+          Media: <span id="u-media">—</span> kg/capo · Incremento: <span id="u-incr">—</span> kg/gg
+        </div>
+      </div>
+    </div>
+
+    <button onclick="inserisciUscita()" style="width:100%;padding:13px;background:var(--green);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-bottom:8px;">
+      ✓ Inserisci uscita
+    </button>
+  </div>
+
+  <!-- FORM TRASFERIMENTO -->
+  <div id="form-trasf" style="display:none;">
+    <div style="background:#FFF;border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:12px;">
+
+      <div style="padding:9px 14px;background:var(--bg2);border-bottom:0.5px solid var(--border);">
+        <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--text2);">Lotto di partenza</div>
+      </div>
+      <div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px;">
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">SOCCIDA PARTENZA</div>
+          <select id="t-soccida" onchange="aggiornaLottiTrasf()" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text);">
+            <option value="">— seleziona soccida —</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">LOTTO</div>
+          <select id="t-lotto" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text);">
+            <option value="">— seleziona prima soccida —</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="padding:9px 14px;background:var(--bg2);border-top:0.5px solid var(--border);border-bottom:0.5px solid var(--border);">
+        <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--text2);">Dati trasferimento</div>
+      </div>
+      <div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px;">
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">DATA</div>
+          <input type="date" id="t-data" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+        </div>
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">SOCCIDA DESTINAZIONE</div>
+          <select id="t-dest" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text);">
+            <option value="">— seleziona —</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">N° CAPI</div>
+          <input type="number" id="t-capi" placeholder="es. 430" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+        </div>
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">KG TOTALI</div>
+          <input type="number" id="t-kg" placeholder="es. 12390" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+        </div>
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">LETTERA DOP</div>
+          <input type="text" id="t-lettera" placeholder="es. B" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+        </div>
+      </div>
+    </div>
+
+    <button onclick="inserisciTrasf()" style="width:100%;padding:13px;background:var(--green);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-bottom:8px;">
+      ✓ Inserisci trasferimento
+    </button>
   </div>
 </div>
 
@@ -500,6 +642,7 @@ function showPage(name, lottoId) {
     if(b.getAttribute('onclick')?.includes(`'${navName}'`)) b.classList.add('active');
   });
   if(name === 'detail' && lottoId) { currentLottoId = lottoId; renderDetail(lottoId); }
+  if(name === 'inserimento') initInserimento();
   if(name === 'analisi' && lottoId) { currentLottoId = lottoId; renderAnalisi(lottoId); }
   if(name === 'analisi' && !lottoId && currentLottoId) renderAnalisi(currentLottoId);
   if(name === 'stampa' && lottoId) { currentLottoId = lottoId; renderStampa(lottoId); }
@@ -1107,6 +1250,174 @@ function renderIlaria(mese) {
   }
 
   document.getElementById('ilaria-content').innerHTML = html;
+}
+
+// ── INSERIMENTO DATI ──
+
+function initInserimento() {
+  const sel = document.getElementById('u-soccida');
+  const selT = document.getElementById('t-soccida');
+  const selDest = document.getElementById('t-dest');
+  if(!sel || !selT) return;
+
+  const opts = '<option value="">— seleziona soccida —</option>' +
+    allSoccide.map(s => `<option value="${s.id}">${s.nome}</option>`).join('');
+  sel.innerHTML = opts;
+  selT.innerHTML = opts;
+  selDest.innerHTML = '<option value="">— seleziona —</option>' +
+    allSoccide.map(s => `<option value="${s.nome}">${s.nome}</option>`).join('');
+
+  // Data default = oggi
+  const oggi = new Date().toISOString().split('T')[0];
+  const dU = document.getElementById('u-data');
+  const dT = document.getElementById('t-data');
+  if(dU && !dU.value) dU.value = oggi;
+  if(dT && !dT.value) dT.value = oggi;
+}
+
+function aggiornaLottiUscita() {
+  const socId = parseInt(document.getElementById('u-soccida').value);
+  const sel = document.getElementById('u-lotto');
+  if(!socId) { sel.innerHTML = '<option value="">— seleziona prima soccida —</option>'; return; }
+  const lotti = allLotti.filter(l => l.soccida_id === socId && l.attivo);
+  sel.innerHTML = '<option value="">— seleziona lotto —</option>' +
+    lotti.map(l => `<option value="${l.id}">${l.codice} · ingresso ${l.data_ingresso}</option>`).join('');
+}
+
+function aggiornaLottiTrasf() {
+  const socId = parseInt(document.getElementById('t-soccida').value);
+  const sel = document.getElementById('t-lotto');
+  if(!socId) { sel.innerHTML = '<option value="">— seleziona prima soccida —</option>'; return; }
+  const lotti = allLotti.filter(l => l.soccida_id === socId && l.attivo);
+  sel.innerHTML = '<option value="">— seleziona lotto —</option>' +
+    lotti.map(l => `<option value="${l.id}">${l.codice} · ingresso ${l.data_ingresso}</option>`).join('');
+}
+
+function switchTab(tab) {
+  const isUscita = tab === 'uscita';
+  document.getElementById('form-uscita').style.display = isUscita ? 'block' : 'none';
+  document.getElementById('form-trasf').style.display = isUscita ? 'none' : 'block';
+  const tU = document.getElementById('tab-uscita');
+  const tT = document.getElementById('tab-trasf');
+  tU.style.background = isUscita ? 'var(--accent)' : '#FFF';
+  tU.style.color = isUscita ? '#FFF' : 'var(--text2)';
+  tU.style.borderColor = isUscita ? 'var(--accent)' : 'var(--border)';
+  tT.style.background = isUscita ? '#FFF' : 'var(--accent)';
+  tT.style.color = isUscita ? 'var(--text2)' : '#FFF';
+  tT.style.borderColor = isUscita ? 'var(--border)' : 'var(--accent)';
+}
+
+function calcolaMediaUscita() {
+  const capi = parseFloat(document.getElementById('u-capi').value);
+  const kg = parseFloat(document.getElementById('u-kg').value);
+  const lottoId = parseInt(document.getElementById('u-lotto').value);
+  const data = document.getElementById('u-data').value;
+  const row = document.getElementById('u-media-row');
+  if(!capi || !kg) { row.style.display = 'none'; return; }
+  const media = kg / capi;
+  document.getElementById('u-media').textContent = media.toFixed(1);
+  if(lottoId && data) {
+    const lotto = allLotti.find(l => l.id === lottoId);
+    if(lotto?.media_ingresso && lotto?.data_ingresso) {
+      const gg = Math.round((new Date(data) - new Date(lotto.data_ingresso)) / 86400000);
+      if(gg > 0) {
+        document.getElementById('u-incr').textContent = ((media - lotto.media_ingresso) / gg).toFixed(3);
+      }
+    }
+  }
+  row.style.display = 'block';
+}
+
+function toastIns(msg, ok) {
+  const t = document.getElementById('toast-ins');
+  t.style.display = 'block';
+  t.style.background = ok ? 'var(--green-bg)' : 'var(--red-bg)';
+  t.style.color = ok ? 'var(--green)' : 'var(--red)';
+  t.style.border = ok ? '0.5px solid #B8DECA' : '0.5px solid #F0BBBB';
+  t.textContent = msg;
+  if(ok) setTimeout(() => { t.style.display = 'none'; }, 4000);
+}
+
+async function inserisciUscita() {
+  const lottoId = parseInt(document.getElementById('u-lotto').value);
+  const data = document.getElementById('u-data').value;
+  const capi = parseInt(document.getElementById('u-capi').value);
+  const kg = parseFloat(document.getElementById('u-kg').value);
+  const ddt = document.getElementById('u-ddt').value || null;
+  const macello = document.getElementById('u-macello').value || null;
+  const prezzo = parseFloat(document.getElementById('u-prezzo').value) || null;
+
+  if(!lottoId || !data || !capi || !kg) {
+    toastIns('Compila: soccida, lotto, data, capi e kg', false); return;
+  }
+
+  const lotto = allLotti.find(l => l.id === lottoId);
+  const gg = lotto ? Math.round((new Date(data) - new Date(lotto.data_ingresso)) / 86400000) : null;
+  let incremento = null;
+  if(lotto?.media_ingresso && gg > 0) {
+    incremento = parseFloat(((kg/capi - lotto.media_ingresso) / gg).toFixed(3));
+  }
+
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/uscite`, {
+      method: 'POST', headers: SB_H,
+      body: JSON.stringify({
+        lotto_id: lottoId, data_uscita: data,
+        numero_ddt: ddt, macello, capi, kg_totali: kg,
+        giorni_permanenza: gg > 0 ? gg : null,
+        incremento, prezzo_kg: prezzo
+      })
+    });
+    if(!r.ok) throw new Error(await r.text());
+
+    // Aggiorna dati locali e home
+    const nuova = await r.json();
+    if(Array.isArray(nuova)) allUscite.push(...nuova); else allUscite.push(nuova);
+    renderHome();
+
+    toastIns(`✓ Uscita inserita — ${capi} capi · ${kg.toLocaleString('it-IT')} kg · ${macello || ''}`, true);
+    // Reset form
+    ['u-ddt','u-macello','u-capi','u-kg','u-prezzo'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('u-media-row').style.display = 'none';
+  } catch(e) {
+    toastIns('Errore: ' + e.message, false);
+  }
+}
+
+async function inserisciTrasf() {
+  const lottoId = parseInt(document.getElementById('t-lotto').value);
+  const data = document.getElementById('t-data').value;
+  const capi = parseInt(document.getElementById('t-capi').value);
+  const kg = parseFloat(document.getElementById('t-kg').value) || null;
+  const dest = document.getElementById('t-dest').value;
+  const lettera = document.getElementById('t-lettera').value || null;
+
+  if(!lottoId || !data || !capi || !dest) {
+    toastIns('Compila: soccida, lotto, data, capi e destinazione', false); return;
+  }
+
+  const lotto = allLotti.find(l => l.id === lottoId);
+  const socPart = allSoccide.find(s => s.id === lotto?.soccida_id);
+
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/trasferimenti`, {
+      method: 'POST', headers: SB_H,
+      body: JSON.stringify({
+        lotto_id: lottoId, data_trasferimento: data,
+        soccida_partenza: socPart?.nome || '', soccida_destinazione: dest,
+        capi, kg, lettera_dop: lettera, tipo: 'TRASFERIMENTO'
+      })
+    });
+    if(!r.ok) throw new Error(await r.text());
+
+    const nuova = await r.json();
+    if(Array.isArray(nuova)) allTrasferimenti.push(...nuova); else allTrasferimenti.push(nuova);
+
+    toastIns(`✓ Trasferimento inserito — ${capi} capi da ${socPart?.nome || ''} a ${dest}`, true);
+    ['t-capi','t-kg','t-lettera'].forEach(id => document.getElementById(id).value = '');
+  } catch(e) {
+    toastIns('Errore: ' + e.message, false);
+  }
 }
 
 // Start
