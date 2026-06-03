@@ -2,8 +2,14 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Le Corti — Gestionale</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Le Corti">
+<meta name="theme-color" content="#1A1A18">
+<link rel="manifest" href="manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -803,6 +809,7 @@ function renderDetail(socId) {
             <div class="uc"><div class="uc-label">gg</div><div class="uc-val">${u.giorni_permanenza || '—'}</div></div>
             <div class="uc"><div class="uc-label">liquid.</div><div class="uc-val green">${u.liquidazione ? fmt(u.liquidazione) + ' €' : '—'}</div></div>
           </div>
+          ${!u.liquidazione ? `<button onclick="apriLiquidazione(${u.id})" style="margin-top:6px;width:100%;padding:7px;background:var(--amber-bg);color:var(--amber);border:0.5px solid var(--accent2);border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">+ Inserisci liquidazione</button>` : ''}
         </div>`).join('');
       html += `</div>`;
       if(totaleLiquidato > 0) {
@@ -1429,6 +1436,99 @@ async function inserisciTrasf() {
 
 // Start
 loadAll();
+</script>
+<!-- MODALE LIQUIDAZIONE -->
+<div id="modal-liq" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center;">
+  <div style="background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div style="font-size:14px;font-weight:500;font-family:var(--mono);">Inserisci liquidazione</div>
+      <button onclick="chiudiLiquidazione()" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
+    </div>
+    <div id="modal-liq-info" style="font-size:11px;color:var(--text2);background:var(--bg2);padding:8px 10px;border-radius:var(--radius);margin-bottom:14px;font-family:var(--mono);"></div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">€/KG</div>
+        <input type="number" step="0.001" id="liq-prezzo" placeholder="es. 1.761" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+      </div>
+      <div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">LIQUIDAZIONE TOTALE €</div>
+        <input type="number" step="0.01" id="liq-totale" placeholder="es. 43008.01" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+      </div>
+      <div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">SCONTI € (opzionale)</div>
+        <input type="number" step="0.01" id="liq-sconti" placeholder="es. 1090" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+      </div>
+      <div id="liq-calc" style="display:none;padding:8px 10px;background:var(--green-bg);border-radius:var(--radius);font-size:12px;color:var(--green);font-family:var(--mono);"></div>
+    </div>
+    <button onclick="salvaLiquidazione()" style="width:100%;padding:13px;background:var(--green);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:16px;">
+      ✓ Salva liquidazione
+    </button>
+  </div>
+</div>
+
+<script>
+// ── LIQUIDAZIONE ──
+let _liqUscitaId = null;
+
+function apriLiquidazione(uscitaId) {
+  _liqUscitaId = uscitaId;
+  const u = allUscite.find(x => x.id === uscitaId);
+  if(!u) return;
+  const lotto = allLotti.find(l => l.id === u.lotto_id);
+  const soc = allSoccide.find(s => s.id === lotto?.soccida_id);
+  document.getElementById('modal-liq-info').textContent =
+    `${soc?.nome || '—'} · ${lotto?.codice || '—'} · ${u.data_uscita} · ${u.macello || '—'} · ${u.capi} capi · ${u.kg_totali?.toLocaleString('it-IT')} kg`;
+  ['liq-prezzo','liq-totale','liq-sconti'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('liq-calc').style.display = 'none';
+  const m = document.getElementById('modal-liq');
+  m.style.display = 'flex';
+
+  // Calcolo automatico al cambio prezzo
+  document.getElementById('liq-prezzo').oninput = () => {
+    const p = parseFloat(document.getElementById('liq-prezzo').value);
+    if(p && u.kg_totali) {
+      const calc = (p * u.kg_totali).toFixed(2);
+      document.getElementById('liq-totale').value = calc;
+      document.getElementById('liq-calc').textContent = `${p} × ${u.kg_totali?.toLocaleString('it-IT')} kg = ${parseFloat(calc).toLocaleString('it-IT')} €`;
+      document.getElementById('liq-calc').style.display = 'block';
+    }
+  };
+}
+
+function chiudiLiquidazione() {
+  document.getElementById('modal-liq').style.display = 'none';
+  _liqUscitaId = null;
+}
+
+async function salvaLiquidazione() {
+  const prezzo = parseFloat(document.getElementById('liq-prezzo').value) || null;
+  const totale = parseFloat(document.getElementById('liq-totale').value) || null;
+  const sconti = parseFloat(document.getElementById('liq-sconti').value) || null;
+  if(!totale) { alert('Inserisci almeno il totale liquidazione'); return; }
+
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/uscite?id=eq.${_liqUscitaId}`, {
+      method: 'PATCH', headers: SB_H,
+      body: JSON.stringify({ prezzo_kg: prezzo, liquidazione: totale, sconti })
+    });
+    if(!r.ok) throw new Error(await r.text());
+
+    // Aggiorna dati locali
+    const u = allUscite.find(x => x.id === _liqUscitaId);
+    if(u) { u.prezzo_kg = prezzo; u.liquidazione = totale; u.sconti = sconti; }
+
+    chiudiLiquidazione();
+    // Ricarica il detail della soccida corrente
+    if(currentLottoId) renderDetail(currentLottoId);
+  } catch(e) {
+    alert('Errore: ' + e.message);
+  }
+}
+
+// Chiudi modale toccando fuori
+document.getElementById('modal-liq').addEventListener('click', function(e) {
+  if(e.target === this) chiudiLiquidazione();
+});
 </script>
 </body>
 </html>
