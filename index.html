@@ -704,12 +704,14 @@ function renderSoccidaCard(soc, activeLotti) {
   // Calcola totale capi presenti su tutti i lotti della soccida
   const totPresenti = lotti.reduce((tot, lotto) => {
     const capiUsciti = allUscite.filter(u => u.lotto_id === lotto.id).reduce((s,u) => s+(u.capi||0), 0);
-    return tot + (lotto.capi_entrati||0) - capiUsciti;
+    const capiMorti = allMortalita.filter(m => m.lotto_id === lotto.id).reduce((s,m) => s+(m.capi_morti||0), 0);
+    return tot + (lotto.capi_entrati||0) - capiUsciti - capiMorti;
   }, 0);
 
   const lottiAttivi = lotti.filter(lotto => {
     const capiUsciti = allUscite.filter(u => u.lotto_id === lotto.id).reduce((s,u) => s+(u.capi||0), 0);
-    return (lotto.capi_entrati||0) - capiUsciti > 0;
+    const capiMorti = allMortalita.filter(m => m.lotto_id === lotto.id).reduce((s,m) => s+(m.capi_morti||0), 0);
+    return (lotto.capi_entrati||0) - capiUsciti - capiMorti > 0;
   });
 
   const dot = totPresenti > 50 ? 'dot-green' : totPresenti > 10 ? 'dot-amber' : 'dot-gray';
@@ -748,7 +750,8 @@ function renderDetail(socId) {
     const ingresso = new Date(lotto.data_ingresso);
     const gg = Math.floor((oggi - ingresso) / 86400000);
     const capiUsciti = uscite.reduce((s,u) => s+(u.capi||0), 0);
-    const presenti = (lotto.capi_entrati||0) - capiUsciti;
+    const capiMorti = (allMortalita||[]).filter(m => m.lotto_id === lotto.id).reduce((s,m) => s+(m.capi_morti||0), 0);
+    const presenti = (lotto.capi_entrati||0) - capiUsciti - capiMorti;
     const prevPeso = lotto.media_ingresso && lotto.incremento_giornaliero
       ? Math.round(lotto.media_ingresso + gg * lotto.incremento_giornaliero) : null;
     const totaleLiquidato = uscite.reduce((s,u) => s+(u.liquidazione||0), 0);
