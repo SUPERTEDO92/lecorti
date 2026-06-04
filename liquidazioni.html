@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Le Corti — Liquidazioni</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Liquidazioni">
+<meta name="theme-color" content="#1A1A18">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --mono: 'SF Mono', 'Fira Code', monospace;
+    --bg:   #F5F3EE;
+    --bg2:  #EDEAE3;
+    --text: #1A1A18;
+    --text2:#6B6860;
+    --text3:#A0A090;
+    --border: #D8D4CB;
+    --green: #2A7A4B;
+    --green-bg: #EBF5EF;
+    --red:  #C0392B;
+    --accent: #8B4513;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  .header {
+    background: var(--text);
+    color: #FFF;
+    padding: 14px 16px 12px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .header-title { font-size: 15px; font-weight: 500; letter-spacing: .02em; }
+  .header-sub { font-size: 11px; color: #AAA; margin-top: 2px; font-family: var(--mono); }
+
+  .container { max-width: 480px; margin: 0 auto; padding: 12px 14px; }
+
+  /* Filtri mese */
+  .chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex-shrink: 0;
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 0.5px solid var(--border);
+    background: #FFF;
+    font-size: 11px;
+    font-family: var(--mono);
+    cursor: pointer;
+    color: var(--text2);
+    white-space: nowrap;
+  }
+  .chip.active { background: var(--text); color: #FFF; border-color: var(--text); }
+
+  /* Summary */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .sum-box {
+    background: #FFF;
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 10px;
+    text-align: center;
+  }
+  .sum-label { font-size: 9px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--text2); }
+  .sum-val { font-size: 15px; font-weight: 500; font-family: var(--mono); margin-top: 2px; }
+  .sum-val.green { color: var(--green); }
+
+  /* Separatore mese */
+  .month-sep { display: flex; align-items: center; gap: 8px; margin: 14px 0 8px; }
+  .month-sep::before, .month-sep::after { content: ''; flex: 1; height: 0.5px; background: var(--border); }
+  .month-sep-text { font-size: 10px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .1em; color: var(--text2); white-space: nowrap; }
+
+  /* Riga liquidazione */
+  .liq-row {
+    background: #FFF;
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 10px 12px;
+    margin-bottom: 6px;
+  }
+  .liq-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .liq-soccida { font-size: 13px; font-weight: 500; }
+  .liq-lotto { font-size: 10px; font-family: var(--mono); color: var(--text2); }
+  .liq-macello { font-size: 11px; color: var(--text2); }
+
+  .liq-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+  }
+  .lg { text-align: center; }
+  .lg-label { font-size: 9px; font-family: var(--mono); text-transform: uppercase; color: var(--text3); letter-spacing: .06em; }
+  .lg-val { font-size: 12px; font-family: var(--mono); font-weight: 500; margin-top: 1px; }
+  .lg-val.green { color: var(--green); }
+  .lg-val.red { color: var(--red); }
+
+  .liq-netto {
+    margin-top: 8px;
+    padding: 7px 10px;
+    background: var(--green-bg);
+    border-radius: var(--radius);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .liq-netto-label { font-size: 10px; font-family: var(--mono); color: var(--green); text-transform: uppercase; letter-spacing: .06em; }
+  .liq-netto-val { font-size: 16px; font-weight: 500; font-family: var(--mono); color: var(--green); }
+
+  .liq-pending {
+    margin-top: 8px;
+    padding: 6px 10px;
+    background: #FEF9EC;
+    border-radius: var(--radius);
+    font-size: 11px;
+    color: #997700;
+    font-family: var(--mono);
+    border: 0.5px solid #F0DC8A;
+  }
+
+  .empty { text-align: center; color: var(--text3); font-size: 13px; padding: 40px 0; }
+  .loading { text-align: center; color: var(--text3); font-size: 13px; padding: 60px 0; }
+
+  /* Totale annuale */
+  .totale-annuale {
+    background: var(--text);
+    color: #FFF;
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .ta-label { font-size: 11px; color: #AAA; font-family: var(--mono); }
+  .ta-val { font-size: 22px; font-weight: 500; font-family: var(--mono); color: #FFF; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">Le Corti — Liquidazioni</div>
+  <div class="header-sub" id="header-sub">Caricamento…</div>
+</div>
+
+<div class="container">
+  <div id="totale-annuale" style="display:none" class="totale-annuale">
+    <div>
+      <div class="ta-label">Totale liquidato anno in corso</div>
+      <div class="ta-val" id="ta-val">—</div>
+    </div>
+    <div style="font-size:28px">💰</div>
+  </div>
+
+  <div class="chips" id="chips"></div>
+  <div class="summary" id="summary"></div>
+  <div id="list"><div class="loading">Caricamento…</div></div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://wfvqgxkxmgcxchcsljzh.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmdnFneGt4bWdjeGNoY3NsanpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMTE1NTAsImV4cCI6MjA5NTg4NzU1MH0.hIhbdVFeCTDJ9bBBqetef87VTCtocMflYUQ_7kvxJF8';
+
+let allUscite = [], allLotti = [], allSoccide = [];
+let filtroMese = 'tutti';
+
+const nomiMese = ['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+const nomiMeseBrevi = ['','Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+
+function fmt(n, dec=0) {
+  if(n == null || isNaN(n)) return '—';
+  return Number(n).toLocaleString('it-IT', {minimumFractionDigits: dec, maximumFractionDigits: dec});
+}
+function fmtDate(d) {
+  if(!d) return '—';
+  const [y,m,g] = d.split('-');
+  return `${g}/${m}/${y}`;
+}
+
+async function sb(table, query='') {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}${query}`, {
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+  });
+  return r.json();
+}
+
+async function loadAll() {
+  [allSoccide, allLotti, allUscite] = await Promise.all([
+    sb('soccide', '?order=nome'),
+    sb('lotti', '?order=data_ingresso.desc'),
+    sb('uscite', '?order=data_uscita.desc'),
+  ]);
+
+  const oggi = new Date().toLocaleDateString('it-IT', {day:'2-digit', month:'2-digit', year:'numeric'});
+  document.getElementById('header-sub').textContent = `Aggiornato al ${oggi}`;
+
+  // Totale anno in corso
+  const annoCorrente = new Date().getFullYear().toString();
+  const usciteAnno = allUscite.filter(u => u.data_uscita?.startsWith(annoCorrente) && u.liquidazione);
+  const totAnno = usciteAnno.reduce((s,u) => s+(u.liquidazione||0), 0);
+  if(totAnno > 0) {
+    document.getElementById('totale-annuale').style.display = 'flex';
+    document.getElementById('ta-val').textContent = fmt(totAnno, 0) + ' €';
+  }
+
+  buildChips();
+  render();
+}
+
+function buildChips() {
+  const mesi = [...new Set(allUscite.map(u => u.data_uscita?.substring(0,7)).filter(Boolean))].sort().reverse();
+  let html = `<div class="chip active" onclick="setFiltro('tutti',this)">Tutti</div>`;
+  html += mesi.map(m => {
+    const [y,mo] = m.split('-');
+    return `<div class="chip" onclick="setFiltro('${m}',this)">${nomiMeseBrevi[parseInt(mo)]} ${y}</div>`;
+  }).join('');
+  document.getElementById('chips').innerHTML = html;
+}
+
+function setFiltro(val, el) {
+  filtroMese = val;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+function render() {
+  let rows = allUscite.filter(u => u.data_uscita);
+  if(filtroMese !== 'tutti') rows = rows.filter(u => u.data_uscita?.startsWith(filtroMese));
+  rows = [...rows].sort((a,b) => b.data_uscita.localeCompare(a.data_uscita));
+
+  // Summary
+  const totCapi = rows.reduce((s,u) => s+(u.capi||0), 0);
+  const totKg = rows.reduce((s,u) => s+(u.kg_totali||0), 0);
+  const totLiq = rows.filter(u => u.liquidazione).reduce((s,u) => s+(u.liquidazione||0), 0);
+  const daLiquidare = rows.filter(u => !u.liquidazione).length;
+
+  document.getElementById('summary').innerHTML = `
+    <div class="sum-box"><div class="sum-label">carichi</div><div class="sum-val">${rows.length}</div></div>
+    <div class="sum-box"><div class="sum-label">capi</div><div class="sum-val">${fmt(totCapi)}</div></div>
+    <div class="sum-box"><div class="sum-label">kg</div><div class="sum-val">${fmt(totKg)}</div></div>
+    <div class="sum-box"><div class="sum-label">liquidato</div><div class="sum-val green">${totLiq > 0 ? fmt(totLiq/1000,1)+'k' : '—'}</div></div>`;
+
+  if(!rows.length) {
+    document.getElementById('list').innerHTML = `<div class="empty">Nessuna uscita nel periodo selezionato.</div>`;
+    return;
+  }
+
+  // Raggruppa per mese
+  const byMonth = {};
+  rows.forEach(u => {
+    const m = u.data_uscita.substring(0,7);
+    if(!byMonth[m]) byMonth[m] = [];
+    byMonth[m].push(u);
+  });
+
+  let html = '';
+  Object.keys(byMonth).sort().reverse().forEach(m => {
+    const [y,mo] = m.split('-');
+    const totMeseLiq = byMonth[m].filter(u => u.liquidazione).reduce((s,u) => s+(u.liquidazione||0), 0);
+    html += `<div class="month-sep"><span class="month-sep-text">${nomiMese[parseInt(mo)]} ${y}${totMeseLiq > 0 ? ' · ' + fmt(totMeseLiq) + ' €' : ''}</span></div>`;
+
+    html += byMonth[m].map(u => {
+      const lotto = allLotti.find(l => l.id === u.lotto_id);
+      const soc = allSoccide.find(s => s.id === lotto?.soccida_id);
+      const socNome = soc?.nome || '—';
+      const media = u.kg_totali && u.capi ? (u.kg_totali / u.capi).toFixed(1) : '—';
+
+      let dettaglioLiq = '';
+      if(u.liquidazione) {
+        // Mostra dettaglio sconti se presenti
+        const sconti = (u.sconto_peso||0) + (u.sconto_merce||0);
+        dettaglioLiq = `<div class="liq-netto">
+          <div>
+            <div class="liq-netto-label">Liquidazione netta</div>
+            ${sconti > 0 ? `<div style="font-size:10px;color:var(--green);margin-top:1px;">Lordo ${fmt(u.liquidazione_lorda||0)} € · Sconti ${fmt(sconti)} €</div>` : ''}
+          </div>
+          <div class="liq-netto-val">${fmt(u.liquidazione)} €</div>
+        </div>`;
+      } else {
+        dettaglioLiq = `<div class="liq-pending">⏳ Liquidazione non ancora ricevuta</div>`;
+      }
+
+      return `<div class="liq-row">
+        <div class="liq-top">
+          <div>
+            <div class="liq-soccida">${socNome}</div>
+            <div class="liq-lotto">Lotto ${lotto?.codice || '—'}${lotto?.lettera_dop ? ' · ' + lotto.lettera_dop : ''}</div>
+          </div>
+          <div class="liq-macello">${u.macello || '—'}</div>
+        </div>
+        <div class="liq-grid">
+          <div class="lg"><div class="lg-label">Data</div><div class="lg-val">${fmtDate(u.data_uscita)}</div></div>
+          <div class="lg"><div class="lg-label">Capi</div><div class="lg-val">${fmt(u.capi)}</div></div>
+          <div class="lg"><div class="lg-label">Kg tot.</div><div class="lg-val">${fmt(u.kg_totali)}</div></div>
+          <div class="lg"><div class="lg-label">Media kg</div><div class="lg-val">${media}</div></div>
+        </div>
+        ${u.prezzo_kg ? `<div style="text-align:right;font-size:10px;color:var(--text2);font-family:var(--mono);margin-top:4px;">${fmt(u.prezzo_kg,3)} €/kg</div>` : ''}
+        ${dettaglioLiq}
+      </div>`;
+    }).join('');
+  });
+
+  document.getElementById('list').innerHTML = html;
+}
+
+loadAll();
+</script>
+</body>
+</html>
