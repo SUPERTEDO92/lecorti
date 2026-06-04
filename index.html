@@ -1019,8 +1019,8 @@ function renderTrasferimenti() {
 function renderAnalisi(lottoId) {
   const lotto = allLotti.find(l => l.id === lottoId);
   const soc = lotto ? allSoccide.find(s => s.id === lotto.soccida_id) : null;
-  const referti = mockSanitario[lottoId] || [];
-  const mortalita = mockMortalita[lottoId] || [];
+  const referti = (allSanitario||[]).filter(r => r.lotto_id === lottoId).sort((a,b) => a.data_referto.localeCompare(b.data_referto));
+  const mortalita = (allMortalita||[]).filter(m => m.lotto_id === lottoId).sort((a,b) => a.data_evento.localeCompare(b.data_evento));
 
   let html = `
   <div class="izs-header">
@@ -1035,7 +1035,7 @@ function renderAnalisi(lottoId) {
       <div class="referto-card">
         <div class="referto-head">
           <span class="referto-data">${fmtDateFull(r.data_referto)}</span>
-          <span class="referto-lotto">Lotto ${r.lotto}</span>
+          <span class="referto-lotto">Lotto ${lotto?.codice || '—'}</span>
         </div>
         <div class="referto-body">
           <div class="referto-patologia">${r.patologia}</div>
@@ -1068,15 +1068,15 @@ function renderStampa(lottoId) {
   if(!lotto) return;
   const soc = allSoccide.find(s => s.id === lotto.soccida_id);
   const uscite = allUscite.filter(u => u.lotto_id === lottoId).sort((a,b) => a.data_uscita.localeCompare(b.data_uscita));
-  const referti = mockSanitario[lottoId] || [];
-  const mortalita = mockMortalita[lottoId] || [];
+  const referti = (allSanitario||[]).filter(r => r.lotto_id === lottoId).sort((a,b) => a.data_referto.localeCompare(b.data_referto));
+  const mortalita = (allMortalita||[]).filter(m => m.lotto_id === lottoId).sort((a,b) => a.data_evento.localeCompare(b.data_evento));
 
   const oggi = new Date();
   const ingresso = new Date(lotto.data_ingresso);
   const gg = Math.floor((oggi - ingresso) / 86400000);
   const capiUsciti = uscite.reduce((s,u) => s+(u.capi||0), 0);
-  const presenti = (lotto.capi_entrati||0) - capiUsciti;
-  const totaleMorti = mortalita.reduce((s,m) => s+(m.morti||0), 0);
+  const totaleMorti = mortalita.reduce((s,m) => s+(m.capi_morti||0), 0);
+  const presenti = (lotto.capi_entrati||0) - capiUsciti - totaleMorti;
   const totaleLiquidato = uscite.reduce((s,u) => s+(u.liquidazione||0), 0);
 
   let html = `
@@ -1167,6 +1167,26 @@ function renderStampa(lottoId) {
     html += `</tbody></table></div>`;
   }
 
+  // Sezione mortalità dettagliata
+  if(mortalita.length) {
+    html += `<div class="print-section">
+      <div class="print-section-title">Mortalità — dettaglio</div>
+      <table class="print-table">
+        <thead><tr><th>Data</th><th>Capi morti</th><th>Trattamento</th><th>Note</th></tr></thead>
+        <tbody>`;
+    html += mortalita.map(m => `<tr>
+      <td>${fmtDate(m.data_evento)}</td>
+      <td style="font-weight:500;color:#C0392B">${m.capi_morti || 0}</td>
+      <td>${m.trattamento || '—'}</td>
+      <td>${m.note || '—'}</td>
+    </tr>`).join('');
+    html += `</tbody></table>
+      <div style="text-align:right;margin-top:6px;font-size:12px;font-weight:500;color:#C0392B">Totale morti: ${totaleMorti} capi</div>
+    </div>`;
+    
+    // Aggiorna riepilogo con presenti corretti (già calcolato sopra con morti)
+  }
+
   document.getElementById('stampa-content').innerHTML = html;
 
   if(mortalita.length) {
@@ -1191,7 +1211,7 @@ function drawMortChart(canvasId, dati, colore = '#A03030') {
   const cH = H - pad.top - pad.bottom;
 
   const maxGg = Math.max(...dati.map(d => d.gg));
-  const maxMorti = Math.max(...dati.map(d => d.morti), 1);
+  const maxMorti = Math.max(...dati.map(d => d.capi_morti||0), 1);
 
   // Griglia orizzontale
   ctx.strokeStyle = '#E8E5DF';
@@ -1216,7 +1236,7 @@ function drawMortChart(canvasId, dati, colore = '#A03030') {
   const barW = Math.max(4, Math.min(18, cW / dati.length - 2));
   dati.forEach(d => {
     const x = pad.left + (d.gg / maxGg) * cW - barW / 2;
-    const barH = (d.morti / maxMorti) * cH;
+    const barH = ((d.capi_morti||0) / maxMorti) * cH;
     const y = pad.top + cH - barH;
     ctx.fillStyle = colore + '22'; // trasparente
     ctx.fillRect(x, y, barW, barH);
@@ -1224,11 +1244,11 @@ function drawMortChart(canvasId, dati, colore = '#A03030') {
     ctx.lineWidth = 1;
     ctx.strokeRect(x, y, barW, barH);
     // label valore
-    if(d.morti > 0) {
+    if((d.capi_morti||0) > 0) {
       ctx.fillStyle = colore;
       ctx.font = 'bold 9px IBM Plex Mono, monospace';
       ctx.textAlign = 'center';
-      ctx.fillText(d.morti, x + barW/2, y - 3);
+      ctx.fillText(d.capi_morti||0, x + barW/2, y - 3);
     }
   });
 }
