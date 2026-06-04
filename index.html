@@ -836,6 +836,7 @@ function renderDetail(socId) {
             <div class="uc"><div class="uc-label">kg</div><div class="uc-val">${fmt(u.kg_totali)}</div></div>
             <div class="uc"><div class="uc-label">media</div><div class="uc-val">${u.kg_totali && u.capi ? fmt(u.kg_totali/u.capi,1) : '—'}</div></div>
             <div class="uc"><div class="uc-label">gg</div><div class="uc-val">${u.giorni_permanenza || (lotto.data_ingresso && u.data_uscita ? Math.round((new Date(u.data_uscita) - new Date(lotto.data_ingresso)) / 86400000) : '—')}</div></div>
+            <div class="uc"><div class="uc-label">incr.</div><div class="uc-val">${(()=>{ const g=u.giorni_permanenza||(lotto.data_ingresso&&u.data_uscita?Math.round((new Date(u.data_uscita)-new Date(lotto.data_ingresso))/86400000):0); return u.incremento?fmt(u.incremento,3):(g&&u.kg_totali&&u.capi&&lotto.media_ingresso?fmt((u.kg_totali/u.capi-lotto.media_ingresso)/g,3):'—'); })()}</div></div>
             <div class="uc"><div class="uc-label">liquid.</div><div class="uc-val green">${u.liquidazione ? fmt(u.liquidazione) + ' €' : '—'}</div></div>
           </div>
           ${!u.liquidazione ? `<button onclick="apriLiquidazione(${u.id})" style="margin-top:6px;width:100%;padding:7px;background:var(--amber-bg);color:var(--amber);border:0.5px solid var(--accent2);border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">+ Inserisci liquidazione</button>` : ''}
