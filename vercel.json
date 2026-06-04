@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/liquidazioni", "destination": "/liquidazioni.html" },
+    { "source": "/scaratti", "destination": "/scaratti.html" },
+    { "source": "/campobello", "destination": "/campobello.html" }
+  ]
+}
