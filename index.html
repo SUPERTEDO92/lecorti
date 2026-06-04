@@ -592,7 +592,7 @@ async function sb(table, query='') {
 }
 
 // State
-let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [];
+let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [], allMortalita = [], allSanitario = [];
 let storicoFilter = 'tutti';
 let currentPage = 'home';
 let currentLottoId = null;
@@ -626,11 +626,13 @@ const mockMortalita = {
 document.getElementById('today-date').textContent = new Date().toLocaleDateString('it-IT', {day:'2-digit',month:'2-digit',year:'numeric'});
 
 async function loadAll() {
-  [allSoccide, allLotti, allUscite, allTrasferimenti] = await Promise.all([
+  [allSoccide, allLotti, allUscite, allTrasferimenti, allMortalita, allSanitario] = await Promise.all([
     sb('soccide', '?order=nome'),
     sb('lotti', '?order=data_ingresso.desc'),
     sb('uscite', '?order=data_uscita.desc'),
     sb('trasferimenti', '?order=data_trasferimento.desc'),
+    sb('mortalita', '?order=data_evento.desc'),
+    sb('sanitario', '?order=data_referto.desc'),
   ]);
   renderHome();
   renderStorico();
@@ -784,18 +786,29 @@ function renderDetail(socId) {
     </div>`;
 
     // Bottoni azione
-    html += `<div class="action-row" style="margin-bottom:8px">
-      <button class="btn-izs" onclick="showPage('analisi',${lotto.id})">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4m5 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
-        Referti IZS
+    // Mortalità del lotto
+    const mortLotto = allMortalita ? allMortalita.filter(m => m.lotto_id === lotto.id).sort((a,b) => a.data_evento.localeCompare(b.data_evento)) : [];
+    // Sanitario del lotto
+    const sanLotto = allSanitario ? allSanitario.filter(s => s.lotto_id === lotto.id).sort((a,b) => a.data_referto.localeCompare(b.data_referto)) : [];
+
+    // Tab bar per lotto
+    html += `<div style="display:flex;gap:4px;margin-bottom:10px;">
+      <button onclick="switchLottoTab(${lotto.id},'uscite',this)" class="ltab ltab-active" data-lotto="${lotto.id}" data-tab="uscite"
+        style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--accent);background:var(--accent);color:#FFF;font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
+        Uscite${uscite.length ? ' ('+uscite.length+')' : ''}
       </button>
-      <button class="btn-print" onclick="showPage('stampa',${lotto.id})">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-        Stampa PDF
+      <button onclick="switchLottoTab(${lotto.id},'mortalita',this)" class="ltab" data-lotto="${lotto.id}" data-tab="mortalita"
+        style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg2);color:var(--text2);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
+        Mortalità${mortLotto.length ? ' ('+mortLotto.length+')' : ''}
+      </button>
+      <button onclick="switchLottoTab(${lotto.id},'izs',this)" class="ltab" data-lotto="${lotto.id}" data-tab="izs"
+        style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg2);color:var(--text2);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
+        Referti${sanLotto.length ? ' ('+sanLotto.length+')' : ''}
       </button>
     </div>`;
 
-    // Uscite
+    // --- TAB USCITE ---
+    html += `<div id="ltab-uscite-${lotto.id}">`;
     if(uscite.length) {
       html += `<div class="uscite-container" style="margin-bottom:8px">
         <div class="uscite-header"><span class="uscite-header-text">Uscite lotto ${lotto.codice}</span></div>`;
@@ -818,7 +831,59 @@ function renderDetail(socId) {
           <span class="tot-val">${fmt(totaleLiquidato)} €</span>
         </div>`;
       }
+    } else {
+      html += `<div class="empty">Nessuna uscita registrata.</div>`;
     }
+    html += `<button onclick="showPage('stampa',${lotto.id})" style="width:100%;padding:8px;background:var(--bg2);color:var(--text2);border:0.5px solid var(--border);border-radius:var(--radius);font-size:11px;font-family:var(--font);cursor:pointer;margin-top:4px;">🖨 Stampa PDF lotto ${lotto.codice}</button>`;
+    html += `</div>`;
+
+    // --- TAB MORTALITA ---
+    html += `<div id="ltab-mortalita-${lotto.id}" style="display:none;">`;
+    html += `<div style="margin-bottom:10px;">
+      <button onclick="apriInserisciMortalita(${lotto.id})" style="width:100%;padding:9px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius);font-size:12px;font-family:var(--font);font-weight:500;cursor:pointer;">
+        + Registra mortalità
+      </button>
+    </div>`;
+    if(mortLotto.length) {
+      mortLotto.forEach(m => {
+        html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--bg2);border-radius:var(--radius);margin-bottom:4px;border:0.5px solid var(--border);">
+          <div>
+            <div style="font-size:12px;font-weight:500;">${fmtDate(m.data_evento)}</div>
+            <div style="font-size:10px;color:var(--text2);margin-top:2px;">${m.lettera_dop ? 'Lettera ' + m.lettera_dop + ' · ' : ''}${m.trattamento ? 'Tratt. ' + m.trattamento : ''}${m.note ? ' · ' + m.note : ''}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:18px;font-weight:500;color:var(--red);font-family:var(--mono);">${m.capi_morti || 0}</div>
+            <div style="font-size:10px;color:var(--text2);">capi</div>
+          </div>
+        </div>`;
+      });
+      const totMorti = mortLotto.reduce((s,m) => s+(m.capi_morti||0), 0);
+      html += `<div style="display:flex;justify-content:space-between;padding:6px 10px;font-size:11px;font-family:var(--mono);color:var(--text2);">
+        <span>Totale mortalità lotto</span><span style="color:var(--red);font-weight:500;">${totMorti} capi</span>
+      </div>`;
+    } else {
+      html += `<div class="empty">Nessuna mortalità registrata.</div>`;
+    }
+    html += `</div>`;
+
+    // --- TAB REFERTI IZS ---
+    html += `<div id="ltab-izs-${lotto.id}" style="display:none;">`;
+    html += `<button onclick="showPage('analisi',${lotto.id})" class="btn-izs" style="width:100%;margin-bottom:8px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4m5 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+      Vedi tutti i referti IZS
+    </button>`;
+    if(sanLotto.length) {
+      sanLotto.forEach(r => {
+        html += `<div style="padding:8px 10px;background:var(--bg2);border-radius:var(--radius);margin-bottom:4px;border:0.5px solid var(--border);">
+          <div style="font-size:10px;color:var(--text2);font-family:var(--mono);">${fmtDate(r.data_referto)}</div>
+          <div style="font-size:12px;margin-top:2px;">${r.patologia || '—'}</div>
+          ${r.note_trattamento ? `<div style="font-size:10px;color:var(--text2);margin-top:2px;">${r.note_trattamento}</div>` : ''}
+        </div>`;
+      });
+    } else {
+      html += `<div class="empty">Nessun referto IZS registrato.</div>`;
+    }
+    html += `</div>`;
 
     // Separatore tra lotti
     html += `<div style="border-top:1px solid var(--border);margin:16px 0"></div>`;
@@ -1259,6 +1324,78 @@ function renderIlaria(mese) {
   document.getElementById('ilaria-content').innerHTML = html;
 }
 
+// ── TAB LOTTO ──
+function switchLottoTab(lottoId, tab, btn) {
+  ['uscite','mortalita','izs'].forEach(t => {
+    const el = document.getElementById(`ltab-${t}-${lottoId}`);
+    if(el) el.style.display = t === tab ? 'block' : 'none';
+  });
+  document.querySelectorAll(`.ltab[data-lotto="${lottoId}"]`).forEach(b => {
+    const isActive = b.dataset.tab === tab;
+    b.style.background = isActive ? 'var(--accent)' : 'var(--bg2)';
+    b.style.color = isActive ? '#FFF' : 'var(--text2)';
+    b.style.borderColor = isActive ? 'var(--accent)' : 'var(--border)';
+  });
+}
+
+// ── MORTALITÀ ──
+let _mortLottoId = null;
+
+function apriInserisciMortalita(lottoId) {
+  _mortLottoId = lottoId;
+  const lotto = allLotti.find(l => l.id === lottoId);
+  const soc = allSoccide.find(s => s.id === lotto?.soccida_id);
+  document.getElementById('modal-mort-info').textContent =
+    `${soc?.nome || '—'} · Lotto ${lotto?.codice || '—'}${lotto?.lettera_dop ? ' · ' + lotto.lettera_dop : ''}`;
+  ['mort-capi','mort-note','mort-trattamento'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('mort-data').value = new Date().toISOString().split('T')[0];
+  document.getElementById('modal-mort').style.display = 'flex';
+}
+
+function chiudiMortalita() {
+  document.getElementById('modal-mort').style.display = 'none';
+  _mortLottoId = null;
+}
+
+async function salvaMortalita() {
+  const data = document.getElementById('mort-data').value;
+  const capi = parseInt(document.getElementById('mort-capi').value) || 0;
+  const tratt = document.getElementById('mort-trattamento').value || null;
+  const note = document.getElementById('mort-note').value || null;
+  if(!data || capi < 0) { alert('Inserisci data e numero capi (anche 0 per solo trattamento)'); return; }
+
+  const lotto = allLotti.find(l => l.id === _mortLottoId);
+  const soc = allSoccide.find(s => s.id === lotto?.soccida_id);
+
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/mortalita`, {
+      method: 'POST', headers: SB_H,
+      body: JSON.stringify({
+        lotto_id: _mortLottoId,
+        soccida: soc?.nome || '',
+        data_evento: data,
+        lettera_dop: lotto?.lettera_dop || null,
+        capi_morti: capi,
+        trattamento: tratt,
+        note
+      })
+    });
+    if(!r.ok) throw new Error(await r.text());
+    const nuova = await r.json();
+    if(Array.isArray(nuova)) allMortalita.push(...nuova); else allMortalita.push(nuova);
+    chiudiMortalita();
+    if(currentLottoId) renderDetail(currentLottoId);
+  } catch(e) {
+    alert('Errore: ' + e.message);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('modal-mort')?.addEventListener('click', function(e) {
+    if(e.target === this) chiudiMortalita();
+  });
+});
+
 // ── INSERIMENTO DATI ──
 
 function initInserimento() {
@@ -1437,6 +1574,40 @@ async function inserisciTrasf() {
 // Start
 loadAll();
 </script>
+<!-- MODALE MORTALITÀ -->
+<div id="modal-mort" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center;">
+  <div style="background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-size:14px;font-weight:500;font-family:var(--mono);">Registra mortalità</div>
+      <button onclick="chiudiMortalita()" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
+    </div>
+    <div id="modal-mort-info" style="font-size:11px;color:var(--text2);background:var(--bg2);padding:8px 10px;border-radius:var(--radius);margin-bottom:14px;font-family:var(--mono);"></div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">DATA</div>
+          <input type="date" id="mort-data" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+        </div>
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">N° CAPI MORTI</div>
+          <input type="number" id="mort-capi" placeholder="es. 2" min="0" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">TRATTAMENTO (opzionale)</div>
+        <input type="text" id="mort-trattamento" placeholder="es. AMO, STR, FLO..." style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+      </div>
+      <div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">NOTE (opzionale)</div>
+        <input type="text" id="mort-note" placeholder="es. 15 scarti arrivo" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+      </div>
+    </div>
+    <button onclick="salvaMortalita()" style="width:100%;padding:13px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:16px;">
+      ✓ Salva
+    </button>
+  </div>
+</div>
+
 <!-- MODALE LIQUIDAZIONE -->
 <div id="modal-liq" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center;">
   <div style="background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;">
