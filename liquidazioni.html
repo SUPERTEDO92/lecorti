@@ -39,26 +39,26 @@
   .header {
     background: var(--text);
     color: #FFF;
-    padding: 14px 16px 12px;
+    padding: 16px 32px 14px;
     position: sticky;
     top: 0;
     z-index: 10;
   }
-  .header-title { font-size: 15px; font-weight: 500; letter-spacing: .02em; }
-  .header-sub { font-size: 11px; color: #AAA; margin-top: 2px; font-family: var(--mono); }
+  .header-title { font-size: 18px; font-weight: 500; letter-spacing: .02em; }
+  .header-sub { font-size: 13px; color: #AAA; margin-top: 3px; font-family: var(--mono); }
 
-  .container { max-width: 480px; margin: 0 auto; padding: 12px 14px; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 20px 32px; }
 
   /* Filtri mese */
   .chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px; scrollbar-width: none; }
   .chips::-webkit-scrollbar { display: none; }
   .chip {
     flex-shrink: 0;
-    padding: 5px 12px;
+    padding: 7px 16px;
     border-radius: 20px;
     border: 0.5px solid var(--border);
     background: #FFF;
-    font-size: 11px;
+    font-size: 13px;
     font-family: var(--mono);
     cursor: pointer;
     color: var(--text2);
@@ -80,21 +80,21 @@
     padding: 8px 10px;
     text-align: center;
   }
-  .sum-label { font-size: 9px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--text2); }
-  .sum-val { font-size: 15px; font-weight: 500; font-family: var(--mono); margin-top: 2px; }
+  .sum-label { font-size: 11px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--text2); }
+  .sum-val { font-size: 18px; font-weight: 500; font-family: var(--mono); margin-top: 2px; }
   .sum-val.green { color: var(--green); }
 
   /* Separatore mese */
-  .month-sep { display: flex; align-items: center; gap: 8px; margin: 14px 0 8px; }
+  .month-sep { display: flex; align-items: center; gap: 8px; margin: 14px 0 8px; column-span: all; break-before: column; }
   .month-sep::before, .month-sep::after { content: ''; flex: 1; height: 0.5px; background: var(--border); }
-  .month-sep-text { font-size: 10px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .1em; color: var(--text2); white-space: nowrap; }
+  .month-sep-text { font-size: 12px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .1em; color: var(--text2); white-space: nowrap; }
 
   /* Riga liquidazione */
-  .liq-row {
+  .liq-row { break-inside: avoid;
     background: #FFF;
     border: 0.5px solid var(--border);
     border-radius: var(--radius-lg);
-    padding: 10px 12px;
+    padding: 16px 18px;
     margin-bottom: 6px;
   }
   .liq-top {
@@ -103,9 +103,9 @@
     align-items: baseline;
     margin-bottom: 6px;
   }
-  .liq-soccida { font-size: 13px; font-weight: 500; }
-  .liq-lotto { font-size: 10px; font-family: var(--mono); color: var(--text2); }
-  .liq-macello { font-size: 11px; color: var(--text2); }
+  .liq-soccida { font-size: 16px; font-weight: 500; }
+  .liq-lotto { font-size: 12px; font-family: var(--mono); color: var(--text2); }
+  .liq-macello { font-size: 13px; color: var(--text2); }
 
   .liq-grid {
     display: grid;
@@ -113,8 +113,8 @@
     gap: 4px;
   }
   .lg { text-align: center; }
-  .lg-label { font-size: 9px; font-family: var(--mono); text-transform: uppercase; color: var(--text3); letter-spacing: .06em; }
-  .lg-val { font-size: 12px; font-family: var(--mono); font-weight: 500; margin-top: 1px; }
+  .lg-label { font-size: 11px; font-family: var(--mono); text-transform: uppercase; color: var(--text3); letter-spacing: .06em; }
+  .lg-val { font-size: 15px; font-family: var(--mono); font-weight: 500; margin-top: 1px; }
   .lg-val.green { color: var(--green); }
   .lg-val.red { color: var(--red); }
 
@@ -127,8 +127,8 @@
     justify-content: space-between;
     align-items: center;
   }
-  .liq-netto-label { font-size: 10px; font-family: var(--mono); color: var(--green); text-transform: uppercase; letter-spacing: .06em; }
-  .liq-netto-val { font-size: 16px; font-weight: 500; font-family: var(--mono); color: var(--green); }
+  .liq-netto-label { font-size: 12px; font-family: var(--mono); color: var(--green); text-transform: uppercase; letter-spacing: .06em; }
+  .liq-netto-val { font-size: 20px; font-weight: 500; font-family: var(--mono); color: var(--green); }
 
   .liq-pending {
     margin-top: 8px;
@@ -155,15 +155,22 @@
     justify-content: space-between;
     align-items: center;
   }
-  .ta-label { font-size: 11px; color: #AAA; font-family: var(--mono); }
-  .ta-val { font-size: 22px; font-weight: 500; font-family: var(--mono); color: #FFF; }
+  .ta-label { font-size: 14px; color: #AAA; font-family: var(--mono); }
+  .ta-val { font-size: 32px; font-weight: 500; font-family: var(--mono); color: #FFF; }
 </style>
 </head>
 <body>
 
 <div class="header">
-  <div class="header-title">Le Corti — Liquidazioni</div>
-  <div class="header-sub" id="header-sub">Caricamento…</div>
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <div>
+      <div class="header-title">Le Corti — Liquidazioni</div>
+      <div class="header-sub" id="header-sub">Caricamento…</div>
+    </div>
+    <button onclick="stampaTutto()" style="padding:8px 18px;background:#FFF;color:var(--text);border:none;border-radius:8px;font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;display:flex;align-items:center;gap:6px;">
+      🖨 Stampa
+    </button>
+  </div>
 </div>
 
 <div class="container">
@@ -324,10 +331,128 @@ function render() {
     }).join('');
   });
 
-  document.getElementById('list').innerHTML = html;
+  document.getElementById('list').innerHTML = `<div style="columns:2;column-gap:20px;">${html}</div>`;
+  // Fix month separators to span full width
+  document.querySelectorAll('.month-sep').forEach(el => el.style.columnSpan = 'all');
 }
 
 loadAll();
+
+function stampaTutto() {
+  const nomiMeseFull = ['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+
+  // Raggruppa tutte le uscite per mese
+  const rows = [...allUscite].filter(u => u.data_uscita).sort((a,b) => b.data_uscita.localeCompare(a.data_uscita));
+  const byMonth = {};
+  rows.forEach(u => {
+    const m = u.data_uscita.substring(0,7);
+    if(!byMonth[m]) byMonth[m] = [];
+    byMonth[m].push(u);
+  });
+
+  const totGenerale = rows.filter(u => u.liquidazione).reduce((s,u) => s+(u.liquidazione||0), 0);
+  const totCarichiGen = rows.length;
+  const totCapiGen = rows.reduce((s,u) => s+(u.capi||0), 0);
+  const totKgGen = rows.reduce((s,u) => s+(u.kg_totali||0), 0);
+
+  let html = `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8">
+  <title>Le Corti — Liquidazioni</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, Arial, sans-serif; font-size: 11px; color: #1A1A18; background: #FFF; padding: 20px 24px; }
+    h1 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+    .sub { font-size: 11px; color: #666; margin-bottom: 20px; }
+    .riepilogo { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 24px; padding: 12px; background: #F5F3EE; border-radius: 8px; }
+    .rie-box { text-align: center; }
+    .rie-label { font-size: 9px; text-transform: uppercase; letter-spacing: .08em; color: #888; }
+    .rie-val { font-size: 16px; font-weight: 600; margin-top: 2px; }
+    .rie-val.green { color: #2A7A4B; }
+    .month-title { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: #555; border-bottom: 1.5px solid #1A1A18; padding-bottom: 4px; margin: 20px 0 10px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+    th { font-size: 9px; text-transform: uppercase; letter-spacing: .07em; color: #888; text-align: left; padding: 4px 8px; border-bottom: 0.5px solid #D8D4CB; }
+    td { padding: 5px 8px; border-bottom: 0.5px solid #EDEAE3; vertical-align: top; }
+    td.num { text-align: right; font-family: 'Courier New', monospace; }
+    td.green { color: #2A7A4B; font-weight: 500; }
+    td.pending { color: #997700; font-style: italic; }
+    .month-tot { display: flex; justify-content: space-between; padding: 6px 8px; background: #F5F3EE; border-radius: 4px; margin-top: 4px; font-size: 11px; }
+    .month-tot-label { color: #555; }
+    .month-tot-val { font-weight: 600; color: #2A7A4B; font-family: 'Courier New', monospace; }
+    .totale-finale { margin-top: 28px; padding: 14px 16px; background: #1A1A18; color: #FFF; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .tf-label { font-size: 12px; color: #AAA; }
+    .tf-val { font-size: 22px; font-weight: 600; font-family: 'Courier New', monospace; }
+    .footer { margin-top: 20px; font-size: 9px; color: #AAA; text-align: right; }
+    @media print {
+      body { padding: 10px 14px; font-size: 10px; }
+      .month-title { margin: 14px 0 8px; }
+      @page { margin: 1.5cm; }
+    }
+  </style></head><body>
+  <h1>Soc. Agr. Le Corti Srl — Riepilogo Liquidazioni</h1>
+  <div class="sub">Stampato il ${new Date().toLocaleDateString('it-IT', {day:'2-digit',month:'2-digit',year:'numeric'})} · Tutti i periodi</div>
+  <div class="riepilogo">
+    <div class="rie-box"><div class="rie-label">Carichi totali</div><div class="rie-val">${totCarichiGen}</div></div>
+    <div class="rie-box"><div class="rie-label">Capi totali</div><div class="rie-val">${totCapiGen.toLocaleString('it-IT')}</div></div>
+    <div class="rie-box"><div class="rie-label">Kg totali</div><div class="rie-val">${totKgGen.toLocaleString('it-IT')}</div></div>
+    <div class="rie-box"><div class="rie-label">Liquidato</div><div class="rie-val green">${totGenerale.toLocaleString('it-IT',{minimumFractionDigits:0})} €</div></div>
+  </div>`;
+
+  Object.keys(byMonth).sort().reverse().forEach(m => {
+    const [y,mo] = m.split('-');
+    const mRighe = byMonth[m];
+    const mLiq = mRighe.filter(u => u.liquidazione).reduce((s,u) => s+(u.liquidazione||0), 0);
+    const mCapi = mRighe.reduce((s,u) => s+(u.capi||0), 0);
+    const mKg = mRighe.reduce((s,u) => s+(u.kg_totali||0), 0);
+
+    html += `<div class="month-title">${nomiMeseFull[parseInt(mo)]} ${y}</div>
+    <table>
+      <thead><tr>
+        <th>Data</th><th>Soccida</th><th>Lotto</th><th>Macello</th>
+        <th style="text-align:right">Capi</th><th style="text-align:right">Kg tot.</th>
+        <th style="text-align:right">Media kg</th><th style="text-align:right">€/kg</th>
+        <th style="text-align:right">Sconti €</th><th style="text-align:right">Liquidazione €</th>
+      </tr></thead><tbody>`;
+
+    mRighe.forEach(u => {
+      const lotto = allLotti.find(l => l.id === u.lotto_id);
+      const soc = allSoccide.find(s => s.id === lotto?.soccida_id);
+      const media = u.kg_totali && u.capi ? (u.kg_totali/u.capi).toFixed(1) : '—';
+      const sconti = (u.sconto_peso||0) + (u.sconto_merce||0);
+      const [yy,mm,gg] = u.data_uscita.split('-');
+
+      html += `<tr>
+        <td>${gg}/${mm}/${yy}</td>
+        <td>${soc?.nome || '—'}</td>
+        <td style="font-family:'Courier New',monospace">${lotto?.codice || '—'}${lotto?.lettera_dop ? ' · '+lotto.lettera_dop : ''}</td>
+        <td>${u.macello || '—'}</td>
+        <td class="num">${(u.capi||0).toLocaleString('it-IT')}</td>
+        <td class="num">${(u.kg_totali||0).toLocaleString('it-IT')}</td>
+        <td class="num">${media}</td>
+        <td class="num">${u.prezzo_kg ? u.prezzo_kg.toFixed(3) : '—'}</td>
+        <td class="num">${sconti > 0 ? sconti.toLocaleString('it-IT',{minimumFractionDigits:2}) : '—'}</td>
+        <td class="num ${u.liquidazione ? 'green' : 'pending'}">${u.liquidazione ? u.liquidazione.toLocaleString('it-IT',{minimumFractionDigits:2})+' €' : 'da ricevere'}</td>
+      </tr>`;
+    });
+
+    html += `</tbody></table>
+    <div class="month-tot">
+      <span class="month-tot-label">${nomiMeseFull[parseInt(mo)]} ${y} — ${mRighe.length} carichi · ${mCapi.toLocaleString('it-IT')} capi · ${mKg.toLocaleString('it-IT')} kg</span>
+      <span class="month-tot-val">${mLiq > 0 ? mLiq.toLocaleString('it-IT',{minimumFractionDigits:2})+' €' : '—'}</span>
+    </div>`;
+  });
+
+  html += `<div class="totale-finale">
+    <div><div class="tf-label">Totale liquidato complessivo</div></div>
+    <div class="tf-val">${totGenerale.toLocaleString('it-IT',{minimumFractionDigits:2})} €</div>
+  </div>
+  <div class="footer">Soc. Agr. Le Corti Srl · Gestionale interno · ${new Date().toLocaleDateString('it-IT')}</div>
+  </body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 500);
+}
 </script>
 </body>
 </html>
