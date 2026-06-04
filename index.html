@@ -41,16 +41,23 @@
   .topbar {
     position: sticky; top: 0; z-index: 100;
     background: var(--text); color: #F5F3EE;
-    padding: 0 20px; height: 48px;
-    display: flex; align-items: center; gap: 16px;
   }
-  .topbar-logo { font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: .08em; }
-  .topbar-date { font-size: 11px; color: #999; margin-left: auto; font-family: var(--mono); }
-  .topbar-nav { display: flex; gap: 4px; }
+  .topbar-title {
+    padding: 12px 20px 8px;
+    display: flex; align-items: baseline; justify-content: space-between;
+  }
+  .topbar-logo { font-family: var(--mono); font-size: 15px; font-weight: 500; letter-spacing: .1em; }
+  .topbar-date { font-size: 11px; color: #888; font-family: var(--mono); }
+  .topbar-nav {
+    display: flex; gap: 2px;
+    padding: 0 12px 10px;
+    border-top: 0.5px solid rgba(255,255,255,.08);
+    padding-top: 8px;
+  }
   .nav-btn {
-    padding: 5px 12px; border-radius: var(--radius); border: none;
-    font-size: 12px; font-family: var(--font); cursor: pointer;
-    background: transparent; color: #AAA; transition: all .15s;
+    flex: 1; padding: 7px 4px; border-radius: var(--radius); border: none;
+    font-size: 12px; font-family: var(--font); cursor: pointer; text-align: center;
+    background: transparent; color: #888; transition: all .15s;
   }
   .nav-btn:hover { color: #FFF; background: rgba(255,255,255,.1); }
   .nav-btn.active { background: rgba(255,255,255,.15); color: #FFF; }
@@ -364,13 +371,16 @@
 <body>
 
 <div class="topbar">
-  <span class="topbar-logo">LE CORTI</span>
+  <div class="topbar-title">
+    <span class="topbar-logo">LE CORTI</span>
+    <span class="topbar-date" id="today-date"></span>
+  </div>
   <div class="topbar-nav">
     <button class="nav-btn active" onclick="showPage('home')">Soccide</button>
     <button class="nav-btn" onclick="showPage('storico')">Storico</button>
     <button class="nav-btn" onclick="showPage('trasferimenti')">Trasferimenti</button>
+    <button class="nav-btn" onclick="showPage('archivio')">Archivio</button>
   </div>
-  <span class="topbar-date" id="today-date"></span>
 </div>
 
 <!-- HOME -->
@@ -384,6 +394,11 @@
   <div id="soccide-list-container">
     <div class="loading">Caricamento...</div>
   </div>
+</div>
+
+<!-- ARCHIVIO -->
+<div class="page" id="page-archivio">
+  <div id="archivio-content"><div class="loading">Caricamento…</div></div>
 </div>
 
 <!-- INSERIMENTO -->
@@ -644,13 +659,14 @@ function showPage(name, lottoId) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   currentPage = name;
   document.getElementById(`page-${name}`).classList.add('visible');
-  const navMap = {home:'home',storico:'storico',trasferimenti:'trasferimenti'};
+  const navMap = {home:'home',storico:'storico',trasferimenti:'trasferimenti',archivio:'archivio',inserimento:'inserimento'};
   const navName = navMap[name] || name;
   document.querySelectorAll('.nav-btn').forEach(b => {
     if(b.getAttribute('onclick')?.includes(`'${navName}'`)) b.classList.add('active');
   });
   if(name === 'detail' && lottoId) { currentLottoId = lottoId; renderDetail(lottoId); }
   if(name === 'inserimento') initInserimento();
+  if(name === 'archivio') renderArchivio();
   if(name === 'analisi' && lottoId) { currentLottoId = lottoId; renderAnalisi(lottoId); }
   if(name === 'analisi' && !lottoId && currentLottoId) renderAnalisi(currentLottoId);
   if(name === 'stampa' && lottoId) { currentLottoId = lottoId; renderStampa(lottoId); }
@@ -852,6 +868,7 @@ function renderDetail(socId) {
       html += `<div class="empty">Nessuna uscita registrata.</div>`;
     }
     html += `<button onclick="showPage('stampa',${lotto.id})" style="width:100%;padding:8px;background:var(--bg2);color:var(--text2);border:0.5px solid var(--border);border-radius:var(--radius);font-size:11px;font-family:var(--font);cursor:pointer;margin-top:4px;">🖨 Stampa PDF lotto ${lotto.codice}</button>`;
+    html += `<button onclick="archiviaLotto(${lotto.id},'${lotto.codice}')" style="width:100%;padding:8px;background:#FFF;color:var(--text3);border:0.5px solid var(--border);border-radius:var(--radius);font-size:11px;font-family:var(--font);cursor:pointer;margin-top:4px;">📦 Archivia lotto ${lotto.codice} (concludi)</button>`;
     html += `</div>`;
 
     // --- TAB MORTALITA ---
@@ -1726,6 +1743,92 @@ loadAll();
 </div>
 
 <script>
+// ── ARCHIVIO ──
+function renderArchivio() {
+  const lottiArchiviati = allLotti.filter(l => !l.attivo);
+  if(!lottiArchiviati.length) {
+    document.getElementById('archivio-content').innerHTML = '<div class="empty" style="padding:40px 0;text-align:center;color:var(--text3);">Nessun lotto archiviato.</div>';
+    return;
+  }
+
+  // Raggruppa per soccida
+  const bySoc = {};
+  lottiArchiviati.forEach(l => {
+    const soc = allSoccide.find(s => s.id === l.soccida_id);
+    const nome = soc?.nome || '—';
+    if(!bySoc[nome]) bySoc[nome] = [];
+    bySoc[nome].push(l);
+  });
+
+  let html = '';
+  Object.keys(bySoc).sort().forEach(nomeSoc => {
+    const lotti = bySoc[nomeSoc].sort((a,b) => b.data_ingresso.localeCompare(a.data_ingresso));
+    html += `<div style="margin-bottom:20px;">
+      <div style="font-size:13px;font-weight:500;font-family:var(--mono);padding:8px 0;border-bottom:1px solid var(--border);margin-bottom:8px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;">${nomeSoc}</div>`;
+
+    lotti.forEach(lotto => {
+      const uscite = allUscite.filter(u => u.lotto_id === lotto.id).sort((a,b) => a.data_uscita.localeCompare(b.data_uscita));
+      const capiUsciti = uscite.reduce((s,u) => s+(u.capi||0), 0);
+      const totLiq = uscite.reduce((s,u) => s+(u.liquidazione||0), 0);
+      const ggStalla = lotto.data_ingresso && uscite.length
+        ? Math.round((new Date(uscite[uscite.length-1].data_uscita) - new Date(lotto.data_ingresso)) / 86400000) : '—';
+
+      html += `<div style="background:#FFF;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:10px 14px;margin-bottom:6px;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+          <div>
+            <span style="font-size:13px;font-weight:500;font-family:var(--mono);">Lotto ${lotto.codice}</span>
+            ${lotto.lettera_dop ? `<span style="font-size:11px;color:var(--text2);margin-left:6px;">${lotto.lettera_dop}</span>` : ''}
+          </div>
+          <span style="font-size:10px;color:var(--text3);font-family:var(--mono);">${lotto.provenienza || ''}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px;">
+          <div style="text-align:center;">
+            <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">Entrati</div>
+            <div style="font-size:13px;font-weight:500;font-family:var(--mono);">${fmt(lotto.capi_entrati)}</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">Macellati</div>
+            <div style="font-size:13px;font-weight:500;font-family:var(--mono);">${fmt(capiUsciti)}</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">Gg stalla</div>
+            <div style="font-size:13px;font-weight:500;font-family:var(--mono);">${ggStalla}</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">Liquidato</div>
+            <div style="font-size:13px;font-weight:500;font-family:var(--mono);color:var(--green);">${totLiq ? fmt(totLiq)+' €' : '—'}</div>
+          </div>
+        </div>
+        ${uscite.length ? `<div style="font-size:10px;color:var(--text2);font-family:var(--mono);">
+          ${uscite.map(u => `${fmtDate(u.data_uscita)} · ${u.macello||'—'} · ${fmt(u.capi)} capi · ${fmt(u.kg_totali)} kg${u.liquidazione ? ' · '+fmt(u.liquidazione)+' €' : ''}`).join('<br>')}
+        </div>` : ''}
+      </div>`;
+    });
+    html += `</div>`;
+  });
+
+  document.getElementById('archivio-content').innerHTML = html;
+}
+
+// ── ARCHIVIA LOTTO ──
+async function archiviaLotto(lottoId, codice) {
+  if(!confirm(`Archiviare il lotto ${codice}? Verrà impostato come non attivo e non apparirà più in home.`)) return;
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/lotti?id=eq.${lottoId}`, {
+      method: 'PATCH', headers: SB_H,
+      body: JSON.stringify({ attivo: false })
+    });
+    if(!r.ok) throw new Error(await r.text());
+    // Aggiorna dato locale
+    const l = allLotti.find(x => x.id === lottoId);
+    if(l) l.attivo = false;
+    showPage('home');
+    renderHome();
+  } catch(e) {
+    alert('Errore: ' + e.message);
+  }
+}
+
 // ── LIQUIDAZIONE ──
 let _liqUscitaId = null;
 
