@@ -1445,21 +1445,57 @@ loadAll();
       <button onclick="chiudiLiquidazione()" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
     </div>
     <div id="modal-liq-info" style="font-size:11px;color:var(--text2);background:var(--bg2);padding:8px 10px;border-radius:var(--radius);margin-bottom:14px;font-family:var(--mono);"></div>
+
     <div style="display:flex;flex-direction:column;gap:10px;">
-      <div>
-        <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">€/KG</div>
-        <input type="number" step="0.001" id="liq-prezzo" placeholder="es. 1.761" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+
+      <!-- €/kg e totale lordo -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">€/KG</div>
+          <input type="number" step="0.001" id="liq-prezzo" placeholder="es. 1.761"
+            style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+        </div>
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">TOTALE LORDO €</div>
+          <input type="number" step="0.01" id="liq-lordo" placeholder="es. 44500.00"
+            style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+        </div>
       </div>
-      <div>
-        <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">LIQUIDAZIONE TOTALE €</div>
-        <input type="number" step="0.01" id="liq-totale" placeholder="es. 43008.01" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+
+      <!-- Sconti -->
+      <div style="padding:8px 10px;background:var(--bg2);border-radius:var(--radius);border:0.5px solid var(--border);">
+        <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:8px;">Detrazioni</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div>
+            <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">SCONTO PESO €</div>
+            <input type="number" step="0.01" id="liq-sc-peso" placeholder="es. 850.00"
+              oninput="calcolaNettoLiq()"
+              style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+          </div>
+          <div>
+            <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">NON CONFORME €</div>
+            <input type="number" step="0.01" id="liq-sc-merce" placeholder="es. 240.00"
+              oninput="calcolaNettoLiq()"
+              style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+          </div>
+        </div>
       </div>
-      <div>
-        <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">SCONTI € (opzionale)</div>
-        <input type="number" step="0.01" id="liq-sconti" placeholder="es. 1090" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+
+      <!-- Netto calcolato -->
+      <div id="liq-netto-row" style="display:none;padding:10px 12px;background:var(--green-bg);border-radius:var(--radius);font-family:var(--mono);">
+        <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">NETTO LIQUIDAZIONE</div>
+        <div id="liq-netto-val" style="font-size:18px;font-weight:500;color:var(--green);"></div>
       </div>
-      <div id="liq-calc" style="display:none;padding:8px 10px;background:var(--green-bg);border-radius:var(--radius);font-size:12px;color:var(--green);font-family:var(--mono);"></div>
+
+      <!-- Totale netto manuale (se non si calcola) -->
+      <div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">LIQUIDAZIONE NETTA € <span style="color:var(--text3);font-weight:400;">(conferma o inserisci manualmente)</span></div>
+        <input type="number" step="0.01" id="liq-totale" placeholder="es. 43008.01"
+          style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+      </div>
+
     </div>
+
     <button onclick="salvaLiquidazione()" style="width:100%;padding:13px;background:var(--green);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:16px;">
       ✓ Salva liquidazione
     </button>
@@ -1477,22 +1513,21 @@ function apriLiquidazione(uscitaId) {
   const lotto = allLotti.find(l => l.id === u.lotto_id);
   const soc = allSoccide.find(s => s.id === lotto?.soccida_id);
   document.getElementById('modal-liq-info').textContent =
-    `${soc?.nome || '—'} · ${lotto?.codice || '—'} · ${u.data_uscita} · ${u.macello || '—'} · ${u.capi} capi · ${u.kg_totali?.toLocaleString('it-IT')} kg`;
-  ['liq-prezzo','liq-totale','liq-sconti'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('liq-calc').style.display = 'none';
-  const m = document.getElementById('modal-liq');
-  m.style.display = 'flex';
+    `${soc?.nome || '—'} · ${lotto?.codice || '—'} · ${u.data_uscita} · ${u.macello || '—'} · ${u.capi} capi · ${(u.kg_totali||0).toLocaleString('it-IT')} kg`;
+  ['liq-prezzo','liq-lordo','liq-sc-peso','liq-sc-merce','liq-totale'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('liq-netto-row').style.display = 'none';
+  document.getElementById('modal-liq').style.display = 'flex';
+}
 
-  // Calcolo automatico al cambio prezzo
-  document.getElementById('liq-prezzo').oninput = () => {
-    const p = parseFloat(document.getElementById('liq-prezzo').value);
-    if(p && u.kg_totali) {
-      const calc = (p * u.kg_totali).toFixed(2);
-      document.getElementById('liq-totale').value = calc;
-      document.getElementById('liq-calc').textContent = `${p} × ${u.kg_totali?.toLocaleString('it-IT')} kg = ${parseFloat(calc).toLocaleString('it-IT')} €`;
-      document.getElementById('liq-calc').style.display = 'block';
-    }
-  };
+function calcolaNettoLiq() {
+  const lordo = parseFloat(document.getElementById('liq-lordo').value) || 0;
+  const scPeso = parseFloat(document.getElementById('liq-sc-peso').value) || 0;
+  const scMerce = parseFloat(document.getElementById('liq-sc-merce').value) || 0;
+  if(!lordo) { document.getElementById('liq-netto-row').style.display = 'none'; return; }
+  const netto = lordo - scPeso - scMerce;
+  document.getElementById('liq-netto-val').textContent = netto.toLocaleString('it-IT', {minimumFractionDigits:2}) + ' €';
+  document.getElementById('liq-netto-row').style.display = 'block';
+  document.getElementById('liq-totale').value = netto.toFixed(2);
 }
 
 function chiudiLiquidazione() {
@@ -1502,23 +1537,36 @@ function chiudiLiquidazione() {
 
 async function salvaLiquidazione() {
   const prezzo = parseFloat(document.getElementById('liq-prezzo').value) || null;
+  const lordo = parseFloat(document.getElementById('liq-lordo').value) || null;
+  const scPeso = parseFloat(document.getElementById('liq-sc-peso').value) || null;
+  const scMerce = parseFloat(document.getElementById('liq-sc-merce').value) || null;
   const totale = parseFloat(document.getElementById('liq-totale').value) || null;
-  const sconti = parseFloat(document.getElementById('liq-sconti').value) || null;
-  if(!totale) { alert('Inserisci almeno il totale liquidazione'); return; }
+  if(!totale) { alert('Inserisci almeno la liquidazione netta'); return; }
 
   try {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/uscite?id=eq.${_liqUscitaId}`, {
       method: 'PATCH', headers: SB_H,
-      body: JSON.stringify({ prezzo_kg: prezzo, liquidazione: totale, sconti })
+      body: JSON.stringify({
+        prezzo_kg: prezzo,
+        liquidazione_lorda: lordo,
+        sconto_peso: scPeso,
+        sconto_merce: scMerce,
+        liquidazione: totale
+      })
     });
     if(!r.ok) throw new Error(await r.text());
 
     // Aggiorna dati locali
     const u = allUscite.find(x => x.id === _liqUscitaId);
-    if(u) { u.prezzo_kg = prezzo; u.liquidazione = totale; u.sconti = sconti; }
+    if(u) {
+      u.prezzo_kg = prezzo;
+      u.liquidazione_lorda = lordo;
+      u.sconto_peso = scPeso;
+      u.sconto_merce = scMerce;
+      u.liquidazione = totale;
+    }
 
     chiudiLiquidazione();
-    // Ricarica il detail della soccida corrente
     if(currentLottoId) renderDetail(currentLottoId);
   } catch(e) {
     alert('Errore: ' + e.message);
