@@ -721,13 +721,15 @@ function renderSoccidaCard(soc, activeLotti) {
   const totPresenti = lotti.reduce((tot, lotto) => {
     const capiUsciti = allUscite.filter(u => u.lotto_id === lotto.id).reduce((s,u) => s+(u.capi||0), 0);
     const capiMorti = allMortalita.filter(m => m.lotto_id === lotto.id).reduce((s,m) => s+(m.capi_morti||0), 0);
-    return tot + (lotto.capi_entrati||0) - capiUsciti - capiMorti;
+    const capiTrasf = allTrasferimenti.filter(t => t.lotto_id === lotto.id).reduce((s,t) => s+(t.capi||0), 0);
+    return tot + (lotto.capi_entrati||0) - capiUsciti - capiMorti - capiTrasf;
   }, 0);
 
   const lottiAttivi = lotti.filter(lotto => {
     const capiUsciti = allUscite.filter(u => u.lotto_id === lotto.id).reduce((s,u) => s+(u.capi||0), 0);
     const capiMorti = allMortalita.filter(m => m.lotto_id === lotto.id).reduce((s,m) => s+(m.capi_morti||0), 0);
-    return (lotto.capi_entrati||0) - capiUsciti - capiMorti > 0;
+    const capiTrasf = allTrasferimenti.filter(t => t.lotto_id === lotto.id).reduce((s,t) => s+(t.capi||0), 0);
+    return (lotto.capi_entrati||0) - capiUsciti - capiMorti - capiTrasf > 0;
   });
 
   const dot = totPresenti > 50 ? 'dot-green' : totPresenti > 10 ? 'dot-amber' : 'dot-gray';
@@ -767,7 +769,8 @@ function renderDetail(socId) {
     const gg = Math.floor((oggi - ingresso) / 86400000);
     const capiUsciti = uscite.reduce((s,u) => s+(u.capi||0), 0);
     const capiMorti = (allMortalita||[]).filter(m => m.lotto_id === lotto.id).reduce((s,m) => s+(m.capi_morti||0), 0);
-    const presenti = (lotto.capi_entrati||0) - capiUsciti - capiMorti;
+    const trasfUscita = (allTrasferimenti||[]).filter(t => t.lotto_id === lotto.id).reduce((s,t) => s+(t.capi||0), 0);
+    const presenti = (lotto.capi_entrati||0) - capiUsciti - capiMorti - trasfUscita;
     const prevPeso = lotto.media_ingresso && lotto.incremento_giornaliero
       ? Math.round(lotto.media_ingresso + gg * lotto.incremento_giornaliero) : null;
     const totaleLiquidato = uscite.reduce((s,u) => s+(u.liquidazione||0), 0);
@@ -866,6 +869,24 @@ function renderDetail(socId) {
       }
     } else {
       html += `<div class="empty">Nessuna uscita registrata.</div>`;
+    }
+    // Trasferimenti in uscita dal lotto
+    const trasfLotto = (allTrasferimenti||[]).filter(t => t.lotto_id === lotto.id).sort((a,b) => a.data_trasferimento.localeCompare(b.data_trasferimento));
+    if(trasfLotto.length) {
+      html += `<div class="uscite-container" style="margin-bottom:8px;">
+        <div class="uscite-header"><span class="uscite-header-text">Trasferimenti in uscita</span></div>`;
+      trasfLotto.forEach(t => {
+        html += `<div class="uscita-row">
+          <div class="uscita-date">${fmtDate(t.data_trasferimento)} · → ${t.soccida_destinazione || '—'}</div>
+          <div class="uscita-line">
+            <div class="uc"><div class="uc-label">capi</div><div class="uc-val">${fmt(t.capi)}</div></div>
+            <div class="uc"><div class="uc-label">kg</div><div class="uc-val">${fmt(t.kg)}</div></div>
+            <div class="uc"><div class="uc-label">lettera</div><div class="uc-val">${t.lettera_dop || '—'}</div></div>
+            <div class="uc"><div class="uc-label">tipo</div><div class="uc-val">${t.tipo || 'TRASF.'}</div></div>
+          </div>
+        </div>`;
+      });
+      html += `</div>`;
     }
     html += `<button onclick="showPage('stampa',${lotto.id})" style="width:100%;padding:8px;background:var(--bg2);color:var(--text2);border:0.5px solid var(--border);border-radius:var(--radius);font-size:11px;font-family:var(--font);cursor:pointer;margin-top:4px;">🖨 Stampa PDF lotto ${lotto.codice}</button>`;
     html += `<button onclick="archiviaLotto(${lotto.id},'${lotto.codice}')" style="width:100%;padding:8px;background:#FFF;color:var(--text3);border:0.5px solid var(--border);border-radius:var(--radius);font-size:11px;font-family:var(--font);cursor:pointer;margin-top:4px;">📦 Archivia lotto ${lotto.codice} (concludi)</button>`;
