@@ -835,8 +835,8 @@ function renderDetail(socId) {
             <div class="uc"><div class="uc-label">capi</div><div class="uc-val">${fmt(u.capi)}</div></div>
             <div class="uc"><div class="uc-label">kg</div><div class="uc-val">${fmt(u.kg_totali)}</div></div>
             <div class="uc"><div class="uc-label">media</div><div class="uc-val">${u.kg_totali && u.capi ? fmt(u.kg_totali/u.capi,1) : '—'}</div></div>
-            <div class="uc"><div class="uc-label">gg</div><div class="uc-val">${u.giorni_permanenza || (lotto.data_ingresso && u.data_uscita ? Math.round((new Date(u.data_uscita) - new Date(lotto.data_ingresso)) / 86400000) : '—')}</div></div>
-            <div class="uc"><div class="uc-label">incr.</div><div class="uc-val">${(()=>{ const g=u.giorni_permanenza||(lotto.data_ingresso&&u.data_uscita?Math.round((new Date(u.data_uscita)-new Date(lotto.data_ingresso))/86400000):0); return u.incremento?fmt(u.incremento,3):(g&&u.kg_totali&&u.capi&&lotto.media_ingresso?fmt((u.kg_totali/u.capi-lotto.media_ingresso)/g,3):'—'); })()}</div></div>
+            <div class="uc"><div class="uc-label">gg</div><div class="uc-val">${calcGgStr(u, lotto)}</div></div>
+            <div class="uc"><div class="uc-label">incr.</div><div class="uc-val">${calcIncr(u, lotto)}</div></div>
             <div class="uc"><div class="uc-label">liquid.</div><div class="uc-val green">${u.liquidazione ? fmt(u.liquidazione) + ' €' : '—'}</div></div>
           </div>
           ${!u.liquidazione ? `<button onclick="apriLiquidazione(${u.id})" style="margin-top:6px;width:100%;padding:7px;background:var(--amber-bg);color:var(--amber);border:0.5px solid var(--accent2);border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">+ Inserisci liquidazione</button>` : ''}
@@ -1132,8 +1132,8 @@ function renderStampa(lottoId) {
       <td>${fmt(u.capi)}</td>
       <td>${fmt(u.kg_totali)}</td>
       <td>${u.kg_totali && u.capi ? fmt(u.kg_totali/u.capi,1) : '—'}</td>
-      <td>${u.giorni_permanenza || (lotto.data_ingresso && u.data_uscita ? Math.round((new Date(u.data_uscita) - new Date(lotto.data_ingresso)) / 86400000) : '—')}</td>
-      <td>${u.incremento ? fmt(u.incremento,3) : '—'}</td>
+      <td>${calcGgStr(u, lotto)}</td>
+      <td>${calcIncr(u, lotto)}</td>
       <td>${u.liquidazione ? fmt(u.liquidazione)+' €' : '—'}</td>
     </tr>`).join('');
     html += `</tbody></table>`;
@@ -1359,6 +1359,21 @@ function renderIlaria(mese) {
   }
 
   document.getElementById('ilaria-content').innerHTML = html;
+}
+
+// ── HELPERS CALCOLO ──
+function calcGg(dataIngresso, dataUscita) {
+  if(!dataIngresso || !dataUscita) return null;
+  return Math.round((new Date(dataUscita) - new Date(dataIngresso)) / 86400000);
+}
+function calcIncr(u, lotto) {
+  if(u.incremento) return fmt(u.incremento, 3);
+  const gg = u.giorni_permanenza || calcGg(lotto.data_ingresso, u.data_uscita);
+  if(!gg || !u.kg_totali || !u.capi || !lotto.media_ingresso) return '—';
+  return fmt((u.kg_totali / u.capi - lotto.media_ingresso) / gg, 3);
+}
+function calcGgStr(u, lotto) {
+  return u.giorni_permanenza || calcGg(lotto.data_ingresso, u.data_uscita) || '—';
 }
 
 // ── TAB LOTTO ──
