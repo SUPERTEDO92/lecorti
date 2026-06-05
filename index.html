@@ -841,7 +841,7 @@ function renderDetail(socId) {
           <div style="font-size:26px;font-weight:600;color:var(--green);font-family:var(--mono)">${fmt(presenti)}</div>
           <div style="font-size:11px;color:var(--text2)">presenti</div>
         </div>
-        <div onclick="toggleIncrEdit(${lotto.id})" style="background:var(--accent);color:#FFF;border-radius:6px;padding:4px 10px;font-size:12px;font-family:var(--mono);font-weight:500;cursor:pointer;" title="Clicca per modificare">
+        <div onclick="toggleIncrEdit('incr-edit-${lotto.id}')" style="background:var(--accent);color:#FFF;border-radius:6px;padding:4px 10px;font-size:12px;font-family:var(--mono);font-weight:500;cursor:pointer;" title="Clicca per modificare">
           +${lotto.incremento_giornaliero ? lotto.incremento_giornaliero.toFixed(3) : '—'} kg/gg ✎
         </div>
         <div id="incr-edit-${lotto.id}" style="display:none;margin-top:4px;background:#FFF;border:0.5px solid var(--border);border-radius:var(--radius);padding:8px 10px;min-width:160px;">
@@ -849,8 +849,8 @@ function renderDetail(socId) {
           <div style="display:flex;gap:6px;align-items:center;">
             <input type="number" step="0.001" id="incr-val-${lotto.id}" value="${lotto.incremento_giornaliero || ''}" placeholder="es. 0.650"
               style="width:90px;padding:6px 8px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
-            <button onclick="salvaIncr(${lotto.id})" style="padding:6px 10px;background:var(--green);color:#FFF;border:none;border-radius:var(--radius);font-size:12px;font-family:var(--font);font-weight:500;cursor:pointer;">✓</button>
-            <button onclick="toggleIncrEdit(${lotto.id})" style="padding:6px 8px;background:var(--bg2);color:var(--text2);border:0.5px solid var(--border);border-radius:var(--radius);font-size:12px;cursor:pointer;">✕</button>
+            <button onclick="salvaIncr(${lotto.id},'incr-val-${lotto.id}','incr-edit-${lotto.id}')" style="padding:6px 10px;background:var(--green);color:#FFF;border:none;border-radius:var(--radius);font-size:12px;font-family:var(--font);font-weight:500;cursor:pointer;">✓</button>
+            <button onclick="toggleIncrEdit('incr-edit-${lotto.id}')" style="padding:6px 8px;background:var(--bg2);color:var(--text2);border:0.5px solid var(--border);border-radius:var(--radius);font-size:12px;cursor:pointer;">✕</button>
           </div>
         </div>
       </div>
@@ -1975,4 +1975,4 @@ loadAll();
       <div style="font-size:14px;font-weight:500;font-family:var(--mono);">Registra mortalità</div>
       <button onclick="chiudiMortalita()" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
     </div>
-    <div id="modal-mort-info" style="font-size:11px;color:var(--text2);ba
+  
