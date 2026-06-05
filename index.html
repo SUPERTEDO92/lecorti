@@ -561,20 +561,19 @@
             <input type="number" id="t-kg" placeholder="es. 12390" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <div>
-            <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">LETTERA DOP</div>
-            <input type="text" id="t-lettera" placeholder="es. B" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
-          </div>
-          <div>
-            <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">INCR. KG/GG</div>
-            <input type="number" step="0.001" id="acq-incr" placeholder="es. 0.650" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
-          </div>
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">LETTERA DOP</div>
+          <input type="text" id="t-lettera" placeholder="es. B" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
         </div>
-        <!-- Prezzo acquisto — solo ACQUISTO -->
+        <!-- Incr solo TRASFERIMENTO -->
+        <div id="incr-block">
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">INCR. KG/GG</div>
+          <input type="number" step="0.001" id="acq-incr" placeholder="es. 0.650" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+        </div>
+        <!-- Costo totale — solo ACQUISTO -->
         <div id="acq-prezzo-block" style="display:none;">
-          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">PREZZO ACQUISTO €/KG</div>
-          <input type="number" step="0.001" id="acq-prezzo" placeholder="es. 1.420" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">COSTO TOTALE € <span style="font-weight:400;color:var(--text3)">(opzionale, inseribile dopo)</span></div>
+          <input type="number" step="0.01" id="acq-prezzo" placeholder="es. 18500.00" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
         </div>
       </div>
     </div>
@@ -908,7 +907,7 @@ function renderDetail(socId) {
             <div class="uc"><div class="uc-label">incr.</div><div class="uc-val">${calcIncr(u, lotto)}</div></div>
             <div class="uc"><div class="uc-label">liquid.</div><div class="uc-val green">${u.liquidazione ? fmt(u.liquidazione) + ' €' : '—'}</div></div>
           </div>
-          ${!u.liquidazione ? `<button onclick="apriLiquidazione(${u.id})" style="margin-top:6px;width:100%;padding:7px;background:var(--amber-bg);color:var(--amber);border:0.5px solid var(--accent2);border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">+ Inserisci liquidazione</button>` : ''}
+
         </div>`).join('');
       html += `</div>`;
       if(totaleLiquidato > 0) {
@@ -1069,9 +1068,10 @@ function renderStoricoList() {
       const soc = allLotti.find(l => l.id === u.lotto_id);
       const socNome = soc ? (allSoccide.find(s => s.id === soc.soccida_id)?.nome || '—') : u.soccida_nome || '—';
       const media = u.kg_totali && u.capi ? fmt(u.kg_totali/u.capi,1) : '—';
+      const lotto = allLotti.find(l => l.id === u.lotto_id);
       return `<div class="storico-row">
         <div class="storico-top">
-          <span class="storico-soccida">${fmtDate(u.data_uscita)} · ${socNome}</span>
+          <span class="storico-soccida">${fmtDate(u.data_uscita)} · ${socNome}${lotto ? ' · ' + lotto.codice : ''}</span>
           <span class="storico-macello">${u.macello || '—'}</span>
         </div>
         <div class="storico-line">
@@ -1081,6 +1081,7 @@ function renderStoricoList() {
           <div class="sc"><div class="sc-label">€/kg</div><div class="sc-val">${u.prezzo_kg ? fmt(u.prezzo_kg,3) : '—'}</div></div>
           <div class="sc"><div class="sc-label">liquid.</div><div class="sc-val green">${u.liquidazione ? fmt(u.liquidazione) + ' €' : '—'}</div></div>
         </div>
+        ${!u.liquidazione ? `<button onclick="apriLiquidazione(${u.id})" style="margin-top:6px;width:100%;padding:7px;background:var(--amber-bg);color:var(--amber);border:0.5px solid #F0DC8A;border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">+ Inserisci liquidazione</button>` : ''}
       </div>`;
     }).join('');
   });
@@ -1090,35 +1091,88 @@ function renderStoricoList() {
 // TRASFERIMENTI
 function renderTrasferimenti() {
   if(!allTrasferimenti.length) {
-    document.getElementById('trasf-list').innerHTML = `<div class="empty">Nessun trasferimento registrato.</div>`;
+    document.getElementById('trasf-list').innerHTML = `<div class="empty">Nessun movimento registrato.</div>`;
     return;
   }
+
+  // Lista cronologica unica ordinata per data decrescente
+  const lista = [...allTrasferimenti]
+    .filter(t => t.data_trasferimento)
+    .sort((a,b) => b.data_trasferimento.localeCompare(a.data_trasferimento));
+
   const byMonth = {};
-  allTrasferimenti.filter(t => t.data_trasferimento).forEach(t => {
+  lista.forEach(t => {
     const m = t.data_trasferimento.substring(0,7);
     if(!byMonth[m]) byMonth[m] = [];
     byMonth[m].push(t);
   });
+
   let html = '';
   Object.keys(byMonth).sort().reverse().forEach(m => {
     const [y,mo] = m.split('-');
     const mn = ['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'][parseInt(mo)];
     html += `<div class="month-sep"><span class="month-sep-text">${mn} ${y}</span></div>`;
-    html += byMonth[m].map(t => `
-      <div class="trasfrow">
+    html += byMonth[m].map(t => {
+      const isAcq = t.tipo === 'ACQUISTO';
+      const lotto = allLotti.find(l => l.id === t.lotto_id);
+      const badgeStyle = isAcq
+        ? 'background:#EBF5EF;color:#2A7A4B;border:0.5px solid #B8DECA;'
+        : 'background:#EEF2FB;color:#3A5AA0;border:0.5px solid #C0CFF0;';
+
+      return `<div class="trasfrow">
         <div class="trasf-top">
-          <span class="trasf-da">${fmtDate(t.data_trasferimento)} · ${t.soccida_partenza}</span>
-          <span class="trasf-a">→ ${t.soccida_destinazione}</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span class="trasf-da">${fmtDate(t.data_trasferimento)} · ${t.soccida_partenza}</span>
+            <span style="font-size:11px;color:var(--text2)">→ ${t.soccida_destinazione}</span>
+          </div>
+          <span style="font-size:10px;font-family:var(--mono);font-weight:500;padding:2px 8px;border-radius:10px;${badgeStyle}">${t.tipo || 'TRASF.'}</span>
         </div>
         <div class="trasf-line">
-          <div class="tc"><div class="tc-label">lotto</div><div class="tc-val">${t.lotto_codice || '—'}</div></div>
+          <div class="tc"><div class="tc-label">lotto</div><div class="tc-val">${lotto?.codice || '—'}</div></div>
           <div class="tc"><div class="tc-label">capi</div><div class="tc-val">${fmt(t.capi)}</div></div>
           <div class="tc"><div class="tc-label">kg</div><div class="tc-val">${t.kg ? fmt(t.kg) : '—'}</div></div>
           <div class="tc"><div class="tc-label">lettera</div><div class="tc-val">${t.lettera_dop || '—'}</div></div>
+          ${isAcq ? `<div class="tc"><div class="tc-label">costo</div><div class="tc-val ${t.costo_acquisto ? 'green' : ''}">${t.costo_acquisto ? fmt(t.costo_acquisto)+' €' : '—'}</div></div>` : ''}
         </div>
-      </div>`).join('');
+        ${isAcq && !t.costo_acquisto ? `<button onclick="apriCostoAcquisto(${t.id})" style="margin-top:6px;width:100%;padding:7px;background:var(--amber-bg);color:var(--amber);border:0.5px solid #F0DC8A;border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">+ Inserisci costo acquisto</button>` : ''}
+      </div>`;
+    }).join('');
   });
+
   document.getElementById('trasf-list').innerHTML = html;
+}
+
+// ── COSTO ACQUISTO ──
+let _costoTrId = null;
+function apriCostoAcquisto(trId) {
+  _costoTrId = trId;
+  const t = allTrasferimenti.find(x => x.id === trId);
+  const lotto = allLotti.find(l => l.id === t?.lotto_id);
+  document.getElementById('modal-costo-info').textContent =
+    `${t?.soccida_destinazione || '—'} · Lotto ${lotto?.codice || '—'} · ${t?.capi} capi · ${fmtDate(t?.data_trasferimento)}`;
+  document.getElementById('costo-val').value = '';
+  document.getElementById('modal-costo').style.display = 'flex';
+}
+function chiudiCostoAcquisto() {
+  document.getElementById('modal-costo').style.display = 'none';
+  _costoTrId = null;
+}
+async function salvaCostoAcquisto() {
+  const costo = parseFloat(document.getElementById('costo-val').value);
+  if(!costo) { alert('Inserisci il costo totale'); return; }
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/trasferimenti?id=eq.${_costoTrId}`, {
+      method: 'PATCH', headers: SB_H,
+      body: JSON.stringify({ costo_acquisto: costo })
+    });
+    if(!r.ok) throw new Error(await r.text());
+    const t = allTrasferimenti.find(x => x.id === _costoTrId);
+    if(t) t.costo_acquisto = costo;
+    chiudiCostoAcquisto();
+    renderTrasferimenti();
+  } catch(e) {
+    alert('Errore: ' + e.message);
+  }
 }
 
 // ── ANALISI E REFERTI IZS ──
@@ -1538,6 +1592,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('modal-mort')?.addEventListener('click', function(e) {
     if(e.target === this) chiudiMortalita();
   });
+  document.getElementById('modal-costo')?.addEventListener('click', function(e) {
+    if(e.target === this) chiudiCostoAcquisto();
+  });
 });
 
 // ── INSERIMENTO DATI ──
@@ -1605,6 +1662,7 @@ function setTipoTrasf(tipo) {
   document.getElementById('trasf-partenza-block').style.display = isTrasf ? 'block' : 'none';
   document.getElementById('acq-fornitore-block').style.display = isTrasf ? 'none' : 'block';
   document.getElementById('acq-prezzo-block').style.display = isTrasf ? 'none' : 'block';
+  document.getElementById('incr-block').style.display = isTrasf ? 'block' : 'none';
   document.getElementById('trasf-dati-label').textContent = isTrasf ? 'Dati trasferimento' : 'Dati acquisto';
   document.getElementById('trasf-submit-btn').textContent = isTrasf ? '✓ Inserisci trasferimento' : '✓ Inserisci acquisto';
 }
@@ -1783,6 +1841,25 @@ async function inserisciTrasf() {
 // Start
 loadAll();
 </script>
+<!-- MODALE COSTO ACQUISTO -->
+<div id="modal-costo" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center;">
+  <div style="background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-size:14px;font-weight:500;font-family:var(--mono);">Costo acquisto</div>
+      <button onclick="chiudiCostoAcquisto()" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
+    </div>
+    <div id="modal-costo-info" style="font-size:11px;color:var(--text2);background:var(--bg2);padding:8px 10px;border-radius:var(--radius);margin-bottom:14px;font-family:var(--mono);"></div>
+    <div>
+      <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">COSTO TOTALE FATTURA €</div>
+      <input type="number" step="0.01" id="costo-val" placeholder="es. 18500.00"
+        style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+    </div>
+    <button onclick="salvaCostoAcquisto()" style="width:100%;padding:13px;background:var(--green);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:16px;">
+      ✓ Salva costo
+    </button>
+  </div>
+</div>
+
 <!-- MODALE MORTALITÀ -->
 <div id="modal-mort" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center;">
   <div style="background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;">
@@ -1869,75 +1946,4 @@ loadAll();
 
       <!-- Totale netto manuale (se non si calcola) -->
       <div>
-        <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">LIQUIDAZIONE NETTA € <span style="color:var(--text3);font-weight:400;">(conferma o inserisci manualmente)</span></div>
-        <input type="number" step="0.01" id="liq-totale" placeholder="es. 43008.01"
-          style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
-      </div>
-
-    </div>
-
-    <button onclick="salvaLiquidazione()" style="width:100%;padding:13px;background:var(--green);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:16px;">
-      ✓ Salva liquidazione
-    </button>
-  </div>
-</div>
-
-<script>
-// ── ARCHIVIO ──
-function renderArchivio() {
-  const lottiArchiviati = allLotti.filter(l => !l.attivo);
-  if(!lottiArchiviati.length) {
-    document.getElementById('archivio-content').innerHTML = '<div class="empty" style="padding:40px 0;text-align:center;color:var(--text3);">Nessun lotto archiviato.</div>';
-    return;
-  }
-
-  // Raggruppa per soccida
-  const bySoc = {};
-  lottiArchiviati.forEach(l => {
-    const soc = allSoccide.find(s => s.id === l.soccida_id);
-    const nome = soc?.nome || '—';
-    if(!bySoc[nome]) bySoc[nome] = [];
-    bySoc[nome].push(l);
-  });
-
-  let html = '';
-  Object.keys(bySoc).sort().forEach(nomeSoc => {
-    const lotti = bySoc[nomeSoc].sort((a,b) => b.data_ingresso.localeCompare(a.data_ingresso));
-    html += `<div style="margin-bottom:20px;">
-      <div style="font-size:13px;font-weight:500;font-family:var(--mono);padding:8px 0;border-bottom:1px solid var(--border);margin-bottom:8px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;">${nomeSoc}</div>`;
-
-    lotti.forEach(lotto => {
-      const uscite = allUscite.filter(u => u.lotto_id === lotto.id).sort((a,b) => a.data_uscita.localeCompare(b.data_uscita));
-      const capiUsciti = uscite.reduce((s,u) => s+(u.capi||0), 0);
-      const totLiq = uscite.reduce((s,u) => s+(u.liquidazione||0), 0);
-      const ggStalla = lotto.data_ingresso && uscite.length
-        ? Math.round((new Date(uscite[uscite.length-1].data_uscita) - new Date(lotto.data_ingresso)) / 86400000) : '—';
-
-      html += `<div style="background:#FFF;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:10px 14px;margin-bottom:6px;">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
-          <div>
-            <span style="font-size:13px;font-weight:500;font-family:var(--mono);">Lotto ${lotto.codice}</span>
-            ${lotto.lettera_dop ? `<span style="font-size:11px;color:var(--text2);margin-left:6px;">${lotto.lettera_dop}</span>` : ''}
-          </div>
-          <span style="font-size:10px;color:var(--text3);font-family:var(--mono);">${lotto.provenienza || ''}</span>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px;">
-          <div style="text-align:center;">
-            <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">Entrati</div>
-            <div style="font-size:13px;font-weight:500;font-family:var(--mono);">${fmt(lotto.capi_entrati)}</div>
-          </div>
-          <div style="text-align:center;">
-            <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">Macellati</div>
-            <div style="font-size:13px;font-weight:500;font-family:var(--mono);">${fmt(capiUsciti)}</div>
-          </div>
-          <div style="text-align:center;">
-            <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">Gg stalla</div>
-            <div style="font-size:13px;font-weight:500;font-family:var(--mono);">${ggStalla}</div>
-          </div>
-          <div style="text-align:center;">
-            <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">Liquidato</div>
-            <div style="font-size:13px;font-weight:500;font-family:var(--mono);color:var(--green);">${totLiq ? fmt(totLiq)+' €' : '—'}</div>
-          </div>
-        </div>
-        ${uscite.length ? `<div style="font-size:10px;color:var(--text2);font-family:var(--mono);">
-          ${uscite.map(u => `${fmtDate(u.data_uscita)} · ${u.macello||'—'} · ${fmt(u.capi)} capi · ${fmt(u.kg_totali)} kg${u.liquidazione ? ' · '+fmt(u.liquidazione)+' €' : ''}`).jo
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">LIQUIDAZIONE NETTA € <span style="col
