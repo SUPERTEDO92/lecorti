@@ -776,14 +776,14 @@ function renderSoccidaCard(soc, activeLotti) {
   const totPresenti = lotti.reduce((tot, lotto) => {
     const capiUsciti = allUscite.filter(u => u.lotto_id === lotto.id).reduce((s,u) => s+(u.capi||0), 0);
     const capiMorti = allMortalita.filter(m => m.lotto_id === lotto.id).reduce((s,m) => s+(m.capi_morti||0), 0);
-    const capiTrasf = allTrasferimenti.filter(t => t.lotto_id === lotto.id).reduce((s,t) => s+(t.capi||0), 0);
+    const capiTrasf = allTrasferimenti.filter(t => t.lotto_id === lotto.id && t.tipo !== 'ACQUISTO').reduce((s,t) => s+(t.capi||0), 0);
     return tot + (lotto.capi_entrati||0) - capiUsciti - capiMorti - capiTrasf;
   }, 0);
 
   const lottiAttivi = lotti.filter(lotto => {
     const capiUsciti = allUscite.filter(u => u.lotto_id === lotto.id).reduce((s,u) => s+(u.capi||0), 0);
     const capiMorti = allMortalita.filter(m => m.lotto_id === lotto.id).reduce((s,m) => s+(m.capi_morti||0), 0);
-    const capiTrasf = allTrasferimenti.filter(t => t.lotto_id === lotto.id).reduce((s,t) => s+(t.capi||0), 0);
+    const capiTrasf = allTrasferimenti.filter(t => t.lotto_id === lotto.id && t.tipo !== 'ACQUISTO').reduce((s,t) => s+(t.capi||0), 0);
     return (lotto.capi_entrati||0) - capiUsciti - capiMorti - capiTrasf > 0;
   });
 
@@ -824,7 +824,7 @@ function renderDetail(socId) {
     const gg = Math.floor((oggi - ingresso) / 86400000);
     const capiUsciti = uscite.reduce((s,u) => s+(u.capi||0), 0);
     const capiMorti = (allMortalita||[]).filter(m => m.lotto_id === lotto.id).reduce((s,m) => s+(m.capi_morti||0), 0);
-    const trasfUscita = (allTrasferimenti||[]).filter(t => t.lotto_id === lotto.id).reduce((s,t) => s+(t.capi||0), 0);
+    const trasfUscita = (allTrasferimenti||[]).filter(t => t.lotto_id === lotto.id && t.tipo !== 'ACQUISTO').reduce((s,t) => s+(t.capi||0), 0);
     const presenti = (lotto.capi_entrati||0) - capiUsciti - capiMorti - trasfUscita;
     const prevPeso = lotto.media_ingresso && lotto.incremento_giornaliero
       ? Math.round(lotto.media_ingresso + gg * lotto.incremento_giornaliero) : null;
@@ -926,7 +926,7 @@ function renderDetail(socId) {
       html += `<div class="empty">Nessuna uscita registrata.</div>`;
     }
     // Trasferimenti in uscita dal lotto
-    const trasfLotto = (allTrasferimenti||[]).filter(t => t.lotto_id === lotto.id).sort((a,b) => a.data_trasferimento.localeCompare(b.data_trasferimento));
+    const trasfLotto = (allTrasferimenti||[]).filter(t => t.lotto_id === lotto.id && t.tipo !== 'ACQUISTO').sort((a,b) => a.data_trasferimento.localeCompare(b.data_trasferimento));
     if(trasfLotto.length) {
       html += `<div class="uscite-container" style="margin-bottom:8px;">
         <div class="uscite-header"><span class="uscite-header-text">Trasferimenti in uscita</span></div>`;
@@ -1982,5 +1982,4 @@ loadAll();
         <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">TRATTAMENTO (opzionale)</div>
         <input type="text" id="mort-trattamento" placeholder="es. AMO, STR, FLO..." style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
       </div>
-      <div>
-        <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">
+      <div
