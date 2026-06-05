@@ -840,10 +840,10 @@ function renderDetail(socId) {
         <div style="font-size:26px;font-weight:600;color:var(--green);font-family:var(--mono)">${fmt(presenti)}</div>
         <div style="font-size:11px;color:var(--text2)">presenti</div>
       </div>
-    </div>
-    <button onclick="apriModaleIncr(${lotto.id},${lotto.incremento_giornaliero||0})" style="width:100%;margin-bottom:8px;padding:8px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius);font-size:12px;font-family:var(--mono);font-weight:500;cursor:pointer;text-align:left;">
+    </div>`;
+    html += `<button onclick="apriModaleIncr(${lotto.id},${lotto.incremento_giornaliero||0})" style="width:100%;margin-bottom:8px;padding:8px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius);font-size:12px;font-family:var(--mono);font-weight:500;cursor:pointer;text-align:left;">
       Incremento: +${lotto.incremento_giornaliero ? lotto.incremento_giornaliero.toFixed(3) : '—'} kg/gg &nbsp;✎ modifica
-    </button>\``;
+    </button>`;
 
     // Stat grid lotto
     html += `<div class="stat-grid" style="margin-bottom:10px;grid-template-columns:repeat(3,1fr);">
@@ -1978,5 +1978,4 @@ loadAll();
         style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:16px;font-family:var(--mono);background:var(--bg);">
     </div>
     <button id="incr-modal-save" style="width:100%;padding:13px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:16px;">
-      ✓ Salva incremento
-    </b
+      ✓ Salva increment
