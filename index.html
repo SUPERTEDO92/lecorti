@@ -841,9 +841,9 @@ function renderDetail(socId) {
         <div style="font-size:11px;color:var(--text2)">presenti</div>
       </div>
     </div>`;
-    html += `<div data-incr-btn="${lotto.id}" data-incr-val="${lotto.incremento_giornaliero||0}" style="width:100%;margin-bottom:8px;padding:8px;background:var(--accent);color:#FFF;border-radius:var(--radius);font-size:12px;font-family:var(--mono);font-weight:500;cursor:pointer;text-align:left;">
+    html += `<button data-incr-btn="${lotto.id}" data-incr-val="${lotto.incremento_giornaliero||0}" style="width:100%;margin-bottom:8px;padding:8px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius);font-size:12px;font-family:var(--mono);font-weight:500;cursor:pointer;text-align:left;display:block;">
       Incremento: +${lotto.incremento_giornaliero ? lotto.incremento_giornaliero.toFixed(3) : '—'} kg/gg &nbsp;✎ modifica
-    </div>`;
+    </button>`;
 
     // Stat grid lotto
     html += `<div class="stat-grid" style="margin-bottom:10px;grid-template-columns:repeat(3,1fr);">
@@ -1985,4 +1985,4 @@ loadAll();
     <div>
       <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">INCREMENTO KG/GG</div>
       <input type="number" step="0.001" id="modal-incr-val" placeholder="es. 0.650"
-        style="width:100%;padding
+ 
