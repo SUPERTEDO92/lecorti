@@ -570,11 +570,7 @@
           <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">INCR. KG/GG</div>
           <input type="number" step="0.001" id="acq-incr" placeholder="es. 0.650" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
         </div>
-        <!-- Costo totale — solo ACQUISTO -->
-        <div id="acq-prezzo-block" style="display:none;">
-          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">COSTO TOTALE € <span style="font-weight:400;color:var(--text3)">(opzionale, inseribile dopo)</span></div>
-          <input type="number" step="0.01" id="acq-prezzo" placeholder="es. 18500.00" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
-        </div>
+        <div id="acq-prezzo-block" style="display:none;"></div>
       </div>
     </div>
 
@@ -615,6 +611,15 @@
 
 <!-- TRASFERIMENTI -->
 <div class="page" id="page-trasferimenti">
+  <div class="ilaria-bar">
+    <div class="ilaria-label">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 7h12M8 12h12M8 17h12M3 7h.01M3 12h.01M3 17h.01"/></svg>
+      Movimenti
+    </div>
+    <div class="ilaria-right">
+      <button class="btn-ilaria" onclick="stampaTrasferimenti()">Stampa →</button>
+    </div>
+  </div>
   <div class="storico-container" id="trasf-list">
     <div class="loading">Caricamento...</div>
   </div>
@@ -1089,6 +1094,78 @@ function renderStoricoList() {
 }
 
 // TRASFERIMENTI
+function stampaTrasferimenti() {
+  const lista = [...allTrasferimenti]
+    .filter(t => t.data_trasferimento)
+    .sort((a,b) => b.data_trasferimento.localeCompare(a.data_trasferimento));
+
+  const nomiMese = ['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+  const byMonth = {};
+  lista.forEach(t => {
+    const m = t.data_trasferimento.substring(0,7);
+    if(!byMonth[m]) byMonth[m] = [];
+    byMonth[m].push(t);
+  });
+
+  let html = `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8">
+  <title>Le Corti — Movimenti</title>
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:-apple-system,Arial,sans-serif; font-size:11px; color:#1A1A18; padding:20px 24px; }
+    h1 { font-size:16px; font-weight:600; margin-bottom:4px; }
+    .sub { font-size:10px; color:#666; margin-bottom:20px; }
+    .month { font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:#555; border-bottom:1.5px solid #1A1A18; padding-bottom:3px; margin:18px 0 8px; }
+    table { width:100%; border-collapse:collapse; }
+    th { font-size:9px; text-transform:uppercase; letter-spacing:.07em; color:#888; text-align:left; padding:4px 6px; border-bottom:0.5px solid #D8D4CB; }
+    td { padding:5px 6px; border-bottom:0.5px solid #EDEAE3; vertical-align:top; }
+    td.num { text-align:right; font-family:'Courier New',monospace; }
+    td.green { color:#2A7A4B; font-weight:500; }
+    td.pending { color:#997700; font-style:italic; }
+    .badge { display:inline-block; font-size:9px; font-weight:600; padding:1px 6px; border-radius:8px; }
+    .badge-acq { background:#EBF5EF; color:#2A7A4B; }
+    .badge-trasf { background:#EEF2FB; color:#3A5AA0; }
+    @media print { @page { margin:1.5cm; } }
+  </style></head><body>
+  <h1>Soc. Agr. Le Corti Srl — Movimenti</h1>
+  <div class="sub">Stampato il ${new Date().toLocaleDateString('it-IT')} · Acquisti e trasferimenti</div>`;
+
+  Object.keys(byMonth).sort().reverse().forEach(m => {
+    const [y,mo] = m.split('-');
+    html += `<div class="month">${nomiMese[parseInt(mo)]} ${y}</div>
+    <table><thead><tr>
+      <th>Data</th><th>Tipo</th><th>Da</th><th>A</th><th>Lotto</th>
+      <th style="text-align:right">Capi</th><th style="text-align:right">Kg</th>
+      <th style="text-align:right">Media</th><th>Lettera</th><th style="text-align:right">Costo €</th>
+    </tr></thead><tbody>`;
+    byMonth[m].forEach(t => {
+      const lotto = allLotti.find(l => l.id === t.lotto_id);
+      const isAcq = t.tipo === 'ACQUISTO';
+      const media = t.kg && t.capi ? (t.kg/t.capi).toFixed(1) : '—';
+      const [yy,mm,gg] = t.data_trasferimento.split('-');
+      html += `<tr>
+        <td>${gg}/${mm}/${yy}</td>
+        <td><span class="badge ${isAcq ? 'badge-acq' : 'badge-trasf'}">${t.tipo||'TRASF.'}</span></td>
+        <td>${t.soccida_partenza||'—'}</td>
+        <td>${t.soccida_destinazione||'—'}</td>
+        <td style="font-family:'Courier New',monospace">${lotto?.codice||'—'}</td>
+        <td class="num">${(t.capi||0).toLocaleString('it-IT')}</td>
+        <td class="num">${t.kg ? t.kg.toLocaleString('it-IT') : '—'}</td>
+        <td class="num">${media}</td>
+        <td>${t.lettera_dop||'—'}</td>
+        <td class="num ${t.costo_acquisto ? 'green' : 'pending'}">${t.costo_acquisto ? t.costo_acquisto.toLocaleString('it-IT',{minimumFractionDigits:2})+' €' : (isAcq ? 'da inserire' : '—')}</td>
+      </tr>`;
+    });
+    html += `</tbody></table>`;
+  });
+
+  html += `</body></html>`;
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 500);
+}
+
 function renderTrasferimenti() {
   if(!allTrasferimenti.length) {
     document.getElementById('trasf-list').innerHTML = `<div class="empty">Nessun movimento registrato.</div>`;
@@ -1661,7 +1738,7 @@ function setTipoTrasf(tipo) {
   // Mostra/nascondi blocchi
   document.getElementById('trasf-partenza-block').style.display = isTrasf ? 'block' : 'none';
   document.getElementById('acq-fornitore-block').style.display = isTrasf ? 'none' : 'block';
-  document.getElementById('acq-prezzo-block').style.display = isTrasf ? 'none' : 'block';
+  // acq-prezzo-block non usato nel form
   document.getElementById('incr-block').style.display = isTrasf ? 'block' : 'none';
   document.getElementById('trasf-dati-label').textContent = isTrasf ? 'Dati trasferimento' : 'Dati acquisto';
   document.getElementById('trasf-submit-btn').textContent = isTrasf ? '✓ Inserisci trasferimento' : '✓ Inserisci acquisto';
@@ -1808,7 +1885,7 @@ async function inserisciTrasf() {
           data_ingresso: data, capi_entrati: capi,
           kg_totali_ingresso: kg, media_ingresso: media,
           lettera_dop: lettera, incremento_giornaliero: incr,
-          prezzo_acquisto: prezzo, attivo: true
+ attivo: true
         })
       });
       if(!rL.ok) throw new Error(await rL.text());
@@ -1830,7 +1907,7 @@ async function inserisciTrasf() {
       }
       renderHome();
       toastIns(`✓ Acquisto inserito — ${capi} capi da ${fornitore} → ${dest} · Lotto ${codice}`, true);
-      ['t-capi','t-kg','t-lettera','acq-incr','acq-codice','acq-prezzo'].forEach(id => document.getElementById(id).value = '');
+      ['t-capi','t-kg','t-lettera','acq-incr','acq-codice'].forEach(id => document.getElementById(id).value = '');
       document.getElementById('acq-fornitore').value = '';
     } catch(e) {
       toastIns('Errore: ' + e.message, false);
@@ -1897,53 +1974,4 @@ loadAll();
 <!-- MODALE LIQUIDAZIONE -->
 <div id="modal-liq" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center;">
   <div style="background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <div style="font-size:14px;font-weight:500;font-family:var(--mono);">Inserisci liquidazione</div>
-      <button onclick="chiudiLiquidazione()" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
-    </div>
-    <div id="modal-liq-info" style="font-size:11px;color:var(--text2);background:var(--bg2);padding:8px 10px;border-radius:var(--radius);margin-bottom:14px;font-family:var(--mono);"></div>
-
-    <div style="display:flex;flex-direction:column;gap:10px;">
-
-      <!-- €/kg e totale lordo -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <div>
-          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">€/KG</div>
-          <input type="number" step="0.001" id="liq-prezzo" placeholder="es. 1.761"
-            style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
-        </div>
-        <div>
-          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">TOTALE LORDO €</div>
-          <input type="number" step="0.01" id="liq-lordo" placeholder="es. 44500.00"
-            style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
-        </div>
-      </div>
-
-      <!-- Sconti -->
-      <div style="padding:8px 10px;background:var(--bg2);border-radius:var(--radius);border:0.5px solid var(--border);">
-        <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:8px;">Detrazioni</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <div>
-            <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">SCONTO PESO €</div>
-            <input type="number" step="0.01" id="liq-sc-peso" placeholder="es. 850.00"
-              oninput="calcolaNettoLiq()"
-              style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
-          </div>
-          <div>
-            <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">NON CONFORME €</div>
-            <input type="number" step="0.01" id="liq-sc-merce" placeholder="es. 240.00"
-              oninput="calcolaNettoLiq()"
-              style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
-          </div>
-        </div>
-      </div>
-
-      <!-- Netto calcolato -->
-      <div id="liq-netto-row" style="display:none;padding:10px 12px;background:var(--green-bg);border-radius:var(--radius);font-family:var(--mono);">
-        <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">NETTO LIQUIDAZIONE</div>
-        <div id="liq-netto-val" style="font-size:18px;font-weight:500;color:var(--green);"></div>
-      </div>
-
-      <!-- Totale netto manuale (se non si calcola) -->
-      <div>
-        <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">LIQUIDAZIONE NETTA € <span style="col
+    <div style
