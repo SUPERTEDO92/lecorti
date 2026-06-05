@@ -1894,7 +1894,6 @@ async function inserisciTrasf() {
   } else {
     const fornitore = document.getElementById('acq-fornitore').value;
     const codice = document.getElementById('acq-codice').value;
-    const prezzo = parseFloat(document.getElementById('acq-prezzo').value) || null;
     const socDest = allSoccide.find(s => s.nome === dest);
     if(!fornitore || !codice || !data || !capi || !dest || !socDest) {
       toastIns('Compila tutti i campi: fornitore, codice lotto, data, soccida, capi', false); return;
@@ -1984,4 +1983,4 @@ loadAll();
         <input type="text" id="mort-trattamento" placeholder="es. AMO, STR, FLO..." style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
       </div>
       <div>
-        <div s
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">
