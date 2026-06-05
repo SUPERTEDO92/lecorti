@@ -841,18 +841,9 @@ function renderDetail(socId) {
         <div style="font-size:11px;color:var(--text2)">presenti</div>
       </div>
     </div>
-    <button onclick="document.getElementById('incr-edit-'+${lotto.id}).style.display='block'" style="width:100%;margin-bottom:8px;padding:8px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius);font-size:12px;font-family:var(--mono);font-weight:500;cursor:pointer;text-align:left;">
+    <button onclick="apriModaleIncr(${lotto.id},${lotto.incremento_giornaliero||0})" style="width:100%;margin-bottom:8px;padding:8px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius);font-size:12px;font-family:var(--mono);font-weight:500;cursor:pointer;text-align:left;">
       Incremento: +${lotto.incremento_giornaliero ? lotto.incremento_giornaliero.toFixed(3) : '—'} kg/gg &nbsp;✎ modifica
-    </button>
-    <div id="incr-edit-${lotto.id}" style="display:none;background:#FFF;border:0.5px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:8px;">
-      <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:6px;">NUOVO INCREMENTO KG/GG</div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <input type="number" step="0.001" id="incr-val-${lotto.id}" value="${lotto.incremento_giornaliero || ''}" placeholder="es. 0.650"
-          style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:14px;font-family:var(--mono);background:var(--bg);">
-        <button onclick="salvaIncr(${lotto.id})" style="padding:9px 14px;background:var(--green);color:#FFF;border:none;border-radius:var(--radius);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;">✓ Salva</button>
-        <button onclick="document.getElementById('incr-edit-'+${lotto.id}).style.display='none'" style="padding:9px 10px;background:var(--bg2);color:var(--text2);border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;cursor:pointer;">✕</button>
-      </div>
-    </div>\``;
+    </button>\``;
 
     // Stat grid lotto
     html += `<div class="stat-grid" style="margin-bottom:10px;grid-template-columns:repeat(3,1fr);">
@@ -1702,6 +1693,13 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('modal-costo')?.addEventListener('click', function(e) {
     if(e.target === this) chiudiCostoAcquisto();
   });
+  document.getElementById('modal-incr')?.addEventListener('click', function(e) {
+    if(e.target === this) document.getElementById('modal-incr').style.display = 'none';
+  });
+  document.getElementById('incr-modal-close')?.addEventListener('click', function() {
+    document.getElementById('modal-incr').style.display = 'none';
+  });
+  document.getElementById('incr-modal-save')?.addEventListener('click', salvaIncr);
 });
 
 // ── INSERIMENTO DATI ──
@@ -1966,11 +1964,19 @@ loadAll();
   </div>
 </div>
 
-<!-- MODALE MORTALITÀ -->
-<div id="modal-mort" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center;">
+<!-- MODALE INCREMENTO -->
+<div id="modal-incr" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center;">
   <div style="background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-      <div style="font-size:14px;font-weight:500;font-family:var(--mono);">Registra mortalità</div>
-      <button onclick="chiudiMortalita()" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
+      <div style="font-size:14px;font-weight:500;font-family:var(--mono);">Modifica incremento</div>
+      <button id="incr-modal-close" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
     </div>
-    <div id="modal-mort-info" style="font-size:11px;color:var 
+    <div id="modal-incr-info" style="font-size:11px;color:var(--text2);background:var(--bg2);padding:8px 10px;border-radius:var(--radius);margin-bottom:14px;font-family:var(--mono);"></div>
+    <div>
+      <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">INCREMENTO KG/GG</div>
+      <input type="number" step="0.001" id="modal-incr-val" placeholder="es. 0.650"
+        style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:16px;font-family:var(--mono);background:var(--bg);">
+    </div>
+    <button id="incr-modal-save" style="width:100%;padding:13px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:16px;">
+      ✓ Salva incremento
+    </b
