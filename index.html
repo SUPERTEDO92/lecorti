@@ -1701,8 +1701,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   document.getElementById('incr-modal-save')?.addEventListener('click', salvaIncr);
 
-  // Event delegation per bottoni incremento nel detail
-  document.getElementById('detail-content')?.addEventListener('click', function(e) {
+  // Event delegation globale per bottoni incremento
+  document.addEventListener('click', function(e) {
     const btn = e.target.closest('[data-incr-btn]');
     if(btn) {
       const lottoId = parseInt(btn.dataset.incrBtn);
@@ -1985,4 +1985,4 @@ loadAll();
     <div>
       <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">INCREMENTO KG/GG</div>
       <input type="number" step="0.001" id="modal-incr-val" placeholder="es. 0.650"
-        style="width:100%;padding:9px 10px;border:0.5px solid var
+        style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius
