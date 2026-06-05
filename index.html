@@ -841,7 +841,7 @@ function renderDetail(socId) {
         <div style="font-size:11px;color:var(--text2)">presenti</div>
       </div>
     </div>`;
-    html += `<button data-incr-btn="${lotto.id}" data-incr-val="${lotto.incremento_giornaliero||0}" style="width:100%;margin-bottom:8px;padding:8px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius);font-size:12px;font-family:var(--mono);font-weight:500;cursor:pointer;text-align:left;display:block;">
+    html += `<button onclick="apriModaleIncr(${lotto.id},${lotto.incremento_giornaliero||0})" type="button" style="width:100%;margin-bottom:8px;padding:8px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius);font-size:12px;font-family:var(--mono);font-weight:500;cursor:pointer;text-align:left;display:block;">
       Incremento: +${lotto.incremento_giornaliero ? lotto.incremento_giornaliero.toFixed(3) : '—'} kg/gg &nbsp;✎ modifica
     </button>`;
 
@@ -1953,6 +1953,35 @@ async function inserisciTrasf() {
   }
 }
 
+// ── MODIFICA INCREMENTO (definita qui per essere disponibile agli onclick inline) ──
+let _incrLottoId = null;
+function apriModaleIncr(lottoId, valAttuale) {
+  _incrLottoId = lottoId;
+  const lotto = allLotti.find(l => l.id === lottoId);
+  const soc = allSoccide.find(s => s.id === lotto?.soccida_id);
+  document.getElementById('modal-incr-info').textContent =
+    (soc?.nome || '—') + ' · Lotto ' + (lotto?.codice || '—') + ' · attuale: +' + (valAttuale || '—') + ' kg/gg';
+  document.getElementById('modal-incr-val').value = valAttuale || '';
+  document.getElementById('modal-incr').style.display = 'flex';
+}
+async function salvaIncr() {
+  const val = parseFloat(document.getElementById('modal-incr-val').value);
+  if(!val || isNaN(val)) { alert('Inserisci un valore valido'); return; }
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/lotti?id=eq.${_incrLottoId}`, {
+      method: 'PATCH', headers: SB_H,
+      body: JSON.stringify({ incremento_giornaliero: val })
+    });
+    if(!r.ok) throw new Error(await r.text());
+    const l = allLotti.find(x => x.id === _incrLottoId);
+    if(l) l.incremento_giornaliero = val;
+    document.getElementById('modal-incr').style.display = 'none';
+    if(currentLottoId) renderDetail(currentLottoId);
+  } catch(e) {
+    alert('Errore: ' + e.message);
+  }
+}
+
 // Start
 loadAll();
 </script>
@@ -1969,20 +1998,4 @@ loadAll();
       <input type="number" step="0.01" id="costo-val" placeholder="es. 18500.00" 
         style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
     </div>
-    <button onclick="salvaCostoAcquisto()" style="width:100%;padding:13px;background:var(--green);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:16px;">
-      ✓ Salva costo
-    </button>
-  </div>
-</div>
-
-<!-- MODALE INCREMENTO -->
-<div id="modal-incr" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center;">
-  <div style="background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-      <div style="font-size:14px;font-weight:500;font-family:var(--mono);">Modifica incremento</div>
-      <button id="incr-modal-close" onclick="document.getElementById('modal-incr').style.display='none'" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
-    </div>
-    <div id="modal-incr-info" style="font-size:11px;color:var(--text2);background:var(--bg2);padding:8px 10px;border-radius:var(--radius);margin-bottom:14px;font-family:var(--mono);"></div>
-    <div>
-      <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">INCREMENTO KG/GG</div>
-      <input type="number" step="0.001" id="modal-incr-val" placeholder="
+    <button onclick="salvaCostoAcquisto()" style="width:100%;padding:
