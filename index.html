@@ -841,9 +841,9 @@ function renderDetail(socId) {
         <div style="font-size:11px;color:var(--text2)">presenti</div>
       </div>
     </div>`;
-    html += `<button onclick="apriModaleIncr(${lotto.id},${lotto.incremento_giornaliero||0})" style="width:100%;margin-bottom:8px;padding:8px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius);font-size:12px;font-family:var(--mono);font-weight:500;cursor:pointer;text-align:left;">
+    html += `<div data-incr-btn="${lotto.id}" data-incr-val="${lotto.incremento_giornaliero||0}" style="width:100%;margin-bottom:8px;padding:8px;background:var(--accent);color:#FFF;border-radius:var(--radius);font-size:12px;font-family:var(--mono);font-weight:500;cursor:pointer;text-align:left;">
       Incremento: +${lotto.incremento_giornaliero ? lotto.incremento_giornaliero.toFixed(3) : '—'} kg/gg &nbsp;✎ modifica
-    </button>`;
+    </div>`;
 
     // Stat grid lotto
     html += `<div class="stat-grid" style="margin-bottom:10px;grid-template-columns:repeat(3,1fr);">
@@ -1700,6 +1700,16 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('modal-incr').style.display = 'none';
   });
   document.getElementById('incr-modal-save')?.addEventListener('click', salvaIncr);
+
+  // Event delegation per bottoni incremento nel detail
+  document.getElementById('detail-content')?.addEventListener('click', function(e) {
+    const btn = e.target.closest('[data-incr-btn]');
+    if(btn) {
+      const lottoId = parseInt(btn.dataset.incrBtn);
+      const valAttuale = parseFloat(btn.dataset.incrVal) || 0;
+      apriModaleIncr(lottoId, valAttuale);
+    }
+  });
 });
 
 // ── INSERIMENTO DATI ──
@@ -1975,7 +1985,4 @@ loadAll();
     <div>
       <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">INCREMENTO KG/GG</div>
       <input type="number" step="0.001" id="modal-incr-val" placeholder="es. 0.650"
-        style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:16px;font-family:var(--mono);background:var(--bg);">
-    </div>
-    <button id="incr-modal-save" style="width:100%;padding:13px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:16px;">
-      ✓ Salva increment 
+        style="width:100%;padding:9px 10px;border:0.5px solid var
