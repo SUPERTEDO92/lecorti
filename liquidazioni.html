@@ -85,7 +85,7 @@
   .sum-val.green { color: var(--green); }
 
   /* Separatore mese */
-  .month-sep { display: flex; align-items: center; gap: 8px; margin: 14px 0 8px; column-span: all; break-before: column; }
+  .month-sep { display: flex; align-items: center; gap: 8px; margin: 14px 0 8px; }
   .month-sep::before, .month-sep::after { content: ''; flex: 1; height: 0.5px; background: var(--border); }
   .month-sep-text { font-size: 12px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .1em; color: var(--text2); white-space: nowrap; }
 
@@ -312,6 +312,7 @@ function render() {
       }
 
       return `<div class="liq-row">
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:6px;"><strong style="color:var(--text);font-size:13px;">${fmtDate(u.data_uscita)}</strong></div>
         <div class="liq-top">
           <div>
             <div class="liq-soccida">${socNome}</div>
@@ -320,20 +321,18 @@ function render() {
           <div class="liq-macello">${u.macello || '—'}</div>
         </div>
         <div class="liq-grid">
-          <div class="lg"><div class="lg-label">Data</div><div class="lg-val">${fmtDate(u.data_uscita)}</div></div>
           <div class="lg"><div class="lg-label">Capi</div><div class="lg-val">${fmt(u.capi)}</div></div>
           <div class="lg"><div class="lg-label">Kg tot.</div><div class="lg-val">${fmt(u.kg_totali)}</div></div>
           <div class="lg"><div class="lg-label">Media kg</div><div class="lg-val">${media}</div></div>
+          <div class="lg"><div class="lg-label">€/kg</div><div class="lg-val">${u.prezzo_kg ? fmt(u.prezzo_kg,3) : '—'}</div></div>
         </div>
-        ${u.prezzo_kg ? `<div style="text-align:right;font-size:10px;color:var(--text2);font-family:var(--mono);margin-top:4px;">${fmt(u.prezzo_kg,3)} €/kg</div>` : ''}
+
         ${dettaglioLiq}
       </div>`;
     }).join('');
   });
 
-  document.getElementById('list').innerHTML = `<div style="columns:2;column-gap:20px;">${html}</div>`;
-  // Fix month separators to span full width
-  document.querySelectorAll('.month-sep').forEach(el => el.style.columnSpan = 'all');
+  document.getElementById('list').innerHTML = `<div>${html}</div>`;
 }
 
 loadAll();
