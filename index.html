@@ -380,7 +380,6 @@
     <button class="nav-btn" onclick="showPage('storico')">Storico</button>
     <button class="nav-btn" onclick="showPage('trasferimenti')">Trasferimenti</button>
     <button class="nav-btn" onclick="showPage('archivio')">Archivio</button>
-    <button class="nav-btn" onclick="window.open('lecorti-prezzo-suinetti.html','_blank')" style="margin-left:8px;border-left:0.5px solid rgba(255,255,255,.2);padding-left:12px;">🧮 Calcolo prezzo</button>
   </div>
 </div>
 
@@ -1076,7 +1075,7 @@ function renderStoricoList() {
       const lotto = allLotti.find(l => l.id === u.lotto_id);
       return `<div class="storico-row">
         <div class="storico-top">
-          <span class="storico-soccida">${fmtDate(u.data_uscita)} · ${socNome}${lotto ? ' · ' + lotto.codice : ''}</span>
+          <span class="storico-soccida"><strong>${fmtDateFull(u.data_uscita)}</strong> · ${socNome}${lotto ? ' · ' + lotto.codice : ''}</span>
           <span class="storico-macello">${u.macello || '—'}</span>
         </div>
         <div class="storico-line">
@@ -1974,206 +1973,23 @@ async function salvaIncr() {
   }
 }
 
-// ── CALCOLATORE PREZZO INTEGRATO ──
-let _cW1 = 30, _cW2 = 40, _cTotaleCalcolato = null;
-
-function toggleCalcPrezzo() {
-  const panel = document.getElementById('calc-prezzo-panel');
-  const btn = document.getElementById('btn-toggle-calc');
-  const aperto = panel.style.display !== 'none';
-  panel.style.display = aperto ? 'none' : 'block';
-  btn.textContent = aperto ? '🧮 Apri calcolatore prezzo' : '✕ Chiudi calcolatore';
-}
-
-function cSelListino(n) {
-  const kg = document.getElementById('c-sel' + n).value;
-  if(!kg) return;
-  if(n === 1) _cW1 = parseFloat(kg);
-  else _cW2 = parseFloat(kg);
-  document.getElementById('c-p' + n).value = '';
-  document.getElementById('c-p' + n).focus();
-  cCalcola();
-}
-
-function cFmt(n, dec) {
-  if(n === null || isNaN(n)) return '—';
-  return n.toLocaleString('it-IT', {minimumFractionDigits: dec, maximumFractionDigits: dec});
-}
-
-function cCalcola() {
-  const p1 = parseFloat(document.getElementById('c-p1').value);
-  const p2 = parseFloat(document.getElementById('c-p2').value);
-  const kg = parseFloat(document.getElementById('c-kg').value);
-  const capi = parseFloat(document.getElementById('c-capi').value);
-  const premio = parseFloat(document.getElementById('c-premio').value) || 0;
-  const sconto = parseFloat(document.getElementById('c-sconto').value) || 0;
-
-  const risultato = document.getElementById('c-risultato');
-  const btnUsa = document.getElementById('btn-usa-valore');
-
-  if(isNaN(p1) || isNaN(p2) || isNaN(kg) || kg <= 0) {
-    risultato.style.display = 'none';
-    btnUsa.style.display = 'none';
-    _cTotaleCalcolato = null;
-    return;
-  }
-
-  const diff = Math.abs(p1 - p2);
-  const deltaW = Math.abs(_cW2 - _cW1);
-  const scalare = (diff / deltaW) * 10 * 1.5;
-  const prezzoKg = p1 - scalare + premio;
-  const imponibile = prezzoKg * kg;
-  const imponibileNetto = imponibile - sconto;
-  const iva = imponibileNetto * 0.10;
-  const totale = imponibileNetto + iva;
-  _cTotaleCalcolato = totale;
-
-  document.getElementById('c-r-prezzo').textContent = cFmt(prezzoKg, 4) + ' €/kg';
-  document.getElementById('c-r-imponibile').textContent = cFmt(imponibile, 2) + ' €';
-  document.getElementById('c-r-iva').textContent = cFmt(iva, 2) + ' €';
-  document.getElementById('c-r-totale').textContent = cFmt(totale, 2) + ' €';
-
-  const rowSconto = document.getElementById('c-row-sconto');
-  if(sconto > 0) {
-    document.getElementById('c-r-sconto').textContent = '– ' + cFmt(sconto, 2) + ' €';
-    rowSconto.style.display = 'flex';
-  } else {
-    rowSconto.style.display = 'none';
-  }
-
-  risultato.style.display = 'block';
-  btnUsa.style.display = 'block';
-  btnUsa.textContent = '← Usa ' + cFmt(totale, 2) + ' €';
-}
-
-function usaValoreCalcolato() {
-  if(_cTotaleCalcolato === null) return;
-  document.getElementById('costo-val').value = _cTotaleCalcolato.toFixed(2);
-  // Chiudi il calcolatore
-  document.getElementById('calc-prezzo-panel').style.display = 'none';
-  document.getElementById('btn-toggle-calc').textContent = '🧮 Apri calcolatore prezzo';
-  document.getElementById('costo-val').focus();
-}
-
 // Start
 loadAll();
 </script>
 <!-- MODALE COSTO ACQUISTO -->
 <div id="modal-costo" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center;">
-  <div style="background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;">
+  <div style="background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
       <div style="font-size:14px;font-weight:500;font-family:var(--mono);">Inserisci valore</div>
       <button onclick="chiudiCostoAcquisto()" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
     </div>
     <div id="modal-costo-info" style="font-size:11px;color:var(--text2);background:var(--bg2);padding:8px 10px;border-radius:var(--radius);margin-bottom:14px;font-family:var(--mono);"></div>
-
-    <!-- CAMPO VALORE DIRETTO -->
     <div>
       <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">VALORE TOTALE €</div>
-      <input type="number" step="0.01" id="costo-val" placeholder="es. 18500.00"
-        style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:16px;font-family:var(--mono);background:var(--bg);">
+      <input type="number" step="0.01" id="costo-val" placeholder="es. 18500.00" 
+        style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
     </div>
-
-    <!-- SEPARATORE CALCOLATORE -->
-    <div style="display:flex;align-items:center;gap:8px;margin:16px 0 12px;">
-      <div style="flex:1;height:0.5px;background:var(--border);"></div>
-      <button onclick="toggleCalcPrezzo()" id="btn-toggle-calc"
-        style="font-size:11px;font-family:var(--mono);color:var(--accent);background:none;border:0.5px solid var(--accent);border-radius:20px;padding:3px 12px;cursor:pointer;white-space:nowrap;">
-        🧮 Apri calcolatore prezzo
-      </button>
-      <div style="flex:1;height:0.5px;background:var(--border);"></div>
-    </div>
-
-    <!-- CALCOLATORE INTEGRATO (nascosto di default) -->
-    <div id="calc-prezzo-panel" style="display:none;background:var(--bg);border-radius:var(--radius-lg);padding:14px;margin-bottom:14px;">
-
-      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px;">Scala mobile CUN</div>
-
-      <!-- LISTINO 1 -->
-      <div style="margin-bottom:10px;">
-        <div style="font-size:10px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">LISTINO 1 — PESO DI RIFERIMENTO</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <select id="c-sel1" onchange="cSelListino(1)" style="padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;color:var(--text);">
-            <option value="">— peso kg —</option>
-            <optgroup label="Lattonzoli"><option value="15">15 kg</option><option value="25">25 kg</option><option value="30">30 kg</option><option value="40">40 kg</option></optgroup>
-            <optgroup label="Magroni"><option value="50">50 kg</option><option value="65">65 kg</option><option value="80">80 kg</option><option value="100">100 kg</option></optgroup>
-          </select>
-          <input type="number" id="c-p1" placeholder="€/kg" step="0.001" min="0" oninput="cCalcola()"
-            style="padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;">
-        </div>
-      </div>
-
-      <!-- LISTINO 2 -->
-      <div style="margin-bottom:10px;">
-        <div style="font-size:10px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">LISTINO 2 — PESO DI RIFERIMENTO</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <select id="c-sel2" onchange="cSelListino(2)" style="padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;color:var(--text);">
-            <option value="">— peso kg —</option>
-            <optgroup label="Lattonzoli"><option value="15">15 kg</option><option value="25">25 kg</option><option value="30">30 kg</option><option value="40">40 kg</option></optgroup>
-            <optgroup label="Magroni"><option value="50">50 kg</option><option value="65">65 kg</option><option value="80">80 kg</option><option value="100">100 kg</option></optgroup>
-          </select>
-          <input type="number" id="c-p2" placeholder="€/kg" step="0.001" min="0" oninput="cCalcola()"
-            style="padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;">
-        </div>
-      </div>
-
-      <!-- KG TOT + CAPI + PREMIO -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
-        <div>
-          <div style="font-size:10px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">KG TOTALI</div>
-          <input type="number" id="c-kg" placeholder="es. 12600" min="0" oninput="cCalcola()"
-            style="width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;">
-        </div>
-        <div>
-          <div style="font-size:10px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">N° CAPI</div>
-          <input type="number" id="c-capi" placeholder="es. 400" min="0" oninput="cCalcola()"
-            style="width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;">
-        </div>
-        <div>
-          <div style="font-size:10px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">PREMIO €/KG</div>
-          <input type="number" id="c-premio" placeholder="0.00" step="0.001" value="0" oninput="cCalcola()"
-            style="width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;">
-        </div>
-      </div>
-
-      <!-- SCONTO -->
-      <div style="margin-bottom:12px;">
-        <div style="font-size:10px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">SCONTO SULL'IMPONIBILE €</div>
-        <input type="number" id="c-sconto" placeholder="0.00" step="0.01" value="0" oninput="cCalcola()"
-          style="width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;">
-      </div>
-
-      <!-- RISULTATO CALCOLATORE -->
-      <div id="c-risultato" style="display:none;background:var(--text);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px;">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;border-bottom:0.5px solid #333;">
-          <span style="font-size:11px;color:#AAA;">Prezzo €/kg</span>
-          <span style="font-family:var(--mono);font-size:13px;color:#FFF;" id="c-r-prezzo">—</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;border-bottom:0.5px solid #333;">
-          <span style="font-size:11px;color:#AAA;">Imponibile</span>
-          <span style="font-family:var(--mono);font-size:13px;color:#FFF;" id="c-r-imponibile">—</span>
-        </div>
-        <div id="c-row-sconto" style="display:none;justify-content:space-between;align-items:baseline;padding:4px 0;border-bottom:0.5px solid #333;">
-          <span style="font-size:11px;color:#E88A8A;">Sconto</span>
-          <span style="font-family:var(--mono);font-size:13px;color:#E88A8A;" id="c-r-sconto">—</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;border-bottom:0.5px solid #333;">
-          <span style="font-size:11px;color:#AAA;">IVA 10%</span>
-          <span style="font-family:var(--mono);font-size:13px;color:#FFF;" id="c-r-iva">—</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0 0;">
-          <span style="font-size:12px;color:#EEE;font-weight:600;">TOTALE FATTURA</span>
-          <span style="font-family:var(--mono);font-size:18px;color:var(--accent2);font-weight:600;" id="c-r-totale">—</span>
-        </div>
-      </div>
-
-      <!-- BOTTONE USA VALORE -->
-      <button id="btn-usa-valore" onclick="usaValoreCalcolato()" style="display:none;width:100%;padding:10px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;">
-        ← Usa questo valore
-      </button>
-    </div>
-
-    <button onclick="salvaCostoAcquisto()" style="width:100%;padding:13px;background:var(--green);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:4px;">
+    <button onclick="salvaCostoAcquisto()" style="width:100%;padding:13px;background:var(--green);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:16px;">
       ✓ Salva costo
     </button>
   </div>
