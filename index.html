@@ -455,9 +455,10 @@
         </div>
         <div>
           <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">MACELLO</div>
-          <select id="u-macello" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text);">
+          <select id="u-macello" onchange="toggleMacelloManuale(this)" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text);">
             <option value="">— seleziona macello —</option>
           </select>
+          <input type="text" id="u-macello-manuale" placeholder="Nome macello..." style="display:none;width:100%;padding:9px 10px;border:0.5px solid var(--accent);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text);margin-top:6px;box-sizing:border-box;">
         </div>
         <div>
           <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">N° CAPI</div>
@@ -652,7 +653,7 @@
 const SUPABASE_URL = 'https://wfvqgxkxmgcxchcsljzh.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmdnFneGt4bWdjeGNoY3NsanpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMTE1NTAsImV4cCI6MjA5NTg4NzU1MH0.hIhbdVFeCTDJ9bBBqetef87VTCtocMflYUQ_7kvxJF8';
 const SB_H = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
-const MACELLI = ['ANNONI','CAPPOLA','GHINZELLI','OPAS','MEC','PINI','PINI ITALIA','COSTA','ZANDALAZINI','SASSI','LINGIARDI','BERTESAGO','FESTA'];
+const MACELLI = ['ANNONI','CAPPOLA','GHINZELLI','OPAS','MEC','PINI','PINI ITALIA','COSTA','ZANDALAZINI','SASSI','LINGIARDI','BERTESAGO','FESTA','__MANUALE__'];
 
 async function sb(table, query='') {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}${query}`, {
@@ -1723,7 +1724,10 @@ function initInserimento() {
   // Popola tendina macelli
   if(selMacello) {
     selMacello.innerHTML = '<option value="">— seleziona macello —</option>' +
-      MACELLI.map(m => `<option value="${m}">${m}</option>`).join('');
+      MACELLI.map(m => m === '__MANUALE__'
+        ? `<option value="__MANUALE__">✏️ Inserisci manualmente...</option>`
+        : `<option value="${m}">${m}</option>`
+      ).join('');
   }
 
   // Data default = oggi
@@ -1819,13 +1823,27 @@ function toastIns(msg, ok) {
   if(ok) setTimeout(() => { t.style.display = 'none'; }, 4000);
 }
 
+function toggleMacelloManuale(sel) {
+  const input = document.getElementById('u-macello-manuale');
+  if(sel.value === '__MANUALE__') {
+    input.style.display = 'block';
+    input.focus();
+  } else {
+    input.style.display = 'none';
+    input.value = '';
+  }
+}
+
 async function inserisciUscita() {
   const lottoId = parseInt(document.getElementById('u-lotto').value);
   const data = document.getElementById('u-data').value;
   const capi = parseInt(document.getElementById('u-capi').value);
   const kg = parseFloat(document.getElementById('u-kg').value);
   const ddt = document.getElementById('u-ddt').value || null;
-  const macello = document.getElementById('u-macello').value || null;
+  const selMac = document.getElementById('u-macello').value;
+  const macello = selMac === '__MANUALE__'
+    ? (document.getElementById('u-macello-manuale').value.trim().toUpperCase() || null)
+    : (selMac || null);
 
   if(!lottoId || !data || !capi || !kg || !macello) {
     toastIns('Compila: soccida, lotto, data, macello, capi e kg', false); return;
@@ -1859,6 +1877,8 @@ async function inserisciUscita() {
     // Reset form
     ['u-ddt','u-capi','u-kg'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('u-macello').value = '';
+    document.getElementById('u-macello-manuale').style.display = 'none';
+    document.getElementById('u-macello-manuale').value = '';
     document.getElementById('u-media-row').style.display = 'none';
   } catch(e) {
     toastIns('Errore: ' + e.message, false);
