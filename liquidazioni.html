@@ -312,7 +312,7 @@ function render() {
       }
 
       return `<div class="liq-row">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><strong style="color:var(--text);font-size:16px;font-family:var(--mono);">${fmtDate(u.data_uscita)}</strong>${u.numero_ddt ? `<span style="font-size:13px;font-family:var(--mono);color:var(--text2);">Bolla n. ${u.numero_ddt}</span>` : ''}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><strong style="color:var(--text);font-size:16px;font-family:var(--mono);">${fmtDate(u.data_uscita)}</strong>${u.numero_ddt ? `<span style="font-size:16px;font-family:var(--mono);font-weight:500;color:var(--text2);">Bolla n. ${u.numero_ddt}</span>` : ''}</div>
         <div class="liq-top">
           <div>
             <div class="liq-soccida">${socNome}</div>
@@ -340,8 +340,11 @@ loadAll();
 function stampaTutto() {
   const nomiMeseFull = ['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 
-  // Raggruppa tutte le uscite per mese
-  const rows = [...allUscite].filter(u => u.data_uscita).sort((a,b) => b.data_uscita.localeCompare(a.data_uscita));
+  // Rispetta il filtro mese attivo
+  let rows = [...allUscite].filter(u => u.data_uscita);
+  if(filtroMese !== 'tutti') rows = rows.filter(u => u.data_uscita?.startsWith(filtroMese));
+  rows = rows.sort((a,b) => b.data_uscita.localeCompare(a.data_uscita));
+
   const byMonth = {};
   rows.forEach(u => {
     const m = u.data_uscita.substring(0,7);
@@ -353,6 +356,11 @@ function stampaTutto() {
   const totCarichiGen = rows.length;
   const totCapiGen = rows.reduce((s,u) => s+(u.capi||0), 0);
   const totKgGen = rows.reduce((s,u) => s+(u.kg_totali||0), 0);
+
+  const periodoLabel = filtroMese === 'tutti' ? 'Tutti i periodi' : (() => {
+    const [y,mo] = filtroMese.split('-');
+    return nomiMeseFull[parseInt(mo)] + ' ' + y;
+  })();
 
   let html = `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8">
   <title>Le Corti — Liquidazioni</title>
@@ -387,9 +395,9 @@ function stampaTutto() {
     }
   </style></head><body>
   <h1>Soc. Agr. Le Corti Srl — Riepilogo Liquidazioni</h1>
-  <div class="sub">Stampato il ${new Date().toLocaleDateString('it-IT', {day:'2-digit',month:'2-digit',year:'numeric'})} · Tutti i periodi</div>
+  <div class="sub">Stampato il ${new Date().toLocaleDateString('it-IT', {day:'2-digit',month:'2-digit',year:'numeric'})} · ${periodoLabel}</div>
   <div class="riepilogo">
-    <div class="rie-box"><div class="rie-label">Carichi totali</div><div class="rie-val">${totCarichiGen}</div></div>
+    <div class="rie-box"><div class="rie-label">Carichi</div><div class="rie-val">${totCarichiGen}</div></div>
     <div class="rie-box"><div class="rie-label">Capi totali</div><div class="rie-val">${totCapiGen.toLocaleString('it-IT')}</div></div>
     <div class="rie-box"><div class="rie-label">Kg totali</div><div class="rie-val">${totKgGen.toLocaleString('it-IT')}</div></div>
     <div class="rie-box"><div class="rie-label">Liquidato</div><div class="rie-val green">${totGenerale.toLocaleString('it-IT',{minimumFractionDigits:0})} €</div></div>
@@ -405,21 +413,21 @@ function stampaTutto() {
     html += `<div class="month-title">${nomiMeseFull[parseInt(mo)]} ${y}</div>
     <table>
       <thead><tr>
-        <th>Data</th><th>Soccida</th><th>Lotto</th><th>Macello</th>
+        <th>Data</th><th>Bolla</th><th>Soccida</th><th>Lotto</th><th>Macello</th>
         <th style="text-align:right">Capi</th><th style="text-align:right">Kg tot.</th>
         <th style="text-align:right">Media kg</th><th style="text-align:right">€/kg</th>
-        <th style="text-align:right">Sconti €</th><th style="text-align:right">Liquidazione €</th>
+        <th style="text-align:right">Liquidazione €</th>
       </tr></thead><tbody>`;
 
     mRighe.forEach(u => {
       const lotto = allLotti.find(l => l.id === u.lotto_id);
       const soc = allSoccide.find(s => s.id === lotto?.soccida_id);
       const media = u.kg_totali && u.capi ? (u.kg_totali/u.capi).toFixed(1) : '—';
-      const sconti = (u.sconto_peso||0) + (u.sconto_merce||0);
       const [yy,mm,gg] = u.data_uscita.split('-');
 
       html += `<tr>
-        <td>${gg}/${mm}/${yy}</td>
+        <td><strong>${gg}/${mm}/${yy}</strong></td>
+        <td style="font-family:'Courier New',monospace">${u.numero_ddt || '—'}</td>
         <td>${soc?.nome || '—'}</td>
         <td style="font-family:'Courier New',monospace">${lotto?.codice || '—'}${lotto?.lettera_dop ? ' · '+lotto.lettera_dop : ''}</td>
         <td>${u.macello || '—'}</td>
@@ -427,8 +435,7 @@ function stampaTutto() {
         <td class="num">${(u.kg_totali||0).toLocaleString('it-IT')}</td>
         <td class="num">${media}</td>
         <td class="num">${u.prezzo_kg ? u.prezzo_kg.toFixed(3) : '—'}</td>
-        <td class="num">${sconti > 0 ? sconti.toLocaleString('it-IT',{minimumFractionDigits:2}) : '—'}</td>
-        <td class="num ${u.liquidazione ? 'green' : 'pending'}">${u.liquidazione ? u.liquidazione.toLocaleString('it-IT',{minimumFractionDigits:2})+' €' : 'da ricevere'}</td>
+        <td class="num ${u.liquidazione ? 'green' : 'pending'}">${u.liquidazione ? u.liquidazione.toLocaleString('it-IT',{minimumFractionDigits:2})+' €' : '⏳ in attesa'}</td>
       </tr>`;
     });
 
@@ -440,18 +447,14 @@ function stampaTutto() {
   });
 
   html += `<div class="totale-finale">
-    <div><div class="tf-label">Totale liquidato complessivo</div></div>
+    <div><div class="tf-label">Totale liquidato — ${periodoLabel}</div></div>
     <div class="tf-val">${totGenerale.toLocaleString('it-IT',{minimumFractionDigits:2})} €</div>
   </div>
-  <div class="footer">Soc. Agr. Le Corti Srl · Gestionale interno · ${new Date().toLocaleDateString('it-IT')}</div>
+  <div class="footer">Soc. Agr. Le Corti Srl · stampato il ${new Date().toLocaleDateString('it-IT')}</div>
   </body></html>`;
 
-  const win = window.open('', '_blank');
-  win.document.write(html);
-  win.document.close();
-  win.focus();
-  setTimeout(() => win.print(), 500);
+  const w = window.open('','_blank');
+  w.document.write(html);
+  w.document.close();
+  w.print();
 }
-</script>
-</body>
-</html>
