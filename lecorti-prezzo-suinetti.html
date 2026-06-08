@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calcolatore Prezzo Suinetti — Le Corti</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F5F3EE;
+    --bg2: #EDEAE3;
+    --bg3: #E3DFD6;
+    --text: #1A1A18;
+    --text2: #6B6B66;
+    --text3: #9C9C96;
+    --accent: #C17B2A;
+    --accent2: #E8A84A;
+    --border: #D4D0C8;
+    --border2: #C4C0B8;
+    --font: 'IBM Plex Sans', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+    --radius: 6px;
+    --radius-lg: 10px;
+    --green: #4A8C5C;
+    --green-bg: #EBF4EF;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* TOPBAR */
+  .topbar {
+    background: var(--text);
+    color: #F5F3EE;
+    padding: 0 20px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .topbar-logo { font-family: var(--mono); font-size: 15px; font-weight: 500; letter-spacing: .1em; }
+  .topbar-sub { font-size: 11px; color: #888; font-family: var(--mono); }
+
+  /* MAIN */
+  .main { max-width: 780px; margin: 0 auto; padding: 28px 20px 60px; }
+
+  .page-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--text2);
+    margin-bottom: 20px;
+  }
+
+  /* CARD */
+  .card {
+    background: #FFF;
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 14px;
+  }
+
+  /* GRID INPUTS */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
+
+  .field label {
+    display: block;
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text2);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+  .field input, .field select {
+    width: 100%;
+    padding: 9px 10px;
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    transition: border-color .15s;
+  }
+  .field input:focus, .field select:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: #FFF;
+  }
+  .field input.highlight {
+    border-color: var(--accent);
+    background: #FFF;
+  }
+
+  /* LISTINI */
+  .listino-row {
+    display: grid;
+    grid-template-columns: 32px 1fr 180px 110px;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .listino-row:last-child { border-bottom: none; }
+  .listino-num {
+    width: 28px; height: 28px;
+    background: var(--bg2);
+    border-radius: 50%;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text2);
+  }
+  .listino-num.active { background: var(--accent); color: #FFF; }
+  .listino-label { font-size: 13px; font-weight: 500; }
+  .listino-sub { font-size: 11px; color: var(--text2); }
+
+  /* SCALARE BOX */
+  .scalare-box {
+    background: var(--bg2);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-top: 14px;
+  }
+  .scalare-formula {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .scalare-formula .val {
+    color: var(--text);
+    font-weight: 500;
+  }
+  .scalare-formula .result-val {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* RISULTATI */
+  .result-section {
+    background: var(--text);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    color: #F5F3EE;
+    margin-bottom: 16px;
+  }
+  .result-section .card-title { color: #888; }
+
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 7px 0;
+    border-bottom: 0.5px solid #333;
+    font-size: 13px;
+  }
+  .result-row:last-child { border-bottom: none; }
+  .result-row .label { color: #AAA; }
+  .result-row .value { font-family: var(--mono); font-size: 14px; font-weight: 500; }
+  .result-row.big .label { font-size: 14px; color: #CCC; }
+  .result-row.big .value { font-size: 20px; font-weight: 600; color: var(--accent2); }
+  .result-row.total .label { font-size: 15px; color: #EEE; font-weight: 600; }
+  .result-row.total .value { font-size: 24px; font-weight: 600; color: #FFF; }
+
+  /* BOTTONI */
+  .btn-row { display: flex; gap: 10px; margin-top: 6px; }
+  .btn {
+    padding: 10px 20px;
+    border-radius: var(--radius);
+    border: none;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity .15s;
+  }
+  .btn:hover { opacity: .85; }
+  .btn-primary { background: var(--accent); color: #FFF; }
+  .btn-secondary { background: var(--bg2); color: var(--text); border: 0.5px solid var(--border); }
+  .btn-print { background: var(--text); color: #FFF; }
+
+  /* ALERT */
+  .alert-info {
+    background: #FFF8F0;
+    border: 0.5px solid #E8C88A;
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    font-size: 12px;
+    color: #8B5E1A;
+    margin-top: 10px;
+  }
+
+  /* PRINT AREA */
+  .print-area { display: none; }
+
+  @media print {
+    .topbar, .btn-row, .no-print { display: none !important; }
+    .main { padding: 10px; max-width: 100%; }
+    .card { break-inside: avoid; box-shadow: none; border: 1px solid #CCC; }
+    .result-section {
+      background: #1A1A18 !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .print-header { display: block !important; }
+    body { font-size: 12px; }
+  }
+
+  .print-header {
+    display: none;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .print-header h1 { font-size: 18px; font-family: var(--mono); }
+  .print-header p { font-size: 12px; color: #666; margin-top: 4px; }
+
+  /* SEPARATORE FORMULA */
+  .formula-step {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text2);
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .formula-step .op { color: var(--text3); }
+  .formula-step .num { color: var(--text); font-weight: 500; }
+  .formula-step .res { color: var(--accent); font-weight: 600; font-size: 13px; }
+  .formula-step .eq { color: var(--text3); font-size: 16px; }
+
+  .divider { border: none; border-top: 0.5px solid var(--border); margin: 16px 0; }
+
+  /* DATA display */
+  .data-display {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    text-align: right;
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar no-print">
+  <span class="topbar-logo">LE CORTI</span>
+  <span class="topbar-sub">CALCOLATORE SUINETTI</span>
+</div>
+
+<div class="main">
+
+  <div class="print-header">
+    <h1>SOC. AGR. LE CORTI SRL</h1>
+    <p>Calcolo Prezzo Suinetti — Scala Mobile ERSAF</p>
+    <p id="print-date"></p>
+  </div>
+
+  <div class="page-title">Scala Mobile — Calcolo Prezzo Suinetti</div>
+
+  <!-- LISTINI ERSAF -->
+  <div class="card">
+    <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+      <span>Listini CUN di riferimento</span>
+      <span style="font-size:10px;color:var(--text3);font-family:var(--mono);" id="data-cun">CUN 04/06/2026</span>
+    </div>
+
+    <div class="listino-row">
+      <div class="listino-num active" id="n1">1</div>
+      <div>
+        <div class="listino-label">Listino 1 — Prezzo base</div>
+        <div class="listino-sub" id="sub1">peso di riferimento: — kg</div>
+      </div>
+      <div class="field">
+        <select id="sel1" onchange="selezionaListino(1)" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text);">
+          <option value="">— seleziona peso —</option>
+          <optgroup label="Lattonzoli">
+            <option value="15">15 kg</option>
+            <option value="25">25 kg</option>
+            <option value="30">30 kg</option>
+            <option value="40">40 kg</option>
+          </optgroup>
+          <optgroup label="Magroni">
+            <option value="50">50 kg</option>
+            <option value="65">65 kg</option>
+            <option value="80">80 kg</option>
+            <option value="100">100 kg</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="field">
+        <input type="number" id="p1" placeholder="€/kg" step="0.001" min="0" oninput="calcola()" style="border-color:var(--accent);">
+      </div>
+      <input type="hidden" id="w1" value="30">
+    </div>
+
+    <div class="listino-row">
+      <div class="listino-num" id="n2">2</div>
+      <div>
+        <div class="listino-label">Listino 2 — Prezzo secondo</div>
+        <div class="listino-sub" id="sub2">peso di riferimento: — kg</div>
+      </div>
+      <div class="field">
+        <select id="sel2" onchange="selezionaListino(2)" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text);">
+          <option value="">— seleziona peso —</option>
+          <optgroup label="Lattonzoli">
+            <option value="15">15 kg</option>
+            <option value="25">25 kg</option>
+            <option value="30">30 kg</option>
+            <option value="40">40 kg</option>
+          </optgroup>
+          <optgroup label="Magroni">
+            <option value="50">50 kg</option>
+            <option value="65">65 kg</option>
+            <option value="80">80 kg</option>
+            <option value="100">100 kg</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="field">
+        <input type="number" id="p2" placeholder="€/kg" step="0.001" min="0" oninput="calcola()" style="border-color:var(--accent);">
+      </div>
+      <input type="hidden" id="w2" value="40">
+    </div>
+
+    <!-- SCALARE CALCOLATO -->
+    <div class="scalare-box" id="scalare-box" style="display:none;">
+      <div class="card-title" style="margin-bottom:8px;">Scalare calcolato automaticamente</div>
+      <div class="formula-step">
+        <span>Differenza prezzi:</span>
+        <span class="num" id="f-diff">—</span>
+        <span class="op">÷</span>
+        <span class="num" id="f-step">10</span>
+        <span class="op">=</span>
+        <span class="num" id="f-per10">—</span>
+        <span class="op">×</span>
+        <span class="num">1.5</span>
+        <span class="eq">=</span>
+        <span class="res" id="f-scalare">—</span>
+        <span>€/kg ogni 10 kg</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- DATI LOTTO -->
+  <div class="card">
+    <div class="card-title">Dati del lotto</div>
+    <div class="grid-3">
+      <div class="field">
+        <label>N° Capi</label>
+        <input type="number" id="capi" placeholder="es. 400" min="1" oninput="calcola()">
+      </div>
+      <div class="field">
+        <label>Kg Totali</label>
+        <input type="number" id="kg-tot" placeholder="es. 12600" min="0" step="0.1" oninput="aggiorna_media(); calcola()">
+      </div>
+      <div class="field">
+        <label>Media Kg/capo</label>
+        <input type="number" id="media" placeholder="es. 31.5" min="0" step="0.01" oninput="calcola()">
+      </div>
+    </div>
+    <div class="grid-2" style="margin-top:14px;">
+      <div class="field">
+        <label>Premio €/kg</label>
+        <input type="number" id="premio" placeholder="es. 0.10" step="0.001" min="0" value="0" oninput="calcola()">
+      </div>
+      <div class="field">
+        <label>Sconto sull'imponibile (€)</label>
+        <input type="number" id="sconto" placeholder="es. 500.00" step="0.01" min="0" value="0" oninput="calcola()">
+      </div>
+    </div>
+    <div class="alert-info" id="media-hint" style="display:none;">
+      ℹ️ Media calcolata automaticamente da Kg Totali ÷ N° Capi
+    </div>
+  </div>
+
+  <!-- RISULTATI -->
+  <div class="result-section" id="risultati" style="display:none;">
+    <div class="card-title">Risultato calcolo</div>
+
+    <div class="result-row">
+      <span class="label">Listino 1 di riferimento</span>
+      <span class="value" id="r-p1">—</span>
+    </div>
+    <div class="result-row">
+      <span class="label">Scalare applicato</span>
+      <span class="value" id="r-scalare">—</span>
+    </div>
+    <div class="result-row">
+      <span class="label">Premio</span>
+      <span class="value" id="r-premio">—</span>
+    </div>
+    <div class="result-row big">
+      <span class="label">Prezzo finale €/kg</span>
+      <span class="value" id="r-prezzo-kg">—</span>
+    </div>
+
+    <hr style="border-color:#333; margin: 10px 0;">
+
+    <div class="result-row">
+      <span class="label">Kg totali</span>
+      <span class="value" id="r-kg">—</span>
+    </div>
+    <div class="result-row">
+      <span class="label">Imponibile lordo</span>
+      <span class="value" id="r-imponibile">—</span>
+    </div>
+    <div class="result-row" id="row-sconto" style="display:none;">
+      <span class="label" style="color:#E88A8A;">Sconto</span>
+      <span class="value" id="r-sconto" style="color:#E88A8A;">—</span>
+    </div>
+    <div class="result-row" id="row-imponibile-netto" style="display:none;">
+      <span class="label">Imponibile netto</span>
+      <span class="value" id="r-imponibile-netto">—</span>
+    </div>
+    <div class="result-row">
+      <span class="label">IVA 10%</span>
+      <span class="value" id="r-iva">—</span>
+    </div>
+    <div class="result-row total">
+      <span class="label">TOTALE FATTURA</span>
+      <span class="value" id="r-totale">—</span>
+    </div>
+
+    <hr style="border-color:#333; margin: 10px 0;">
+
+    <div class="result-row">
+      <span class="label">N° capi</span>
+      <span class="value" id="r-capi">—</span>
+    </div>
+    <div class="result-row">
+      <span class="label">Valore €/capo</span>
+      <span class="value" id="r-per-capo">—</span>
+    </div>
+    <div class="result-row">
+      <span class="label">Media kg/capo</span>
+      <span class="value" id="r-media">—</span>
+    </div>
+
+    <!-- FORMULA DETTAGLIO -->
+    <div style="margin-top:14px; padding-top:12px; border-top:0.5px solid #333;">
+      <div style="font-size:10px; color:#666; font-family:var(--mono); letter-spacing:.08em; text-transform:uppercase; margin-bottom:8px;">Formula applicata</div>
+      <div class="formula-step" style="color:#999;">
+        <span id="detail-p1" style="color:#CCC; font-weight:500;">—</span>
+        <span class="op">-</span>
+        <span id="detail-scalare" style="color:#CCC; font-weight:500;">—</span>
+        <span class="op">+</span>
+        <span id="detail-premio" style="color:#CCC; font-weight:500;">—</span>
+        <span class="op">=</span>
+        <span id="detail-finale" style="color:var(--accent2); font-weight:600; font-size:14px;">—</span>
+        <span style="color:#666;">€/kg</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTA VUOTA -->
+  <div class="card" id="placeholder-msg">
+    <div style="text-align:center; padding: 20px 0; color:var(--text3);">
+      <div style="font-size:28px; margin-bottom:10px;">🧮</div>
+      <div style="font-family:var(--mono); font-size:12px;">Inserisci i due listini ERSAF e i dati del lotto per calcolare il prezzo</div>
+    </div>
+  </div>
+
+  <!-- AZIONI -->
+  <div class="btn-row no-print">
+    <button class="btn btn-primary" onclick="calcola()">Calcola</button>
+    <button class="btn btn-print" onclick="stampa()">🖨 Stampa / PDF</button>
+    <button class="btn btn-secondary" onclick="reset()">Azzera</button>
+  </div>
+
+  <div class="data-display no-print" style="margin-top:20px;" id="data-oggi"></div>
+</div>
+
+<script>
+  // Data oggi
+  const oggi = new Date();
+  const dataStr = oggi.toLocaleDateString('it-IT', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+  document.getElementById('data-oggi').textContent = dataStr;
+  document.getElementById('print-date').textContent = 'Elaborato il ' + dataStr;
+
+  function fmt(n, dec=2) {
+    if(n === null || isNaN(n)) return '—';
+    return n.toLocaleString('it-IT', {minimumFractionDigits: dec, maximumFractionDigits: dec});
+  }
+
+  function selezionaListino(n) {
+    const sel = document.getElementById('sel' + n);
+    const kg = sel.value;
+    if(!kg) return;
+    document.getElementById('w' + n).value = kg;
+    document.getElementById('sub' + n).textContent = 'peso di riferimento: ' + kg + ' kg';
+    document.getElementById('p' + n).value = '';
+    document.getElementById('p' + n).focus();
+    calcola();
+  }
+
+  function aggiorna_media() {
+    const capi = parseFloat(document.getElementById('capi').value);
+    const kgTot = parseFloat(document.getElementById('kg-tot').value);
+    const mediaInput = document.getElementById('media');
+    const hint = document.getElementById('media-hint');
+    if(capi > 0 && kgTot > 0) {
+      mediaInput.value = (kgTot / capi).toFixed(3);
+      mediaInput.classList.add('highlight');
+      hint.style.display = 'block';
+    } else {
+      mediaInput.classList.remove('highlight');
+      hint.style.display = 'none';
+    }
+  }
+
+  function calcola() {
+    const p1 = parseFloat(document.getElementById('p1').value);
+    const p2 = parseFloat(document.getElementById('p2').value);
+    const w1 = parseFloat(document.getElementById('w1').value) || 30;
+    const w2 = parseFloat(document.getElementById('w2').value) || 40;
+    const capi = parseFloat(document.getElementById('capi').value);
+    const kgTot = parseFloat(document.getElementById('kg-tot').value);
+    const media = parseFloat(document.getElementById('media').value);
+    const premio = parseFloat(document.getElementById('premio').value) || 0;
+
+    // Aggiorna label pesi riferimento
+    document.getElementById('sub1').textContent = `peso di riferimento: ${w1} kg`;
+    document.getElementById('sub2').textContent = `peso di riferimento: ${w2} kg`;
+
+    // Calcolo scalare se ho entrambi i listini
+    const scalareBox = document.getElementById('scalare-box');
+    let scalare = null;
+
+    if(!isNaN(p1) && !isNaN(p2) && p1 > 0 && p2 > 0) {
+      const diff = Math.abs(p1 - p2);
+      const deltaW = Math.abs(w2 - w1);
+      const per10 = (diff / deltaW) * 10;
+      scalare = per10 * 1.5;
+
+      document.getElementById('f-diff').textContent = fmt(diff, 4);
+      document.getElementById('f-step').textContent = deltaW;
+      document.getElementById('f-per10').textContent = fmt(per10, 4);
+      document.getElementById('f-scalare').textContent = fmt(scalare, 4);
+      scalareBox.style.display = 'block';
+
+      // Attiva pallino listino 2
+      document.getElementById('n2').classList.add('active');
+    } else {
+      scalareBox.style.display = 'none';
+      document.getElementById('n2').classList.remove('active');
+    }
+
+    // Calcolo risultato finale
+    const placeholder = document.getElementById('placeholder-msg');
+    const risultati = document.getElementById('risultati');
+
+    if(!isNaN(p1) && p1 > 0 && scalare !== null && !isNaN(media) && media > 0 && !isNaN(kgTot) && kgTot > 0) {
+      const sconto = parseFloat(document.getElementById('sconto').value) || 0;
+      const prezzoKg = p1 - scalare + premio;
+      const imponibileLordo = prezzoKg * kgTot;
+      const imponibileNetto = imponibileLordo - sconto;
+      const iva = imponibileNetto * 0.10;
+      const totale = imponibileNetto + iva;
+      const perCapo = !isNaN(capi) && capi > 0 ? totale / capi : null;
+
+      document.getElementById('r-p1').textContent = fmt(p1, 4) + ' €/kg';
+      document.getElementById('r-scalare').textContent = '– ' + fmt(scalare, 4) + ' €/kg';
+      document.getElementById('r-premio').textContent = '+' + fmt(premio, 4) + ' €/kg';
+      document.getElementById('r-prezzo-kg').textContent = fmt(prezzoKg, 4) + ' €/kg';
+      document.getElementById('r-kg').textContent = fmt(kgTot, 0) + ' kg';
+      document.getElementById('r-imponibile').textContent = fmt(imponibileLordo, 2) + ' €';
+
+      // Sconto: mostra solo se > 0
+      const rowSconto = document.getElementById('row-sconto');
+      const rowNetto = document.getElementById('row-imponibile-netto');
+      if(sconto > 0) {
+        document.getElementById('r-sconto').textContent = '– ' + fmt(sconto, 2) + ' €';
+        document.getElementById('r-imponibile-netto').textContent = fmt(imponibileNetto, 2) + ' €';
+        rowSconto.style.display = '';
+        rowNetto.style.display = '';
+      } else {
+        rowSconto.style.display = 'none';
+        rowNetto.style.display = 'none';
+      }
+
+      document.getElementById('r-iva').textContent = fmt(iva, 2) + ' €';
+      document.getElementById('r-totale').textContent = fmt(totale, 2) + ' €';
+      document.getElementById('r-capi').textContent = !isNaN(capi) ? fmt(capi, 0) + ' capi' : '—';
+      document.getElementById('r-per-capo').textContent = perCapo !== null ? fmt(perCapo, 2) + ' €' : '—';
+      document.getElementById('r-media').textContent = fmt(media, 3) + ' kg';
+
+      // Formula dettaglio
+      document.getElementById('detail-p1').textContent = fmt(p1, 4);
+      document.getElementById('detail-scalare').textContent = fmt(scalare, 4);
+      document.getElementById('detail-premio').textContent = fmt(premio, 4);
+      document.getElementById('detail-finale').textContent = fmt(prezzoKg, 4);
+
+      placeholder.style.display = 'none';
+      risultati.style.display = 'block';
+    } else {
+      // Mostra placeholder solo se non c'è nulla
+      if(isNaN(p1) || p1 === 0) {
+        placeholder.style.display = 'block';
+        risultati.style.display = 'none';
+      }
+    }
+  }
+
+  function stampa() {
+    window.print();
+  }
+
+  function reset() {
+    ['p1','p2','capi','kg-tot','media','premio','sconto'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('sel1').value = '';
+    document.getElementById('sel2').value = '';
+    document.getElementById('w1').value = '30';
+    document.getElementById('w2').value = '40';
+    document.getElementById('sub1').textContent = 'peso di riferimento: — kg';
+    document.getElementById('sub2').textContent = 'peso di riferimento: — kg';
+    document.getElementById('premio').value = '0';
+    document.getElementById('scalare-box').style.display = 'none';
+    document.getElementById('risultati').style.display = 'none';
+    document.getElementById('placeholder-msg').style.display = 'block';
+    document.getElementById('media').classList.remove('highlight');
+    document.getElementById('media-hint').style.display = 'none';
+    document.getElementById('n2').classList.remove('active');
+  }
+</script>
+
+</body>
+</html>
