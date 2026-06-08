@@ -312,11 +312,11 @@ function render() {
       }
 
       return `<div class="liq-row">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><strong style="color:var(--text);font-size:16px;font-family:var(--mono);">${fmtDate(u.data_uscita)}</strong>${u.numero_ddt ? `<span style="font-size:16px;font-family:var(--mono);font-weight:500;color:var(--text2);">Bolla n. ${u.numero_ddt}</span>` : ''}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><strong style="color:var(--text);font-size:16px;font-family:var(--mono);">${fmtDate(u.data_uscita)}</strong>${u.numero_ddt ? `<span style="font-size:20px;font-family:var(--mono);font-weight:600;color:var(--text);">Bolla n. ${u.numero_ddt}</span>` : ''}</div>
         <div class="liq-top">
           <div>
             <div class="liq-soccida">${socNome}</div>
-            <div class="liq-lotto">Lotto ${lotto?.codice || '—'}${lotto?.lettera_dop ? ' · ' + lotto.lettera_dop : ''}</div>
+
           </div>
           <div class="liq-macello">${u.macello || '—'}</div>
         </div>
@@ -413,7 +413,7 @@ function stampaTutto() {
     html += `<div class="month-title">${nomiMeseFull[parseInt(mo)]} ${y}</div>
     <table>
       <thead><tr>
-        <th>Data</th><th>Bolla</th><th>Soccida</th><th>Lotto</th><th>Macello</th>
+        <th>Data</th><th>Bolla</th><th>Soccida</th><th>Macello</th>
         <th style="text-align:right">Capi</th><th style="text-align:right">Kg tot.</th>
         <th style="text-align:right">Media kg</th><th style="text-align:right">€/kg</th>
         <th style="text-align:right">Liquidazione €</th>
@@ -429,7 +429,6 @@ function stampaTutto() {
         <td><strong>${gg}/${mm}/${yy}</strong></td>
         <td style="font-family:'Courier New',monospace">${u.numero_ddt || '—'}</td>
         <td>${soc?.nome || '—'}</td>
-        <td style="font-family:'Courier New',monospace">${lotto?.codice || '—'}${lotto?.lettera_dop ? ' · '+lotto.lettera_dop : ''}</td>
         <td>${u.macello || '—'}</td>
         <td class="num">${(u.capi||0).toLocaleString('it-IT')}</td>
         <td class="num">${(u.kg_totali||0).toLocaleString('it-IT')}</td>
