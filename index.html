@@ -492,6 +492,10 @@
         style="flex:1;padding:9px;border-radius:var(--radius-lg);border:0.5px solid var(--border);background:var(--bg2);color:var(--text2);font-size:12px;font-family:var(--font);font-weight:500;cursor:pointer;">
         🐷 Acquisto
       </button>
+      <button id="tipo-vend-btn" onclick="setTipoTrasf('VENDITA')"
+        style="flex:1;padding:9px;border-radius:var(--radius-lg);border:0.5px solid var(--border);background:var(--bg2);color:var(--text2);font-size:12px;font-family:var(--font);font-weight:500;cursor:pointer;">
+        💶 Vendita
+      </button>
     </div>
 
     <div style="background:#FFF;border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:12px;">
@@ -537,6 +541,31 @@
         </div>
       </div>
 
+      <!-- ACQUIRENTE — solo per VENDITA -->
+      <div id="vend-acquirente-block" style="display:none;">
+        <div style="padding:9px 14px;background:var(--bg2);border-bottom:0.5px solid var(--border);">
+          <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--text2);">Vendita a</div>
+        </div>
+        <div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px;">
+          <div>
+            <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">ACQUIRENTE</div>
+            <input type="text" id="vend-acquirente" placeholder="es. FAPPANI" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+          </div>
+          <div>
+            <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">SOCCIDA DI PARTENZA</div>
+            <select id="vend-soccida" onchange="aggiornaLottiVendita()" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text);">
+              <option value="">— seleziona soccida —</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">LOTTO</div>
+            <select id="vend-lotto" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text);">
+              <option value="">— seleziona prima soccida —</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
       <!-- DATI COMUNI -->
       <div style="padding:9px 14px;background:var(--bg2);border-top:0.5px solid var(--border);border-bottom:0.5px solid var(--border);">
         <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--text2);" id="trasf-dati-label">Dati trasferimento</div>
@@ -566,6 +595,97 @@
           <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">LETTERA DOP</div>
           <input type="text" id="t-lettera" placeholder="es. B" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
         </div>
+        <!-- Valore vendita + calcolatore -->
+        <div id="vend-valore-block" style="display:none;">
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">VALORE TOTALE €</div>
+          <input type="number" step="0.01" id="vend-valore" placeholder="es. 18500.00"
+            style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:14px;font-family:var(--mono);background:var(--bg);">
+          <!-- Separatore calcolatore -->
+          <div style="display:flex;align-items:center;gap:8px;margin:10px 0 8px;">
+            <div style="flex:1;height:0.5px;background:var(--border);"></div>
+            <button onclick="toggleCalcVendita()" id="btn-toggle-calc-vend"
+              style="font-size:11px;font-family:var(--mono);color:var(--accent);background:none;border:0.5px solid var(--accent);border-radius:20px;padding:3px 12px;cursor:pointer;white-space:nowrap;">
+              🧮 Apri calcolatore prezzo
+            </button>
+            <div style="flex:1;height:0.5px;background:var(--border);"></div>
+          </div>
+          <!-- Calcolatore integrato vendita -->
+          <div id="calc-vend-panel" style="display:none;background:var(--bg);border-radius:var(--radius-lg);padding:14px;margin-bottom:8px;">
+            <div style="font-size:10px;font-family:var(--mono);color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px;">Scala mobile CUN</div>
+            <div style="margin-bottom:10px;">
+              <div style="font-size:10px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">LISTINO 1</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <select id="cv-sel1" onchange="cvSelListino(1)" style="padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;color:var(--text);">
+                  <option value="">— peso kg —</option>
+                  <optgroup label="Lattonzoli"><option value="15">15 kg</option><option value="25">25 kg</option><option value="30">30 kg</option><option value="40">40 kg</option></optgroup>
+                  <optgroup label="Magroni"><option value="50">50 kg</option><option value="65">65 kg</option><option value="80">80 kg</option><option value="100">100 kg</option></optgroup>
+                </select>
+                <input type="number" id="cv-p1" placeholder="€/kg" step="0.001" min="0" oninput="cvCalcola()"
+                  style="padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;">
+              </div>
+            </div>
+            <div style="margin-bottom:10px;">
+              <div style="font-size:10px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">LISTINO 2</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <select id="cv-sel2" onchange="cvSelListino(2)" style="padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;color:var(--text);">
+                  <option value="">— peso kg —</option>
+                  <optgroup label="Lattonzoli"><option value="15">15 kg</option><option value="25">25 kg</option><option value="30">30 kg</option><option value="40">40 kg</option></optgroup>
+                  <optgroup label="Magroni"><option value="50">50 kg</option><option value="65">65 kg</option><option value="80">80 kg</option><option value="100">100 kg</option></optgroup>
+                </select>
+                <input type="number" id="cv-p2" placeholder="€/kg" step="0.001" min="0" oninput="cvCalcola()"
+                  style="padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;">
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+              <div>
+                <div style="font-size:10px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">KG TOTALI</div>
+                <input type="number" id="cv-kg" placeholder="es. 12600" min="0" oninput="cvCalcola()"
+                  style="width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;">
+              </div>
+              <div>
+                <div style="font-size:10px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">N° CAPI</div>
+                <input type="number" id="cv-capi" placeholder="es. 400" min="0" oninput="cvCalcola()"
+                  style="width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;">
+              </div>
+              <div>
+                <div style="font-size:10px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">PREMIO €/KG</div>
+                <input type="number" id="cv-premio" placeholder="0.00" step="0.001" value="0" oninput="cvCalcola()"
+                  style="width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;">
+              </div>
+            </div>
+            <div style="margin-bottom:12px;">
+              <div style="font-size:10px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">SCONTO SULL'IMPONIBILE €</div>
+              <input type="number" id="cv-sconto" placeholder="0.00" step="0.01" value="0" oninput="cvCalcola()"
+                style="width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;">
+            </div>
+            <div id="cv-risultato" style="display:none;background:var(--text);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px;">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;border-bottom:0.5px solid #333;">
+                <span style="font-size:11px;color:#AAA;">Prezzo €/kg</span>
+                <span style="font-family:var(--mono);font-size:13px;color:#FFF;" id="cv-r-prezzo">—</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;border-bottom:0.5px solid #333;">
+                <span style="font-size:11px;color:#AAA;">Imponibile</span>
+                <span style="font-family:var(--mono);font-size:13px;color:#FFF;" id="cv-r-imponibile">—</span>
+              </div>
+              <div id="cv-row-sconto" style="display:none;justify-content:space-between;align-items:baseline;padding:4px 0;border-bottom:0.5px solid #333;">
+                <span style="font-size:11px;color:#E88A8A;">Sconto</span>
+                <span style="font-family:var(--mono);font-size:13px;color:#E88A8A;" id="cv-r-sconto">—</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;border-bottom:0.5px solid #333;">
+                <span style="font-size:11px;color:#AAA;">IVA 10%</span>
+                <span style="font-family:var(--mono);font-size:13px;color:#FFF;" id="cv-r-iva">—</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0 0;">
+                <span style="font-size:12px;color:#EEE;font-weight:600;">TOTALE</span>
+                <span style="font-family:var(--mono);font-size:18px;color:var(--accent2);font-weight:600;" id="cv-r-totale">—</span>
+              </div>
+            </div>
+            <button id="cv-btn-usa" onclick="cvUsaValore()" style="display:none;width:100%;padding:10px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;">
+              ← Usa questo valore
+            </button>
+          </div>
+        </div>
+
         <!-- Incr solo TRASFERIMENTO -->
         <div id="incr-block">
           <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">INCR. KG/GG</div>
@@ -1760,22 +1880,35 @@ let _tipoTrasf = 'TRASFERIMENTO';
 function setTipoTrasf(tipo) {
   _tipoTrasf = tipo;
   const isTrasf = tipo === 'TRASFERIMENTO';
-  // Toggle pulsanti
-  const bT = document.getElementById('tipo-trasf-btn');
-  const bA = document.getElementById('tipo-acq-btn');
-  bT.style.background = isTrasf ? 'var(--accent)' : 'var(--bg2)';
-  bT.style.color = isTrasf ? '#FFF' : 'var(--text2)';
-  bT.style.borderColor = isTrasf ? 'var(--accent)' : 'var(--border)';
-  bA.style.background = isTrasf ? 'var(--bg2)' : 'var(--accent)';
-  bA.style.color = isTrasf ? 'var(--text2)' : '#FFF';
-  bA.style.borderColor = isTrasf ? 'var(--border)' : 'var(--accent)';
+  const isAcq   = tipo === 'ACQUISTO';
+  const isVend  = tipo === 'VENDITA';
+  // Reset tutti i bottoni
+  ['tipo-trasf-btn','tipo-acq-btn','tipo-vend-btn'].forEach(id => {
+    const b = document.getElementById(id);
+    b.style.background = 'var(--bg2)';
+    b.style.color = 'var(--text2)';
+    b.style.borderColor = 'var(--border)';
+  });
+  // Attiva bottone selezionato
+  const attivo = isTrasf ? 'tipo-trasf-btn' : isAcq ? 'tipo-acq-btn' : 'tipo-vend-btn';
+  const b = document.getElementById(attivo);
+  b.style.background = 'var(--accent)';
+  b.style.color = '#FFF';
+  b.style.borderColor = 'var(--accent)';
   // Mostra/nascondi blocchi
   document.getElementById('trasf-partenza-block').style.display = isTrasf ? 'block' : 'none';
-  document.getElementById('acq-fornitore-block').style.display = isTrasf ? 'none' : 'block';
-  // acq-prezzo-block non usato nel form
+  document.getElementById('acq-fornitore-block').style.display = isAcq ? 'block' : 'none';
+  document.getElementById('vend-acquirente-block').style.display = isVend ? 'block' : 'none';
   document.getElementById('incr-block').style.display = isTrasf ? 'block' : 'none';
-  document.getElementById('trasf-dati-label').textContent = isTrasf ? 'Dati trasferimento' : 'Dati acquisto';
-  document.getElementById('trasf-submit-btn').textContent = isTrasf ? '✓ Inserisci trasferimento' : '✓ Inserisci acquisto';
+  document.getElementById('vend-valore-block').style.display = isVend ? 'block' : 'none';
+  document.getElementById('trasf-dati-label').textContent = isTrasf ? 'Dati trasferimento' : isAcq ? 'Dati acquisto' : 'Dati vendita';
+  document.getElementById('trasf-submit-btn').textContent = isTrasf ? '✓ Inserisci trasferimento' : isAcq ? '✓ Inserisci acquisto' : '✓ Inserisci vendita';
+  // Popola soccide nel blocco vendita
+  if(isVend) {
+    const sel = document.getElementById('vend-soccida');
+    sel.innerHTML = '<option value="">— seleziona soccida —</option>' +
+      allSoccide.map(s => `<option value="${s.id}">${s.nome}</option>`).join('');
+  }
 }
 
 function switchTab(tab) {
@@ -1885,6 +2018,70 @@ async function inserisciUscita() {
   }
 }
 
+function aggiornaLottiVendita() {
+  const socId = parseInt(document.getElementById('vend-soccida').value);
+  const sel = document.getElementById('vend-lotto');
+  if(!socId) { sel.innerHTML = '<option value="">— seleziona prima soccida —</option>'; return; }
+  const lotti = allLotti.filter(l => l.soccida_id === socId && l.attivo);
+  sel.innerHTML = '<option value="">— seleziona lotto —</option>' +
+    lotti.map(l => `<option value="${l.id}">${l.codice} · ingresso ${fmtDateFull(l.data_ingresso)}</option>`).join('');
+}
+
+// ── CALCOLATORE VENDITA ──
+let _cvW1 = 30, _cvW2 = 40, _cvTotale = null;
+function toggleCalcVendita() {
+  const panel = document.getElementById('calc-vend-panel');
+  const btn = document.getElementById('btn-toggle-calc-vend');
+  const aperto = panel.style.display !== 'none';
+  panel.style.display = aperto ? 'none' : 'block';
+  btn.textContent = aperto ? '🧮 Apri calcolatore prezzo' : '✕ Chiudi calcolatore';
+}
+function cvSelListino(n) {
+  const kg = document.getElementById('cv-sel' + n).value;
+  if(!kg) return;
+  if(n===1) _cvW1 = parseFloat(kg); else _cvW2 = parseFloat(kg);
+  document.getElementById('cv-p' + n).value = '';
+  document.getElementById('cv-p' + n).focus();
+  cvCalcola();
+}
+function cvFmt(n, dec) { return n == null || isNaN(n) ? '—' : Number(n).toLocaleString('it-IT', {minimumFractionDigits:dec, maximumFractionDigits:dec}); }
+function cvCalcola() {
+  const p1 = parseFloat(document.getElementById('cv-p1').value);
+  const p2 = parseFloat(document.getElementById('cv-p2').value);
+  const kg = parseFloat(document.getElementById('cv-kg').value);
+  const premio = parseFloat(document.getElementById('cv-premio').value) || 0;
+  const sconto = parseFloat(document.getElementById('cv-sconto').value) || 0;
+  const ris = document.getElementById('cv-risultato');
+  const btnUsa = document.getElementById('cv-btn-usa');
+  if(isNaN(p1)||isNaN(p2)||isNaN(kg)||kg<=0) { ris.style.display='none'; btnUsa.style.display='none'; _cvTotale=null; return; }
+  const diff = Math.abs(p1-p2);
+  const deltaW = Math.abs(_cvW2-_cvW1);
+  const scalare = (diff/deltaW)*10*1.5;
+  const prezzoKg = p1 - scalare + premio;
+  const imponibile = prezzoKg * kg;
+  const imponibileNetto = imponibile - sconto;
+  const iva = imponibileNetto * 0.10;
+  const totale = imponibileNetto + iva;
+  _cvTotale = totale;
+  document.getElementById('cv-r-prezzo').textContent = cvFmt(prezzoKg,4) + ' €/kg';
+  document.getElementById('cv-r-imponibile').textContent = cvFmt(imponibile,2) + ' €';
+  document.getElementById('cv-r-iva').textContent = cvFmt(iva,2) + ' €';
+  document.getElementById('cv-r-totale').textContent = cvFmt(totale,2) + ' €';
+  const rowS = document.getElementById('cv-row-sconto');
+  if(sconto>0) { document.getElementById('cv-r-sconto').textContent = '– '+cvFmt(sconto,2)+' €'; rowS.style.display='flex'; }
+  else rowS.style.display='none';
+  ris.style.display='block';
+  btnUsa.style.display='block';
+  btnUsa.textContent = '← Usa ' + cvFmt(totale,2) + ' €';
+}
+function cvUsaValore() {
+  if(_cvTotale===null) return;
+  document.getElementById('vend-valore').value = _cvTotale.toFixed(2);
+  document.getElementById('calc-vend-panel').style.display='none';
+  document.getElementById('btn-toggle-calc-vend').textContent='🧮 Apri calcolatore prezzo';
+  document.getElementById('vend-valore').focus();
+}
+
 async function inserisciTrasf() {
   const data = document.getElementById('t-data').value;
   const capi = parseInt(document.getElementById('t-capi').value);
@@ -1958,6 +2155,35 @@ async function inserisciTrasf() {
       toastIns(`✓ Acquisto inserito — ${capi} capi da ${fornitore} → ${dest} · Lotto ${codice}`, true);
       ['t-capi','t-kg','t-lettera','acq-incr','acq-codice'].forEach(id => document.getElementById(id).value = '');
       document.getElementById('acq-fornitore').value = '';
+    } catch(e) {
+      toastIns('Errore: ' + e.message, false);
+    }
+
+  } else if(_tipoTrasf === 'VENDITA') {
+    const lottoId = parseInt(document.getElementById('vend-lotto').value);
+    const acquirente = document.getElementById('vend-acquirente').value.trim().toUpperCase();
+    const valore = parseFloat(document.getElementById('vend-valore').value) || null;
+    if(!lottoId || !data || !capi || !acquirente) {
+      toastIns('Compila: soccida, lotto, data, capi e acquirente', false); return;
+    }
+    const lotto = allLotti.find(l => l.id === lottoId);
+    const socPart = allSoccide.find(s => s.id === lotto?.soccida_id);
+    try {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/trasferimenti`, {
+        method: 'POST', headers: SB_H,
+        body: JSON.stringify({
+          lotto_id: lottoId, data_trasferimento: data,
+          soccida_partenza: socPart?.nome || '', soccida_destinazione: acquirente,
+          capi, kg, lettera_dop: lettera, tipo: 'VENDITA', valore
+        })
+      });
+      if(!r.ok) throw new Error(await r.text());
+      const nuova = await r.json();
+      if(Array.isArray(nuova)) allTrasferimenti.push(...nuova); else allTrasferimenti.push(nuova);
+      toastIns(`✓ Vendita inserita — ${capi} capi da ${socPart?.nome||''} a ${acquirente}${valore ? ' · '+valore.toLocaleString('it-IT',{minimumFractionDigits:2})+' €' : ''}`, true);
+      ['t-capi','t-kg','t-lettera','vend-acquirente','vend-valore'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('vend-soccida').value = '';
+      document.getElementById('vend-lotto').innerHTML = '<option value="">— seleziona prima soccida —</option>';
     } catch(e) {
       toastIns('Errore: ' + e.message, false);
     }
