@@ -431,7 +431,7 @@
       <span class="value" id="r-kg">—</span>
     </div>
     <div class="result-row">
-      <span class="label">Imponibile lordo</span>
+      <span class="label">Imponibile</span>
       <span class="value" id="r-imponibile">—</span>
     </div>
     <div class="result-row" id="row-sconto" style="display:none;">
@@ -439,8 +439,8 @@
       <span class="value" id="r-sconto" style="color:#E88A8A;">—</span>
     </div>
     <div class="result-row" id="row-imponibile-netto" style="display:none;">
-      <span class="label">Imponibile netto</span>
-      <span class="value" id="r-imponibile-netto">—</span>
+      <span class="label" style="font-weight:600;">Imponibile netto</span>
+      <span class="value" id="r-imponibile-netto" style="font-weight:600;">—</span>
     </div>
     <div class="result-row">
       <span class="label">IVA 10%</span>
@@ -595,19 +595,20 @@
       document.getElementById('r-kg').textContent = fmt(kgTot, 0) + ' kg';
       document.getElementById('r-imponibile').textContent = fmt(imponibileLordo, 2) + ' €';
 
-      // Sconto: mostra solo se > 0
+      // Sconto e imponibile netto: visibili solo se sconto > 0
       const rowSconto = document.getElementById('row-sconto');
       const rowNetto = document.getElementById('row-imponibile-netto');
       if(sconto > 0) {
         document.getElementById('r-sconto').textContent = '– ' + fmt(sconto, 2) + ' €';
         document.getElementById('r-imponibile-netto').textContent = fmt(imponibileNetto, 2) + ' €';
-        rowSconto.style.display = '';
-        rowNetto.style.display = '';
+        rowSconto.style.display = 'flex';
+        rowNetto.style.display = 'flex';
       } else {
         rowSconto.style.display = 'none';
         rowNetto.style.display = 'none';
       }
 
+      // IVA calcolata su imponibile netto (dopo eventuale sconto)
       document.getElementById('r-iva').textContent = fmt(iva, 2) + ' €';
       document.getElementById('r-totale').textContent = fmt(totale, 2) + ' €';
       document.getElementById('r-capi').textContent = !isNaN(capi) ? fmt(capi, 0) + ' capi' : '—';
