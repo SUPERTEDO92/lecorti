@@ -363,7 +363,7 @@
         <span class="op">=</span>
         <span class="num" id="f-per10">—</span>
         <span class="op">×</span>
-        <span class="num">1.5</span>
+        <span class="num" id="f-media-label">media kg</span>
         <span class="eq">=</span>
         <span class="res" id="f-scalare">—</span>
         <span>€/kg ogni 10 kg</span>
@@ -550,6 +550,11 @@
 
     // Aggiorna label pesi riferimento
     document.getElementById('sub1').textContent = `peso di riferimento: ${w1} kg`;
+    const mediaDisp = parseFloat(document.getElementById('media').value);
+    if(!isNaN(mediaDisp) && mediaDisp > 0) {
+      const el = document.getElementById('f-media-label');
+      if(el) el.textContent = fmt(mediaDisp,2) + ' kg';
+    }
     document.getElementById('sub2').textContent = `peso di riferimento: ${w2} kg`;
 
     // Calcolo scalare se ho entrambi i listini
@@ -559,8 +564,10 @@
     if(!isNaN(p1) && !isNaN(p2) && p1 > 0 && p2 > 0) {
       const diff = Math.abs(p1 - p2);
       const deltaW = Math.abs(w2 - w1);
-      const per10 = (diff / deltaW) * 10;
-      scalare = per10 * 1.5;
+      const per10 = diff / deltaW;
+      const mediaVal = parseFloat(document.getElementById('media').value) || 0;
+      const moltiplicatore = mediaVal > 0 ? mediaVal / deltaW : 0;
+      scalare = per10 * mediaVal;
 
       document.getElementById('f-diff').textContent = fmt(diff, 4);
       document.getElementById('f-step').textContent = deltaW;

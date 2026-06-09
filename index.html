@@ -2057,7 +2057,9 @@ function cvCalcola() {
   if(isNaN(p1)||isNaN(p2)||isNaN(kg)||kg<=0) { ris.style.display='none'; btnUsa.style.display='none'; _cvTotale=null; return; }
   const diff = Math.abs(p1-p2);
   const deltaW = Math.abs(_cvW2-_cvW1);
-  const scalare = (diff/deltaW)*10*1.5;
+  const capiVal = parseFloat(document.getElementById('cv-capi').value) || 0;
+  const mediaVal = capiVal > 0 ? kg / capiVal : 0;
+  const scalare = mediaVal > 0 ? (diff/deltaW)*mediaVal : 0;
   const prezzoKg = p1 - scalare + premio;
   const imponibile = prezzoKg * kg;
   const imponibileNetto = imponibile - sconto;
