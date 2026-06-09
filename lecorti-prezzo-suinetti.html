@@ -566,8 +566,9 @@
       const deltaW = Math.abs(w2 - w1);
       const per10 = diff / deltaW;
       const mediaVal = parseFloat(document.getElementById('media').value) || 0;
-      const moltiplicatore = mediaVal > 0 ? mediaVal / deltaW : 0;
-      scalare = per10 * mediaVal;
+      const wMin = Math.min(w1, w2);
+      const moltiplicatore = mediaVal > 0 ? (mediaVal - wMin) : 0;
+      scalare = per10 * moltiplicatore;
 
       document.getElementById('f-diff').textContent = fmt(diff, 4);
       document.getElementById('f-step').textContent = deltaW;
