@@ -224,15 +224,30 @@
 
   @media print {
     .topbar, .btn-row, .no-print { display: none !important; }
-    .main { padding: 10px; max-width: 100%; }
-    .card { break-inside: avoid; box-shadow: none; border: 1px solid #CCC; }
+    .main { padding: 4px 8px; max-width: 100%; }
+    .card { break-inside: avoid; box-shadow: none; border: 0.5px solid #CCC; padding: 10px 12px; margin-bottom: 8px; }
     .result-section {
       background: #1A1A18 !important;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
+      padding: 10px 14px;
+      margin-bottom: 8px;
     }
     .print-header { display: block !important; }
-    body { font-size: 12px; }
+    body { font-size: 10px; }
+    .card-title { font-size: 9px; margin-bottom: 8px; }
+    .field label { font-size: 9px; }
+    .field input, .field select { padding: 4px 6px; font-size: 11px; }
+    .result-row .label { font-size: 10px; }
+    .result-row .value { font-size: 11px; }
+    .result-row.big .value { font-size: 14px; }
+    .result-row.total .value { font-size: 16px; }
+    .result-row.total .label { font-size: 11px; }
+    .scalare-box { padding: 6px 10px; margin-top: 8px; }
+    .scalare-formula { font-size: 10px; }
+    .grid-2, .grid-3, .grid-4 { gap: 8px; }
+    .formula-step { font-size: 10px; }
+    @page { margin: 1cm; size: A4; }
   }
 
   .print-header {
@@ -281,8 +296,7 @@
 
   <div class="print-header">
     <h1>SOC. AGR. LE CORTI SRL</h1>
-    <p>Calcolo Prezzo Suinetti — Scala Mobile ERSAF</p>
-    <p id="print-date"></p>
+    <p>Calcolo Prezzo Suinetti — Scala Mobile CUN</p>
   </div>
 
   <div class="page-title">Scala Mobile — Calcolo Prezzo Suinetti</div>
@@ -505,7 +519,7 @@
   const oggi = new Date();
   const dataStr = oggi.toLocaleDateString('it-IT', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
   document.getElementById('data-oggi').textContent = dataStr;
-  document.getElementById('print-date').textContent = 'Elaborato il ' + dataStr;
+
 
   function fmt(n, dec=2) {
     if(n === null || isNaN(n)) return '—';
