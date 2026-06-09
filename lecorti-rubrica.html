@@ -138,136 +138,33 @@
 </div>
 
 <div class="toast" id="toast"></div>
-
 <script>
 const allevamenti = [
-  {
-    nome: 'SOC. AGR. SABBIONERA delle Sorelle Vitari s.s.',
-    indirizzo: 'Via Fienile Pozzo, 3 — 25030 Roccafranca (BS)',
-    cod_asl: '162BS008/5',
-    cod_parma: 'BS156',
-    tag: null
-  },
-  {
-    nome: 'AZ. AGR. FILIPPINI di Salini Ivonne',
-    indirizzo: "Via Padana Superiore, 54 — 25030 Urago d'Oglio (BS)",
-    cod_asl: '192BS002/4',
-    cod_parma: 'BS304',
-    tag: null
-  },
-  {
-    nome: 'SOC. AGRICOLA LE CORTI — Allevamento LA FEROLDA',
-    indirizzo: 'Via Orzinuovi — 25030 Barbariga (BS)',
-    cod_asl: '011BS003',
-    cod_parma: 'BS208',
-    tag: 'lecorti'
-  },
-  {
-    nome: 'SOC. AGRICOLA LE CORTI — Allevamento MINERBIO',
-    indirizzo: 'Via Nuova Inferiore 2b — Minerbio (BO)',
-    cod_asl: '038BO009',
-    cod_parma: 'BO040',
-    tag: 'lecorti'
-  },
-  {
-    nome: 'SOC. AGRICOLA LE CORTI — Allevamento BATTAGLIOLA',
-    indirizzo: 'Loc. Feroldina — 25030 Barbariga (BS)',
-    cod_asl: '011BS002/9',
-    cod_parma: 'BS371',
-    tag: 'lecorti'
-  },
-  {
-    nome: 'GALUPPINI GIUSEPPE Az. Agr.',
-    indirizzo: 'Via Cucca, 13 — 25012 Calvisano (BS)',
-    cod_asl: '034BS003/13',
-    cod_parma: 'BS133',
-    tag: null
-  },
-  {
-    nome: 'AZIENDE AGRICOLE GALUPPINI GIUSEPPE (2)',
-    indirizzo: 'Via Cucca — 25012 Calvisano (BS)',
-    cod_asl: '034BS327',
-    cod_parma: 'BS',
-    tag: null
-  },
-  {
-    nome: 'AZ. AGRICOLA SCARATTI GIACOMO LUIGI',
-    indirizzo: 'Cascina Ugona — Verolavecchia (BS)',
-    cod_asl: '196BS053/6',
-    cod_parma: 'BS691',
-    tag: null
-  },
-  {
-    nome: 'MOSTARDA BRUNO — Cascina Santa Caterina',
-    indirizzo: 'Via Campagna 16 — 25011 Calcinato (BS)',
-    cod_asl: '032BS105/9',
-    cod_parma: 'BS764',
-    tag: null
-  },
-  {
-    nome: 'AZ. AGRICOLA FESTA GIANFRANCO',
-    indirizzo: 'Via Lunghe 11 — 25032 Chiari (BS) · UVAC: 8401',
-    cod_asl: '052BS005/9',
-    cod_parma: 'BS076',
-    tag: null
-  },
-  {
-    nome: 'Allevamenti F.lli MORINI s.r.l.s. — Fraz. CAMPOBELLO',
-    indirizzo: 'Torre de Negri (PV) · Loc. Bellaria 2 — 27049 Zenevredo',
-    cod_asl: '158PV001/5',
-    cod_parma: 'PV074',
-    tag: null
-  },
-  {
-    nome: 'SOC. AGRICOLA PIOPPETTE di Ferronato Maurizio e Lucy s.s.',
-    indirizzo: "Via Ca' Morino 2 — 46040 Solferino (MN)",
-    cod_asl: '063MN002',
-    cod_parma: 'MN216',
-    tag: null
-  },
-  {
-    nome: 'SOC. AGRICOLA BARONCHELLI PIETRO E FIGLI',
-    indirizzo: 'C.na Marcellino — Corte Palasio 26834 (LO)',
-    cod_asl: '024LO015',
-    cod_parma: 'MI121',
-    tag: null
-  },
-  {
-    nome: 'MIGLIORATI ALESSANDRO',
-    indirizzo: 'Via Colombo, Fr. Corticelle — 25020 Dello (BS)',
-    cod_asl: '066BS002',
-    cod_parma: 'BS136',
-    tag: null
-  },
-  {
-    nome: 'ALLEVAMENTO LA PRADA di Tomasoni Alfredo',
-    indirizzo: 'Via Bembo 2, Coniolo di Orzinuovi — 25034 (BS)',
-    cod_asl: '125BS036',
-    cod_parma: '—',
-    tag: null
-  },
-  {
-    nome: 'SOC. AGRICOLA LE CORTI — Allevamento BORDOALA',
-    indirizzo: 'Loc. Molino Ala — 26020 Bordolano (CR)',
-    cod_asl: '007CR001',
-    cod_parma: 'CR323',
-    tag: 'lecorti'
-  },
-  {
-    nome: 'SOC. AGRICOLA LE CORTI — Cascina Fiorita (VEROLAVECCHIA)',
-    indirizzo: 'Numero 6 Verolavecchia (BS)',
-    cod_asl: '196BS005',
-    cod_parma: 'BS947',
-    tag: 'lecorti'
-  },
-  {
-    nome: 'AMEDEO PELIZZOLA',
-    indirizzo: 'Via Rivella 13, Fr. Villa — Castel d\'Aiano (BO)',
-    cod_asl: '013BO543',
-    cod_parma: 'BO111',
-    tag: null
-  },
+  { nome: 'SOC. AGR. SABBIONERA delle Sorelle Vitari s.s.', indirizzo: 'Via Fienile Pozzo, 3 — 25030 Roccafranca (BS)', cod_asl: '162BS008/5', cod_parma: 'BS156', tag: null },
+  { nome: 'AZ. AGR. FILIPPINI di Salini Ivonne', indirizzo: "Via Padana Superiore, 54 — 25030 Urago d'Oglio (BS)", cod_asl: '192BS002/4', cod_parma: 'BS304', tag: null },
+  { nome: 'SOC. AGRICOLA LE CORTI — Allevamento LA FEROLDA', indirizzo: 'Via Orzinuovi — 25030 Barbariga (BS)', cod_asl: '011BS003', cod_parma: 'BS208', tag: 'lecorti' },
+  { nome: 'SOC. AGRICOLA LE CORTI — Allevamento MINERBIO', indirizzo: 'Via Nuova Inferiore 2b — Minerbio (BO)', cod_asl: '038BO009', cod_parma: 'BO040', tag: 'lecorti' },
+  { nome: 'SOC. AGRICOLA LE CORTI — Allevamento BATTAGLIOLA', indirizzo: 'Loc. Feroldina — 25030 Barbariga (BS)', cod_asl: '011BS002/9', cod_parma: 'BS371', tag: 'lecorti' },
+  { nome: 'GALUPPINI GIUSEPPE Az. Agr.', indirizzo: 'Via Cucca, 13 — 25012 Calvisano (BS)', cod_asl: '034BS003/13', cod_parma: 'BS133', tag: null },
+  { nome: 'AZIENDE AGRICOLE GALUPPINI GIUSEPPE (2)', indirizzo: 'Via Cucca — 25012 Calvisano (BS)', cod_asl: '034BS327', cod_parma: 'BS', tag: null },
+  { nome: 'AZ. AGRICOLA SCARATTI GIACOMO LUIGI', indirizzo: 'Cascina Ugona — Verolavecchia (BS)', cod_asl: '196BS053/6', cod_parma: 'BS691', tag: null },
+  { nome: 'MOSTARDA BRUNO — Cascina Santa Caterina', indirizzo: 'Via Campagna 16 — 25011 Calcinato (BS)', cod_asl: '032BS105/9', cod_parma: 'BS764', tag: null },
+  { nome: 'AZ. AGRICOLA FESTA GIANFRANCO', indirizzo: 'Via Lunghe 11 — 25032 Chiari (BS) · UVAC: 8401', cod_asl: '052BS005/9', cod_parma: 'BS076', tag: null },
+  { nome: 'Allevamenti F.lli MORINI s.r.l.s. — Fraz. CAMPOBELLO', indirizzo: 'Torre de Negri (PV) · Loc. Bellaria 2 — 27049 Zenevredo', cod_asl: '158PV001/5', cod_parma: 'PV074', tag: null },
+  { nome: 'SOC. AGRICOLA PIOPPETTE di Ferronato Maurizio e Lucy s.s.', indirizzo: "Via Ca' Morino 2 — 46040 Solferino (MN)", cod_asl: '063MN002', cod_parma: 'MN216', tag: null },
+  { nome: 'SOC. AGRICOLA BARONCHELLI PIETRO E FIGLI', indirizzo: 'C.na Marcellino — Corte Palasio 26834 (LO)', cod_asl: '024LO015', cod_parma: 'MI121', tag: null },
+  { nome: 'MIGLIORATI ALESSANDRO', indirizzo: 'Via Colombo, Fr. Corticelle — 25020 Dello (BS)', cod_asl: '066BS002', cod_parma: 'BS136', tag: null },
+  { nome: 'ALLEVAMENTO LA PRADA di Tomasoni Alfredo', indirizzo: 'Via Bembo 2, Coniolo di Orzinuovi — 25034 (BS)', cod_asl: '125BS036', cod_parma: '—', tag: null },
+  { nome: 'SOC. AGRICOLA LE CORTI — Allevamento BORDOALA', indirizzo: 'Loc. Molino Ala — 26020 Bordolano (CR)', cod_asl: '007CR001', cod_parma: 'CR323', tag: 'lecorti' },
+  { nome: 'SOC. AGRICOLA LE CORTI — Cascina Fiorita (VEROLAVECCHIA)', indirizzo: 'Numero 6 Verolavecchia (BS)', cod_asl: '196BS005', cod_parma: 'BS947', tag: 'lecorti' },
+  { nome: 'AMEDEO PELIZZOLA', indirizzo: "Via Rivella 13, Fr. Villa — Castel d'Aiano (BO)", cod_asl: '013BO543', cod_parma: 'BO111', tag: null },
 ];
+
+// Carica extra da localStorage
+try {
+  const saved = JSON.parse(localStorage.getItem('rubrica_extra') || '[]');
+  allevamenti.push(...saved);
+} catch(e) {}
 
 function copia(testo, btnEl) {
   navigator.clipboard.writeText(testo).then(() => {
@@ -289,7 +186,7 @@ function mostraToast(msg) {
 }
 
 function testoCompleto(a) {
-  return `${a.nome}\n${a.indirizzo}\nCod. Allevamento: ${a.cod_asl}\nCod. Parma DOP: ${a.cod_parma}`;
+  return a.nome + '\n' + a.indirizzo + '\nCod. Allevamento: ' + a.cod_asl + '\nCod. Parma DOP: ' + a.cod_parma;
 }
 
 function render(lista) {
@@ -298,8 +195,9 @@ function render(lista) {
     el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);font-family:var(--mono);font-size:12px;">Nessun risultato</div>';
     return;
   }
-  el.innerHTML = lista.map((a, i) => `
-    <div class="card">
+  el.innerHTML = lista.map((a, i) => {
+    const testo = testoCompleto(a).replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/'/g, "\\'");
+    return `<div class="card">
       ${a.tag === 'lecorti' ? '<span class="tag lecorti">LE CORTI</span>' : ''}
       <div class="card-header">
         <div>
@@ -312,26 +210,25 @@ function render(lista) {
           <span class="chip-label">ASL</span>
           <span class="chip-val">${a.cod_asl}</span>
         </div>
-        ${a.cod_parma !== '—' && a.cod_parma ? `
-        <div class="codice-chip">
-          <span class="chip-label">Parma DOP</span>
-          <span class="chip-val">${a.cod_parma}</span>
-        </div>` : ''}
+        ${a.cod_parma && a.cod_parma !== '—' ? `<div class="codice-chip"><span class="chip-label">Parma DOP</span><span class="chip-val">${a.cod_parma}</span></div>` : ''}
       </div>
       <div class="copy-row">
-        <button class="btn-copia" data-label="📋 Copia anagrafica completa" onclick="copia(`${testoCompleto(a).replace(/`/g,'\\\\`')}`, this)">📋 Copia anagrafica completa</button>
+        <button class="btn-copia" data-label="📋 Copia anagrafica completa" onclick="copia(testoCompleto(allevamenti[${i}]), this)">📋 Copia anagrafica completa</button>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 function filtra() {
   const q = document.getElementById('cerca').value.toLowerCase();
-  if(!q) { // Carica extra da localStorage
-try {
-  const saved = JSON.parse(localStorage.getItem('rubrica_extra') || '[]');
-  allevamenti.push(...saved);
-} catch(e) {}
+  if(!q) { render(allevamenti); return; }
+  render(allevamenti.filter(a =>
+    a.nome.toLowerCase().includes(q) ||
+    a.indirizzo.toLowerCase().includes(q) ||
+    a.cod_asl.toLowerCase().includes(q) ||
+    (a.cod_parma || '').toLowerCase().includes(q)
+  ));
+}
 
 function aggiungiSito() {
   const nome = document.getElementById('new-nome').value.trim();
@@ -347,29 +244,16 @@ function aggiungiSito() {
   const nuovo = { nome, indirizzo, cod_asl, cod_parma: cod_parma || '—', tag: null };
   allevamenti.push(nuovo);
 
-  // Salva in localStorage
   try {
     const saved = JSON.parse(localStorage.getItem('rubrica_extra') || '[]');
     saved.push(nuovo);
     localStorage.setItem('rubrica_extra', JSON.stringify(saved));
   } catch(e) {}
 
-  // Pulisci form
   ['new-nome','new-indirizzo','new-asl','new-parma'].forEach(id => document.getElementById(id).value = '');
-
   filtra();
   mostraToast('✓ Sito aggiunto');
-  // Scrolla in cima
   window.scrollTo({top: 0, behavior: 'smooth'});
-}
-
-render(allevamenti); return; }
-  render(allevamenti.filter(a =>
-    a.nome.toLowerCase().includes(q) ||
-    a.indirizzo.toLowerCase().includes(q) ||
-    a.cod_asl.toLowerCase().includes(q) ||
-    a.cod_parma.toLowerCase().includes(q)
-  ));
 }
 
 render(allevamenti);
