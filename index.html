@@ -1883,4 +1883,833 @@ function aggiornaLottiTrasf() {
     lotti.map(l => `<option value="${l.id}">${l.codice} · ingresso ${fmtDateFull(l.data_ingresso)}</option>`).join('');
 }
 
-let _tipoTrasf = 'TRASFERI
+let _tipoTrasf = 'TRASFERIMENTO';
+function setTipoTrasf(tipo) {
+  _tipoTrasf = tipo;
+  const isTrasf = tipo === 'TRASFERIMENTO';
+  const isAcq   = tipo === 'ACQUISTO';
+  const isVend  = tipo === 'VENDITA';
+  // Reset tutti i bottoni
+  ['tipo-trasf-btn','tipo-acq-btn','tipo-vend-btn'].forEach(id => {
+    const b = document.getElementById(id);
+    b.style.background = 'var(--bg2)';
+    b.style.color = 'var(--text2)';
+    b.style.borderColor = 'var(--border)';
+  });
+  // Attiva bottone selezionato
+  const attivo = isTrasf ? 'tipo-trasf-btn' : isAcq ? 'tipo-acq-btn' : 'tipo-vend-btn';
+  const b = document.getElementById(attivo);
+  b.style.background = 'var(--accent)';
+  b.style.color = '#FFF';
+  b.style.borderColor = 'var(--accent)';
+  // Mostra/nascondi blocchi
+  document.getElementById('trasf-partenza-block').style.display = isTrasf ? 'block' : 'none';
+  document.getElementById('acq-fornitore-block').style.display = isAcq ? 'block' : 'none';
+  document.getElementById('vend-acquirente-block').style.display = isVend ? 'block' : 'none';
+  document.getElementById('incr-block').style.display = isTrasf ? 'block' : 'none';
+  document.getElementById('vend-valore-block').style.display = isVend ? 'block' : 'none';
+  document.getElementById('trasf-dati-label').textContent = isTrasf ? 'Dati trasferimento' : isAcq ? 'Dati acquisto' : 'Dati vendita';
+  document.getElementById('trasf-submit-btn').textContent = isTrasf ? '✓ Inserisci trasferimento' : isAcq ? '✓ Inserisci acquisto' : '✓ Inserisci vendita';
+  // Popola soccide nel blocco vendita
+  if(isVend) {
+    const sel = document.getElementById('vend-soccida');
+    sel.innerHTML = '<option value="">— seleziona soccida —</option>' +
+      allSoccide.map(s => `<option value="${s.id}">${s.nome}</option>`).join('');
+  }
+}
+
+function switchTab(tab) {
+  const isUscita = tab === 'uscita';
+  document.getElementById('form-uscita').style.display = isUscita ? 'block' : 'none';
+  document.getElementById('form-trasf').style.display = isUscita ? 'none' : 'block';
+  const tU = document.getElementById('tab-uscita');
+  const tT = document.getElementById('tab-trasf');
+  tU.style.background = isUscita ? 'var(--accent)' : '#FFF';
+  tU.style.color = isUscita ? '#FFF' : 'var(--text2)';
+  tU.style.borderColor = isUscita ? 'var(--accent)' : 'var(--border)';
+  tT.style.background = isUscita ? '#FFF' : 'var(--accent)';
+  tT.style.color = isUscita ? 'var(--text2)' : '#FFF';
+  tT.style.borderColor = isUscita ? 'var(--border)' : 'var(--accent)';
+}
+
+function calcolaMediaUscita() {
+  const capi = parseFloat(document.getElementById('u-capi').value);
+  const kg = parseFloat(document.getElementById('u-kg').value);
+  const lottoId = parseInt(document.getElementById('u-lotto').value);
+  const data = document.getElementById('u-data').value;
+  const row = document.getElementById('u-media-row');
+  if(!capi || !kg) { row.style.display = 'none'; return; }
+  const media = kg / capi;
+  document.getElementById('u-media').textContent = media.toFixed(1);
+  if(lottoId && data) {
+    const lotto = allLotti.find(l => l.id === lottoId);
+    if(lotto?.media_ingresso && lotto?.data_ingresso) {
+      const gg = Math.round((new Date(data) - new Date(lotto.data_ingresso)) / 86400000);
+      if(gg > 0) {
+        document.getElementById('u-incr').textContent = ((media - lotto.media_ingresso) / gg).toFixed(3);
+      }
+    }
+  }
+  row.style.display = 'block';
+}
+
+function toastIns(msg, ok) {
+  const t = document.getElementById('toast-ins');
+  t.style.display = 'block';
+  t.style.background = ok ? 'var(--green-bg)' : 'var(--red-bg)';
+  t.style.color = ok ? 'var(--green)' : 'var(--red)';
+  t.style.border = ok ? '0.5px solid #B8DECA' : '0.5px solid #F0BBBB';
+  t.textContent = msg;
+  if(ok) setTimeout(() => { t.style.display = 'none'; }, 4000);
+}
+
+function toggleMacelloManuale(sel) {
+  const input = document.getElementById('u-macello-manuale');
+  if(sel.value === '__MANUALE__') {
+    input.style.display = 'block';
+    input.focus();
+  } else {
+    input.style.display = 'none';
+    input.value = '';
+  }
+}
+
+async function inserisciUscita() {
+  const lottoId = parseInt(document.getElementById('u-lotto').value);
+  const data = document.getElementById('u-data').value;
+  const capi = parseInt(document.getElementById('u-capi').value);
+  const kg = parseFloat(document.getElementById('u-kg').value);
+  const ddt = document.getElementById('u-ddt').value || null;
+  const selMac = document.getElementById('u-macello').value;
+  const macello = selMac === '__MANUALE__'
+    ? (document.getElementById('u-macello-manuale').value.trim().toUpperCase() || null)
+    : (selMac || null);
+
+  if(!lottoId || !data || !capi || !kg || !macello) {
+    toastIns('Compila: soccida, lotto, data, macello, capi e kg', false); return;
+  }
+
+  const lotto = allLotti.find(l => l.id === lottoId);
+  const gg = lotto ? Math.round((new Date(data) - new Date(lotto.data_ingresso)) / 86400000) : null;
+  let incremento = null;
+  if(lotto?.media_ingresso && gg > 0) {
+    incremento = parseFloat(((kg/capi - lotto.media_ingresso) / gg).toFixed(3));
+  }
+
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/uscite`, {
+      method: 'POST', headers: SB_H,
+      body: JSON.stringify({
+        lotto_id: lottoId, data_uscita: data,
+        numero_ddt: ddt, macello, capi, kg_totali: kg,
+        giorni_permanenza: gg > 0 ? gg : null,
+        incremento
+      })
+    });
+    if(!r.ok) throw new Error(await r.text());
+
+    // Aggiorna dati locali e home
+    const nuova = await r.json();
+    if(Array.isArray(nuova)) allUscite.push(...nuova); else allUscite.push(nuova);
+    renderHome();
+
+    toastIns(`✓ Uscita inserita — ${capi} capi · ${kg.toLocaleString('it-IT')} kg · ${macello}`, true);
+    // Reset form
+    ['u-ddt','u-capi','u-kg'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('u-macello').value = '';
+    document.getElementById('u-macello-manuale').style.display = 'none';
+    document.getElementById('u-macello-manuale').value = '';
+    document.getElementById('u-media-row').style.display = 'none';
+  } catch(e) {
+    toastIns('Errore: ' + e.message, false);
+  }
+}
+
+function aggiornaTrasfDestinazione() {
+  const dest = document.getElementById('t-dest').value;
+  const socDest = allSoccide.find(s => s.nome === dest);
+  const block = document.getElementById('trasf-codice-lotto-block');
+  const sugg = document.getElementById('trasf-codice-suggerito');
+  if(socDest) {
+    block.style.display = 'block';
+    // Suggerisci prossimo codice lotto
+    const anno = new Date().getFullYear().toString().slice(-2);
+    const lottiEsistenti = allLotti.filter(l => l.soccida_id === socDest.id && l.codice && l.codice.endsWith('/'+anno));
+    const numeri = lottiEsistenti.map(l => parseInt(l.codice)).filter(n => !isNaN(n));
+    const prossimo = numeri.length > 0 ? (Math.max(...numeri) + 1).toString().padStart(2,'0') : '01';
+    const codSugg = prossimo + '/' + anno;
+    document.getElementById('trasf-codice-dest').value = codSugg;
+    sugg.textContent = 'Suggerito: ' + codSugg;
+  } else {
+    block.style.display = 'none';
+    sugg.textContent = '';
+  }
+}
+
+function aggiornaLottiVendita() {
+  const socId = parseInt(document.getElementById('vend-soccida').value);
+  const sel = document.getElementById('vend-lotto');
+  if(!socId) { sel.innerHTML = '<option value="">— seleziona prima soccida —</option>'; return; }
+  const lotti = allLotti.filter(l => l.soccida_id === socId && l.attivo);
+  sel.innerHTML = '<option value="">— seleziona lotto —</option>' +
+    lotti.map(l => `<option value="${l.id}">${l.codice} · ingresso ${fmtDateFull(l.data_ingresso)}</option>`).join('');
+}
+
+// ── CALCOLATORE VENDITA ──
+let _cvW1 = 30, _cvW2 = 40, _cvTotale = null;
+// ── CALCOLATORE PREZZO INTEGRATO (modale costo acquisto) ──
+let _cW1 = 30, _cW2 = 40, _cTotaleCalcolato = null;
+
+function toggleCalcPrezzo() {
+  const panel = document.getElementById('calc-prezzo-panel');
+  const btn = document.getElementById('btn-toggle-calc');
+  const aperto = panel.style.display !== 'none';
+  panel.style.display = aperto ? 'none' : 'block';
+  btn.textContent = aperto ? '🧮 Apri calcolatore prezzo' : '✕ Chiudi calcolatore';
+}
+function cSelListino(n) {
+  const kg = document.getElementById('c-sel' + n).value;
+  if(!kg) return;
+  if(n===1) _cW1 = parseFloat(kg); else _cW2 = parseFloat(kg);
+  document.getElementById('c-p' + n).value = '';
+  document.getElementById('c-p' + n).focus();
+  cCalcola();
+}
+function cFmt(n,dec){return n==null||isNaN(n)?'—':Number(n).toLocaleString('it-IT',{minimumFractionDigits:dec,maximumFractionDigits:dec});}
+function cCalcola() {
+  const p1=parseFloat(document.getElementById('c-p1').value);
+  const p2=parseFloat(document.getElementById('c-p2').value);
+  const kg=parseFloat(document.getElementById('c-kg').value);
+  const capi=parseFloat(document.getElementById('c-capi').value);
+  const premio=parseFloat(document.getElementById('c-premio').value)||0;
+  const sconto=parseFloat(document.getElementById('c-sconto').value)||0;
+  const ris=document.getElementById('c-risultato');
+  const btnUsa=document.getElementById('btn-usa-valore');
+  if(isNaN(p1)||isNaN(p2)||isNaN(kg)||kg<=0||isNaN(capi)||capi<=0){ris.style.display='none';btnUsa.style.display='none';_cTotaleCalcolato=null;return;}
+  const diff=Math.abs(p1-p2);
+  const deltaW=Math.abs(_cW2-_cW1);
+  const media=kg/capi;
+  const wMin=Math.min(_cW1,_cW2);
+  const scalare=(diff/deltaW)*(media-wMin);
+  const prezzoKg=p1-scalare+premio;
+  const imponibile=prezzoKg*kg;
+  const imponibileNetto=imponibile-sconto;
+  const iva=imponibileNetto*0.10;
+  const totale=imponibileNetto+iva;
+  _cTotaleCalcolato=totale;
+  document.getElementById('c-r-prezzo').textContent=cFmt(prezzoKg,4)+' €/kg';
+  document.getElementById('c-r-imponibile').textContent=cFmt(imponibile,2)+' €';
+  document.getElementById('c-r-iva').textContent=cFmt(iva,2)+' €';
+  document.getElementById('c-r-totale').textContent=cFmt(totale,2)+' €';
+  const rowS=document.getElementById('c-row-sconto');
+  if(sconto>0){document.getElementById('c-r-sconto').textContent='– '+cFmt(sconto,2)+' €';rowS.style.display='flex';}else rowS.style.display='none';
+  ris.style.display='block';btnUsa.style.display='block';
+  btnUsa.textContent='← Usa '+cFmt(totale,2)+' €';
+}
+function usaValoreCalcolato() {
+  if(_cTotaleCalcolato===null) return;
+  document.getElementById('costo-val').value=_cTotaleCalcolato.toFixed(2);
+  document.getElementById('calc-prezzo-panel').style.display='none';
+  document.getElementById('btn-toggle-calc').textContent='🧮 Apri calcolatore prezzo';
+  document.getElementById('costo-val').focus();
+}
+
+function toggleCalcVendita() {
+  const panel = document.getElementById('calc-vend-panel');
+  const btn = document.getElementById('btn-toggle-calc-vend');
+  const aperto = panel.style.display !== 'none';
+  panel.style.display = aperto ? 'none' : 'block';
+  btn.textContent = aperto ? '🧮 Apri calcolatore prezzo' : '✕ Chiudi calcolatore';
+}
+function cvSelListino(n) {
+  const kg = document.getElementById('cv-sel' + n).value;
+  if(!kg) return;
+  if(n===1) _cvW1 = parseFloat(kg); else _cvW2 = parseFloat(kg);
+  document.getElementById('cv-p' + n).value = '';
+  document.getElementById('cv-p' + n).focus();
+  cvCalcola();
+}
+function cvFmt(n, dec) { return n == null || isNaN(n) ? '—' : Number(n).toLocaleString('it-IT', {minimumFractionDigits:dec, maximumFractionDigits:dec}); }
+function cvCalcola() {
+  const p1 = parseFloat(document.getElementById('cv-p1').value);
+  const p2 = parseFloat(document.getElementById('cv-p2').value);
+  const kg = parseFloat(document.getElementById('cv-kg').value);
+  const premio = parseFloat(document.getElementById('cv-premio').value) || 0;
+  const sconto = parseFloat(document.getElementById('cv-sconto').value) || 0;
+  const ris = document.getElementById('cv-risultato');
+  const btnUsa = document.getElementById('cv-btn-usa');
+  if(isNaN(p1)||isNaN(p2)||isNaN(kg)||kg<=0) { ris.style.display='none'; btnUsa.style.display='none'; _cvTotale=null; return; }
+  const diff = Math.abs(p1-p2);
+  const deltaW = Math.abs(_cvW2-_cvW1);
+  const capiVal = parseFloat(document.getElementById('cv-capi').value) || 0;
+  const mediaVal = capiVal > 0 ? kg / capiVal : 0;
+  const wMin = Math.min(_cvW1, _cvW2);
+  const scalare = mediaVal > 0 ? (diff/deltaW)*(mediaVal - wMin) : 0;
+  const prezzoKg = p1 - scalare + premio;
+  const imponibile = prezzoKg * kg;
+  const imponibileNetto = imponibile - sconto;
+  const iva = imponibileNetto * 0.10;
+  const totale = imponibileNetto + iva;
+  _cvTotale = totale;
+  document.getElementById('cv-r-prezzo').textContent = cvFmt(prezzoKg,4) + ' €/kg';
+  document.getElementById('cv-r-imponibile').textContent = cvFmt(imponibile,2) + ' €';
+  document.getElementById('cv-r-iva').textContent = cvFmt(iva,2) + ' €';
+  document.getElementById('cv-r-totale').textContent = cvFmt(totale,2) + ' €';
+  const rowS = document.getElementById('cv-row-sconto');
+  if(sconto>0) { document.getElementById('cv-r-sconto').textContent = '– '+cvFmt(sconto,2)+' €'; rowS.style.display='flex'; }
+  else rowS.style.display='none';
+  ris.style.display='block';
+  btnUsa.style.display='block';
+  btnUsa.textContent = '← Usa ' + cvFmt(totale,2) + ' €';
+}
+function cvUsaValore() {
+  if(_cvTotale===null) return;
+  document.getElementById('vend-valore').value = _cvTotale.toFixed(2);
+  document.getElementById('calc-vend-panel').style.display='none';
+  document.getElementById('btn-toggle-calc-vend').textContent='🧮 Apri calcolatore prezzo';
+  document.getElementById('vend-valore').focus();
+}
+
+async function inserisciTrasf() {
+  const data = document.getElementById('t-data').value;
+  const capi = parseInt(document.getElementById('t-capi').value);
+  const kg = parseFloat(document.getElementById('t-kg').value) || null;
+  const dest = document.getElementById('t-dest').value;
+  const lettera = document.getElementById('t-lettera').value || null;
+  const incr = parseFloat(document.getElementById('acq-incr').value) || null;
+
+  if(_tipoTrasf === 'TRASFERIMENTO') {
+    const lottoId = parseInt(document.getElementById('t-lotto').value);
+    if(!lottoId || !data || !capi || !dest) {
+      toastIns('Compila: soccida, lotto, data, capi e destinazione', false); return;
+    }
+    const lotto = allLotti.find(l => l.id === lottoId);
+    const socPart = allSoccide.find(s => s.id === lotto?.soccida_id);
+    const socDest = allSoccide.find(s => s.nome === dest);
+
+    try {
+      let lottoDestId = null;
+
+      // Se destinazione è soccida interna → crea lotto automaticamente
+      if(socDest) {
+        const codiceDest = document.getElementById('trasf-codice-dest').value.trim();
+        if(!codiceDest) {
+          toastIns('Inserisci il codice lotto per la soccida di destinazione', false); return;
+        }
+        const media = kg && capi ? parseFloat((kg/capi).toFixed(2)) : null;
+        const rL = await fetch(`${SUPABASE_URL}/rest/v1/lotti`, {
+          method: 'POST', headers: SB_H,
+          body: JSON.stringify({
+            soccida_id: socDest.id, codice: codiceDest,
+            provenienza: socPart?.nome || '',
+            data_ingresso: data, capi_entrati: capi,
+            kg_totali_ingresso: kg, media_ingresso: media,
+            lettera_dop: lettera, incremento_giornaliero: incr || 0.75,
+            attivo: true
+          })
+        });
+        if(!rL.ok) throw new Error(await rL.text());
+        const nuovoL = await rL.json();
+        const lottoNew = Array.isArray(nuovoL) ? nuovoL[0] : nuovoL;
+        if(Array.isArray(nuovoL)) allLotti.push(...nuovoL); else allLotti.push(nuovoL);
+        lottoDestId = lottoNew.id;
+      }
+
+      // Registra il trasferimento
+      // Se destinazione è soccida interna → ACQUISTO (capi entrano nel lotto dest)
+      // Se destinazione è esterna → TRASFERIMENTO
+      const tipoMov = socDest ? 'ACQUISTO' : 'TRASFERIMENTO';
+      const lottoIdMov = socDest ? lottoDestId : lottoId;
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/trasferimenti`, {
+        method: 'POST', headers: SB_H,
+        body: JSON.stringify({
+          lotto_id: lottoIdMov, data_trasferimento: data,
+          soccida_partenza: socPart?.nome || '', soccida_destinazione: dest,
+          capi, kg, lettera_dop: lettera, tipo: tipoMov
+        })
+      });
+      if(!r.ok) throw new Error(await r.text());
+      const nuova = await r.json();
+      if(Array.isArray(nuova)) allTrasferimenti.push(...nuova); else allTrasferimenti.push(nuova);
+
+      renderHome();
+      const msg = socDest
+        ? `✓ Trasferimento inserito — ${capi} capi da ${socPart?.nome||''} a ${dest} · Lotto ${document.getElementById('trasf-codice-dest').value} creato`
+        : `✓ Trasferimento inserito — ${capi} capi da ${socPart?.nome||''} a ${dest}`;
+      toastIns(msg, true);
+      ['t-capi','t-kg','t-lettera','acq-incr','trasf-codice-dest'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+      document.getElementById('trasf-codice-lotto-block').style.display = 'none';
+      document.getElementById('trasf-codice-suggerito').textContent = '';
+    } catch(e) {
+      toastIns('Errore: ' + e.message, false);
+    }
+
+  } else if(_tipoTrasf === 'ACQUISTO') {
+    const fornitore = document.getElementById('acq-fornitore').value;
+    const codice = document.getElementById('acq-codice').value;
+    const socDest = allSoccide.find(s => s.nome === dest);
+    if(!fornitore || !codice || !data || !capi || !dest || !socDest) {
+      toastIns('Compila tutti i campi: fornitore, codice lotto, data, soccida, capi', false); return;
+    }
+    try {
+      const media = kg && capi ? parseFloat((kg/capi).toFixed(2)) : null;
+      const rL = await fetch(`${SUPABASE_URL}/rest/v1/lotti`, {
+        method: 'POST', headers: SB_H,
+        body: JSON.stringify({
+          soccida_id: socDest.id, codice, provenienza: fornitore,
+          data_ingresso: data, capi_entrati: capi,
+          kg_totali_ingresso: kg, media_ingresso: media,
+          lettera_dop: lettera, incremento_giornaliero: incr,
+ attivo: true
+        })
+      });
+      if(!rL.ok) throw new Error(await rL.text());
+      const nuovoL = await rL.json();
+      const lottoNew = Array.isArray(nuovoL) ? nuovoL[0] : nuovoL;
+      if(Array.isArray(nuovoL)) allLotti.push(...nuovoL); else allLotti.push(nuovoL);
+      // Registra in trasferimenti come ACQUISTO
+      const rT = await fetch(`${SUPABASE_URL}/rest/v1/trasferimenti`, {
+        method: 'POST', headers: SB_H,
+        body: JSON.stringify({
+          lotto_id: lottoNew.id, data_trasferimento: data,
+          soccida_partenza: fornitore, soccida_destinazione: dest,
+          capi, kg, lettera_dop: lettera, tipo: 'ACQUISTO'
+        })
+      });
+      if(rT.ok) {
+        const nuovoT = await rT.json();
+        if(Array.isArray(nuovoT)) allTrasferimenti.push(...nuovoT); else allTrasferimenti.push(nuovoT);
+      }
+      renderHome();
+      toastIns(`✓ Acquisto inserito — ${capi} capi da ${fornitore} → ${dest} · Lotto ${codice}`, true);
+      ['t-capi','t-kg','t-lettera','acq-incr','acq-codice'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('acq-fornitore').value = '';
+    } catch(e) {
+      toastIns('Errore: ' + e.message, false);
+    }
+
+  } else if(_tipoTrasf === 'VENDITA') {
+    const lottoId = parseInt(document.getElementById('vend-lotto').value);
+    const acquirente = document.getElementById('vend-acquirente').value.trim().toUpperCase();
+    const valore = parseFloat(document.getElementById('vend-valore').value) || null;
+    if(!lottoId || !data || !capi || !acquirente) {
+      toastIns('Compila: soccida, lotto, data, capi e acquirente', false); return;
+    }
+    const lotto = allLotti.find(l => l.id === lottoId);
+    const socPart = allSoccide.find(s => s.id === lotto?.soccida_id);
+    try {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/trasferimenti`, {
+        method: 'POST', headers: SB_H,
+        body: JSON.stringify({
+          lotto_id: lottoId, data_trasferimento: data,
+          soccida_partenza: socPart?.nome || '', soccida_destinazione: acquirente,
+          capi, kg, lettera_dop: lettera, tipo: 'VENDITA', valore
+        })
+      });
+      if(!r.ok) throw new Error(await r.text());
+      const nuova = await r.json();
+      if(Array.isArray(nuova)) allTrasferimenti.push(...nuova); else allTrasferimenti.push(nuova);
+      toastIns(`✓ Vendita inserita — ${capi} capi da ${socPart?.nome||''} a ${acquirente}${valore ? ' · '+valore.toLocaleString('it-IT',{minimumFractionDigits:2})+' €' : ''}`, true);
+      ['t-capi','t-kg','t-lettera','vend-acquirente','vend-valore'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('vend-soccida').value = '';
+      document.getElementById('vend-lotto').innerHTML = '<option value="">— seleziona prima soccida —</option>';
+    } catch(e) {
+      toastIns('Errore: ' + e.message, false);
+    }
+  }
+}
+
+// ── MODIFICA INCREMENTO (definita qui per essere disponibile agli onclick inline) ──
+let _incrLottoId = null;
+function apriModaleIncr(lottoId, valAttuale) {
+  _incrLottoId = lottoId;
+  const lotto = allLotti.find(l => l.id === lottoId);
+  const soc = allSoccide.find(s => s.id === lotto?.soccida_id);
+  document.getElementById('modal-incr-info').textContent =
+    (soc?.nome || '—') + ' · Lotto ' + (lotto?.codice || '—') + ' · attuale: +' + (valAttuale || '—') + ' kg/gg';
+  document.getElementById('modal-incr-val').value = valAttuale || '';
+  document.getElementById('modal-incr').style.display = 'flex';
+}
+async function salvaIncr() {
+  const val = parseFloat(document.getElementById('modal-incr-val').value);
+  if(!val || isNaN(val)) { alert('Inserisci un valore valido'); return; }
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/lotti?id=eq.${_incrLottoId}`, {
+      method: 'PATCH', headers: SB_H,
+      body: JSON.stringify({ incremento_giornaliero: val })
+    });
+    if(!r.ok) throw new Error(await r.text());
+    const l = allLotti.find(x => x.id === _incrLottoId);
+    if(l) l.incremento_giornaliero = val;
+    document.getElementById('modal-incr').style.display = 'none';
+    if(currentLottoId) renderDetail(currentLottoId);
+  } catch(e) {
+    alert('Errore: ' + e.message);
+  }
+}
+
+// Start
+loadAll();
+</script>
+<!-- MODALE COSTO ACQUISTO -->
+<div id="modal-costo" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center;">
+  <div style="background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-size:14px;font-weight:500;font-family:var(--mono);">Inserisci valore</div>
+      <button onclick="chiudiCostoAcquisto()" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
+    </div>
+    <div id="modal-costo-info" style="font-size:11px;color:var(--text2);background:var(--bg2);padding:8px 10px;border-radius:var(--radius);margin-bottom:14px;font-family:var(--mono);"></div>
+    <div>
+      <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">VALORE TOTALE €</div>
+      <input type="number" step="0.01" id="costo-val" placeholder="es. 18500.00"
+        style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:16px;font-family:var(--mono);background:var(--bg);">
+    </div>
+    <!-- SEPARATORE CALCOLATORE -->
+    <div style="display:flex;align-items:center;gap:8px;margin:16px 0 12px;">
+      <div style="flex:1;height:0.5px;background:var(--border);"></div>
+      <button onclick="toggleCalcPrezzo()" id="btn-toggle-calc" style="font-size:11px;font-family:var(--mono);color:var(--accent);background:none;border:0.5px solid var(--accent);border-radius:20px;padding:3px 12px;cursor:pointer;white-space:nowrap;">🧮 Apri calcolatore prezzo</button>
+      <div style="flex:1;height:0.5px;background:var(--border);"></div>
+    </div>
+    <!-- CALCOLATORE INTEGRATO -->
+    <div id="calc-prezzo-panel" style="display:none;background:var(--bg);border-radius:var(--radius-lg);padding:14px;margin-bottom:14px;">
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px;">Scala mobile CUN</div>
+      <div style="margin-bottom:10px;">
+        <div style="font-size:10px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">LISTINO 1</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <select id="c-sel1" onchange="cSelListino(1)" style="padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;color:var(--text);">
+            <option value="">— peso kg —</option>
+            <optgroup label="Lattonzoli"><option value="15">15 kg</option><option value="25">25 kg</option><option value="30">30 kg</option><option value="40">40 kg</option></optgroup>
+            <optgroup label="Magroni"><option value="50">50 kg</option><option value="65">65 kg</option><option value="80">80 kg</option><option value="100">100 kg</option></optgroup>
+          </select>
+          <input type="number" id="c-p1" placeholder="€/kg" step="0.001" min="0" oninput="cCalcola()" style="padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;">
+        </div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <div style="font-size:10px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">LISTINO 2</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <select id="c-sel2" onchange="cSelListino(2)" style="padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;color:var(--text);">
+            <option value="">— peso kg —</option>
+            <optgroup label="Lattonzoli"><option value="15">15 kg</option><option value="25">25 kg</option><option value="30">30 kg</option><option value="40">40 kg</option></optgroup>
+            <optgroup label="Magroni"><option value="50">50 kg</option><option value="65">65 kg</option><option value="80">80 kg</option><option value="100">100 kg</option></optgroup>
+          </select>
+          <input type="number" id="c-p2" placeholder="€/kg" step="0.001" min="0" oninput="cCalcola()" style="padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+        <div>
+          <div style="font-size:10px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">KG TOTALI</div>
+          <input type="number" id="c-kg" placeholder="es. 9300" min="0" oninput="cCalcola()" style="width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;">
+        </div>
+        <div>
+          <div style="font-size:10px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">N° CAPI</div>
+          <input type="number" id="c-capi" placeholder="es. 285" min="0" oninput="cCalcola()" style="width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;">
+        </div>
+        <div>
+          <div style="font-size:10px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">PREMIO €/KG</div>
+          <input type="number" id="c-premio" placeholder="0.00" step="0.001" value="0" oninput="cCalcola()" style="width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;">
+        </div>
+      </div>
+      <div style="margin-bottom:12px;">
+        <div style="font-size:10px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">SCONTO IMPONIBILE €</div>
+        <input type="number" id="c-sconto" placeholder="0.00" step="0.01" value="0" oninput="cCalcola()" style="width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;">
+      </div>
+      <div id="c-risultato" style="display:none;background:var(--text);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:0.5px solid #333;"><span style="font-size:11px;color:#AAA;">Prezzo €/kg</span><span style="font-family:var(--mono);font-size:13px;color:#FFF;" id="c-r-prezzo">—</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:0.5px solid #333;"><span style="font-size:11px;color:#AAA;">Imponibile</span><span style="font-family:var(--mono);font-size:13px;color:#FFF;" id="c-r-imponibile">—</span></div>
+        <div id="c-row-sconto" style="display:none;justify-content:space-between;padding:4px 0;border-bottom:0.5px solid #333;"><span style="font-size:11px;color:#E88A8A;">Sconto</span><span style="font-family:var(--mono);font-size:13px;color:#E88A8A;" id="c-r-sconto">—</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:0.5px solid #333;"><span style="font-size:11px;color:#AAA;">IVA 10%</span><span style="font-family:var(--mono);font-size:13px;color:#FFF;" id="c-r-iva">—</span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0 0;"><span style="font-size:12px;color:#EEE;font-weight:600;">TOTALE</span><span style="font-family:var(--mono);font-size:18px;color:var(--accent2);font-weight:600;" id="c-r-totale">—</span></div>
+      </div>
+      <button id="btn-usa-valore" onclick="usaValoreCalcolato()" style="display:none;width:100%;padding:10px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;"></button>
+    </div>
+    <button onclick="salvaCostoAcquisto()" style="width:100%;padding:13px;background:var(--green);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:4px;">
+      ✓ Salva costo
+    </button>
+  </div>
+</div>
+
+<!-- MODALE INCREMENTO -->
+<div id="modal-incr" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center;">
+  <div style="background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-size:14px;font-weight:500;font-family:var(--mono);">Modifica incremento</div>
+      <button id="incr-modal-close" onclick="document.getElementById('modal-incr').style.display='none'" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
+    </div>
+    <div id="modal-incr-info" style="font-size:11px;color:var(--text2);background:var(--bg2);padding:8px 10px;border-radius:var(--radius);margin-bottom:14px;font-family:var(--mono);"></div>
+    <div>
+      <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">INCREMENTO KG/GG</div>
+      <input type="number" step="0.001" id="modal-incr-val" placeholder="es. 0.650"
+        style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:16px;font-family:var(--mono);background:var(--bg);">
+    </div>
+    <button id="incr-modal-save" onclick="salvaIncr()" style="width:100%;padding:13px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:16px;">
+      ✓ Salva incremento
+    </button>
+  </div>
+</div>
+
+<!-- MODALE MORTALITÀ -->
+<div id="modal-mort" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center;">
+  <div style="background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-size:14px;font-weight:500;font-family:var(--mono);">Registra mortalità</div>
+      <button onclick="chiudiMortalita()" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
+    </div>
+    <div id="modal-mort-info" style="font-size:11px;color:var(--text2);background:var(--bg2);padding:8px 10px;border-radius:var(--radius);margin-bottom:14px;font-family:var(--mono);"></div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">DATA</div>
+          <input type="date" id="mort-data" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+        </div>
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">N° CAPI MORTI</div>
+          <input type="number" id="mort-capi" placeholder="es. 2" min="0" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">TRATTAMENTO (opzionale)</div>
+        <input type="text" id="mort-trattamento" placeholder="es. AMO, STR, FLO..." style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+      </div>
+      <div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">NOTE (opzionale)</div>
+        <input type="text" id="mort-note" placeholder="es. 15 scarti arrivo" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+      </div>
+    </div>
+    <button onclick="salvaMortalita()" style="width:100%;padding:13px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:16px;">
+      ✓ Salva
+    </button>
+  </div>
+</div>
+
+<!-- MODALE LIQUIDAZIONE -->
+<div id="modal-liq" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center;">
+  <div style="background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div style="font-size:14px;font-weight:500;font-family:var(--mono);">Inserisci liquidazione</div>
+      <button onclick="chiudiLiquidazione()" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
+    </div>
+    <div id="modal-liq-info" style="font-size:11px;color:var(--text2);background:var(--bg2);padding:8px 10px;border-radius:var(--radius);margin-bottom:14px;font-family:var(--mono);"></div>
+
+    <div style="display:flex;flex-direction:column;gap:10px;">
+
+      <!-- €/kg e totale lordo -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">€/KG</div>
+          <input type="number" step="0.001" id="liq-prezzo" placeholder="es. 1.761"
+            style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+        </div>
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">TOTALE LORDO €</div>
+          <input type="number" step="0.01" id="liq-lordo" placeholder="es. 44500.00"
+            style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+        </div>
+      </div>
+
+      <!-- Sconti -->
+      <div style="padding:8px 10px;background:var(--bg2);border-radius:var(--radius);border:0.5px solid var(--border);">
+        <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:8px;">Detrazioni</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div>
+            <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">SCONTO PESO €</div>
+            <input type="number" step="0.01" id="liq-sc-peso" placeholder="es. 850.00"
+              oninput="calcolaNettoLiq()"
+              style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+          </div>
+          <div>
+            <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">NON CONFORME €</div>
+            <input type="number" step="0.01" id="liq-sc-merce" placeholder="es. 240.00"
+              oninput="calcolaNettoLiq()"
+              style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+          </div>
+        </div>
+      </div>
+
+      <!-- Netto calcolato -->
+      <div id="liq-netto-row" style="display:none;padding:10px 12px;background:var(--green-bg);border-radius:var(--radius);font-family:var(--mono);">
+        <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">NETTO LIQUIDAZIONE</div>
+        <div id="liq-netto-val" style="font-size:18px;font-weight:500;color:var(--green);"></div>
+      </div>
+
+      <!-- Totale netto manuale (se non si calcola) -->
+      <div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">LIQUIDAZIONE NETTA € <span style="color:var(--text3);font-weight:400;">(conferma o inserisci manualmente)</span></div>
+        <input type="number" step="0.01" id="liq-totale" placeholder="es. 43008.01"
+          style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+      </div>
+
+    </div>
+
+    <button onclick="salvaLiquidazione()" style="width:100%;padding:13px;background:var(--green);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:16px;">
+      ✓ Salva liquidazione
+    </button>
+  </div>
+</div>
+
+<script>
+// ── ARCHIVIO ──
+function renderArchivio() {
+  const lottiArchiviati = allLotti.filter(l => !l.attivo);
+  if(!lottiArchiviati.length) {
+    document.getElementById('archivio-content').innerHTML = '<div class="empty" style="padding:40px 0;text-align:center;color:var(--text3);">Nessun lotto archiviato.</div>';
+    return;
+  }
+
+  // Raggruppa per soccida
+  const bySoc = {};
+  lottiArchiviati.forEach(l => {
+    const soc = allSoccide.find(s => s.id === l.soccida_id);
+    const nome = soc?.nome || '—';
+    if(!bySoc[nome]) bySoc[nome] = [];
+    bySoc[nome].push(l);
+  });
+
+  let html = '';
+  Object.keys(bySoc).sort().forEach(nomeSoc => {
+    const lotti = bySoc[nomeSoc].sort((a,b) => b.data_ingresso.localeCompare(a.data_ingresso));
+    html += `<div style="margin-bottom:20px;">
+      <div style="font-size:13px;font-weight:500;font-family:var(--mono);padding:8px 0;border-bottom:1px solid var(--border);margin-bottom:8px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;">${nomeSoc}</div>`;
+
+    lotti.forEach(lotto => {
+      const uscite = allUscite.filter(u => u.lotto_id === lotto.id).sort((a,b) => a.data_uscita.localeCompare(b.data_uscita));
+      const capiUsciti = uscite.reduce((s,u) => s+(u.capi||0), 0);
+      const totLiq = uscite.reduce((s,u) => s+(u.liquidazione||0), 0);
+      const ggStalla = lotto.data_ingresso && uscite.length
+        ? Math.round((new Date(uscite[uscite.length-1].data_uscita) - new Date(lotto.data_ingresso)) / 86400000) : '—';
+
+      html += `<div style="background:#FFF;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:10px 14px;margin-bottom:6px;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+          <div>
+            <span style="font-size:13px;font-weight:500;font-family:var(--mono);">Lotto ${lotto.codice}</span>
+            ${lotto.lettera_dop ? `<span style="font-size:11px;color:var(--text2);margin-left:6px;">${lotto.lettera_dop}</span>` : ''}
+          </div>
+          <span style="font-size:10px;color:var(--text3);font-family:var(--mono);">${lotto.provenienza || ''}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px;">
+          <div style="text-align:center;">
+            <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">Entrati</div>
+            <div style="font-size:13px;font-weight:500;font-family:var(--mono);">${fmt(lotto.capi_entrati)}</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">Macellati</div>
+            <div style="font-size:13px;font-weight:500;font-family:var(--mono);">${fmt(capiUsciti)}</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">Gg stalla</div>
+            <div style="font-size:13px;font-weight:500;font-family:var(--mono);">${ggStalla}</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">Liquidato</div>
+            <div style="font-size:13px;font-weight:500;font-family:var(--mono);color:var(--green);">${totLiq ? fmt(totLiq)+' €' : '—'}</div>
+          </div>
+        </div>
+        ${uscite.length ? `<div style="font-size:10px;color:var(--text2);font-family:var(--mono);">
+          ${uscite.map(u => `${fmtDate(u.data_uscita)} · ${u.macello||'—'} · ${fmt(u.capi)} capi · ${fmt(u.kg_totali)} kg${u.liquidazione ? ' · '+fmt(u.liquidazione)+' €' : ''}`).join('<br>')}
+        </div>` : ''}
+      </div>`;
+    });
+    html += `</div>`;
+  });
+
+  document.getElementById('archivio-content').innerHTML = html;
+}
+
+
+
+// ── ARCHIVIA LOTTO ──
+async function archiviaLotto(lottoId, codice) {
+  if(!confirm(`Archiviare il lotto ${codice}? Verrà impostato come non attivo e non apparirà più in home.`)) return;
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/lotti?id=eq.${lottoId}`, {
+      method: 'PATCH', headers: SB_H,
+      body: JSON.stringify({ attivo: false })
+    });
+    if(!r.ok) throw new Error(await r.text());
+    // Aggiorna dato locale
+    const l = allLotti.find(x => x.id === lottoId);
+    if(l) l.attivo = false;
+    showPage('home');
+    renderHome();
+  } catch(e) {
+    alert('Errore: ' + e.message);
+  }
+}
+
+// ── LIQUIDAZIONE ──
+let _liqUscitaId = null;
+
+function apriLiquidazione(uscitaId) {
+  _liqUscitaId = uscitaId;
+  const u = allUscite.find(x => x.id === uscitaId);
+  if(!u) return;
+  const lotto = allLotti.find(l => l.id === u.lotto_id);
+  const soc = allSoccide.find(s => s.id === lotto?.soccida_id);
+  document.getElementById('modal-liq-info').textContent =
+    `${soc?.nome || '—'} · ${lotto?.codice || '—'} · ${u.data_uscita} · ${u.macello || '—'} · ${u.capi} capi · ${(u.kg_totali||0).toLocaleString('it-IT')} kg`;
+  ['liq-prezzo','liq-lordo','liq-sc-peso','liq-sc-merce','liq-totale'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('liq-netto-row').style.display = 'none';
+  document.getElementById('modal-liq').style.display = 'flex';
+}
+
+function calcolaNettoLiq() {
+  const lordo = parseFloat(document.getElementById('liq-lordo').value) || 0;
+  const scPeso = parseFloat(document.getElementById('liq-sc-peso').value) || 0;
+  const scMerce = parseFloat(document.getElementById('liq-sc-merce').value) || 0;
+  if(!lordo) { document.getElementById('liq-netto-row').style.display = 'none'; return; }
+  const netto = lordo - scPeso - scMerce;
+  document.getElementById('liq-netto-val').textContent = netto.toLocaleString('it-IT', {minimumFractionDigits:2}) + ' €';
+  document.getElementById('liq-netto-row').style.display = 'block';
+  document.getElementById('liq-totale').value = netto.toFixed(2);
+}
+
+function chiudiLiquidazione() {
+  document.getElementById('modal-liq').style.display = 'none';
+  _liqUscitaId = null;
+}
+
+async function salvaLiquidazione() {
+  const prezzo = parseFloat(document.getElementById('liq-prezzo').value) || null;
+  const lordo = parseFloat(document.getElementById('liq-lordo').value) || null;
+  const scPeso = parseFloat(document.getElementById('liq-sc-peso').value) || null;
+  const scMerce = parseFloat(document.getElementById('liq-sc-merce').value) || null;
+  const totale = parseFloat(document.getElementById('liq-totale').value) || null;
+  if(!totale) { alert('Inserisci almeno la liquidazione netta'); return; }
+
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/uscite?id=eq.${_liqUscitaId}`, {
+      method: 'PATCH', headers: SB_H,
+      body: JSON.stringify({
+        prezzo_kg: prezzo,
+        liquidazione_lorda: lordo,
+        sconto_peso: scPeso,
+        sconto_merce: scMerce,
+        liquidazione: totale
+      })
+    });
+    if(!r.ok) throw new Error(await r.text());
+
+    // Aggiorna dati locali
+    const u = allUscite.find(x => x.id === _liqUscitaId);
+    if(u) {
+      u.prezzo_kg = prezzo;
+      u.liquidazione_lorda = lordo;
+      u.sconto_peso = scPeso;
+      u.sconto_merce = scMerce;
+      u.liquidazione = totale;
+    }
+
+    chiudiLiquidazione();
+    renderStoricoList();
+    if(currentLottoId) renderDetail(currentLottoId);
+  } catch(e) {
+    alert('Errore: ' + e.message);
+  }
+}
+
+// Chiudi modale toccando fuori
+document.getElementById('modal-liq').addEventListener('click', function(e) {
+  if(e.target === this) chiudiLiquidazione();
+});
+</script>
+</body>
+</html>
