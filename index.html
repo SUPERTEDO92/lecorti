@@ -1085,6 +1085,7 @@ function renderDetail(socId) {
       html += `</div>`;
     }
     html += `<button onclick="showPage('stampa',${lotto.id})" style="width:100%;padding:8px;background:var(--bg2);color:var(--text2);border:0.5px solid var(--border);border-radius:var(--radius);font-size:11px;font-family:var(--font);cursor:pointer;margin-top:4px;">🖨 Stampa PDF lotto ${lotto.codice}</button>`;
+    html += `<button onclick="apriModificaLotto(${lotto.id})" style="width:100%;padding:8px;background:var(--amber-bg);color:var(--amber);border:0.5px solid #F0DC8A;border-radius:var(--radius);font-size:11px;font-family:var(--font);cursor:pointer;margin-top:4px;">✎ Modifica dati ingresso lotto ${lotto.codice}</button>`;
     html += `<button onclick="archiviaLotto(${lotto.id},'${lotto.codice}')" style="width:100%;padding:8px;background:#FFF;color:var(--text3);border:0.5px solid var(--border);border-radius:var(--radius);font-size:11px;font-family:var(--font);cursor:pointer;margin-top:4px;">📦 Archivia lotto ${lotto.codice} (concludi)</button>`;
     html += `</div>`;
 
@@ -2068,7 +2069,10 @@ function aggiornaTrasfDestinazione() {
   const socDest = allSoccide.find(s => s.nome === dest);
   const block = document.getElementById('trasf-codice-lotto-block');
   const sugg = document.getElementById('trasf-codice-suggerito');
-  if(socDest) {
+  // Mostra campo lotto solo per soccide da ingrasso (non svezzamento)
+  const svezz = ['PODESTA','CASTELDAIANO','MINERBIO'];
+  const isIngrassoInterno = socDest && !svezz.includes(socDest.nome);
+  if(isIngrassoInterno) {
     block.style.display = 'block';
     // Suggerisci prossimo codice lotto
     const anno = new Date().getFullYear().toString().slice(-2);
@@ -2228,12 +2232,14 @@ async function inserisciTrasf() {
     }
     const lotto = isManuale ? null : allLotti.find(l => l.id === lottoId);
     const socDest = allSoccide.find(s => s.nome === dest);
+    const svezzDest = ['PODESTA','CASTELDAIANO','MINERBIO'];
+    const isIngrassoDest = socDest && !svezzDest.includes(socDest.nome);
 
     try {
       let lottoDestId = null;
 
-      // Se destinazione è soccida interna → crea lotto automaticamente
-      if(socDest) {
+      // Se destinazione è soccida interna da ingrasso → crea lotto automaticamente
+      if(isIngrassoDest) {
         const codiceDest = document.getElementById('trasf-codice-dest').value.trim();
         if(!codiceDest) {
           toastIns('Inserisci il codice lotto per la soccida di destinazione', false); return;
@@ -2260,8 +2266,8 @@ async function inserisciTrasf() {
       // Registra il trasferimento
       // Se destinazione è soccida interna → ACQUISTO (capi entrano nel lotto dest)
       // Se destinazione è esterna → TRASFERIMENTO
-      const tipoMov = socDest ? 'ACQUISTO' : 'TRASFERIMENTO';
-      const lottoIdMov = socDest ? lottoDestId : lottoId;
+      const tipoMov = isIngrassoDest ? 'ACQUISTO' : 'TRASFERIMENTO';
+      const lottoIdMov = isIngrassoDest ? lottoDestId : lottoId;
       const r = await fetch(`${SUPABASE_URL}/rest/v1/trasferimenti`, {
         method: 'POST', headers: SB_H,
         body: JSON.stringify({
@@ -2275,7 +2281,7 @@ async function inserisciTrasf() {
       if(Array.isArray(nuova)) allTrasferimenti.push(...nuova); else allTrasferimenti.push(nuova);
 
       renderHome();
-      const msg = socDest
+      const msg = isIngrassoDest
         ? `✓ Trasferimento inserito — ${capi} capi da ${socPart?.nome||''} a ${dest} · Lotto ${document.getElementById('trasf-codice-dest').value} creato`
         : `✓ Trasferimento inserito — ${capi} capi da ${socPart?.nome||''} a ${dest}`;
       toastIns(msg, true);
@@ -2442,6 +2448,68 @@ async function salvaModificaUscita() {
     chiudiModificaUscita();
     renderStoricoList();
     if(currentLottoId) renderDetail(currentLottoId);
+  } catch(e) {
+    alert('Errore: ' + e.message);
+  }
+}
+
+// ── MODIFICA LOTTO ──
+let _modLottoId = null;
+function apriModificaLotto(lottoId) {
+  _modLottoId = lottoId;
+  const l = allLotti.find(x => x.id === lottoId);
+  const soc = allSoccide.find(s => s.id === l?.soccida_id);
+  document.getElementById('modal-mod-lotto-info').textContent =
+    `${soc?.nome || '—'} · Lotto ${l?.codice || '—'}`;
+  document.getElementById('ml-data').value = l?.data_ingresso || '';
+  document.getElementById('ml-prov').value = l?.provenienza || '';
+  document.getElementById('ml-capi').value = l?.capi_entrati || '';
+  document.getElementById('ml-kg').value = l?.kg_totali_ingresso || '';
+  document.getElementById('ml-media').value = l?.media_ingresso || '';
+  document.getElementById('ml-lettera').value = l?.lettera_dop || '';
+  document.getElementById('ml-incr').value = l?.incremento_giornaliero || '';
+  document.getElementById('modal-mod-lotto').style.display = 'flex';
+}
+function chiudiModificaLotto() {
+  document.getElementById('modal-mod-lotto').style.display = 'none';
+  _modLottoId = null;
+}
+async function salvaModificaLotto() {
+  const data = document.getElementById('ml-data').value;
+  const prov = document.getElementById('ml-prov').value.trim().toUpperCase() || null;
+  const capi = parseInt(document.getElementById('ml-capi').value) || null;
+  const kg = parseFloat(document.getElementById('ml-kg').value) || null;
+  const media = parseFloat(document.getElementById('ml-media').value) || (kg && capi ? parseFloat((kg/capi).toFixed(3)) : null);
+  const lettera = document.getElementById('ml-lettera').value.trim().toUpperCase() || null;
+  const incr = parseFloat(document.getElementById('ml-incr').value) || null;
+  if(!data || !capi) { alert('Data e capi sono obbligatori'); return; }
+  try {
+    // Aggiorna lotto
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/lotti?id=eq.${_modLottoId}`, {
+      method: 'PATCH', headers: SB_H,
+      body: JSON.stringify({ data_ingresso: data, provenienza: prov, capi_entrati: capi,
+        kg_totali_ingresso: kg, media_ingresso: media, lettera_dop: lettera, incremento_giornaliero: incr })
+    });
+    if(!r.ok) throw new Error(await r.text());
+
+    // Aggiorna trasferimento collegato (ACQUISTO con questo lotto_id)
+    const trasf = allTrasferimenti.find(t => t.lotto_id === _modLottoId && t.tipo === 'ACQUISTO');
+    if(trasf) {
+      await fetch(`${SUPABASE_URL}/rest/v1/trasferimenti?id=eq.${trasf.id}`, {
+        method: 'PATCH', headers: SB_H,
+        body: JSON.stringify({ capi, kg, data_trasferimento: data, lettera_dop: lettera })
+      });
+      trasf.capi = capi; trasf.kg = kg; trasf.data_trasferimento = data; trasf.lettera_dop = lettera;
+    }
+
+    // Aggiorna stato locale
+    const l = allLotti.find(x => x.id === _modLottoId);
+    if(l) { l.data_ingresso=data; l.provenienza=prov; l.capi_entrati=capi;
+      l.kg_totali_ingresso=kg; l.media_ingresso=media; l.lettera_dop=lettera; l.incremento_giornaliero=incr; }
+
+    chiudiModificaLotto();
+    if(currentLottoId) renderDetail(currentLottoId);
+    renderHome();
   } catch(e) {
     alert('Errore: ' + e.message);
   }
@@ -2812,6 +2880,9 @@ document.getElementById('modal-liq').addEventListener('click', function(e) {
 document.getElementById('modal-mod-uscita')?.addEventListener('click', function(e) {
   if(e.target === this) chiudiModificaUscita();
 });
+document.getElementById('modal-mod-lotto')?.addEventListener('click', function(e) {
+  if(e.target === this) chiudiModificaLotto();
+});
 </script>
 <!-- MODALE MODIFICA USCITA -->
 <div id="modal-mod-uscita" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center;">
@@ -2856,6 +2927,57 @@ document.getElementById('modal-mod-uscita')?.addEventListener('click', function(
       </div>
     </div>
     <button onclick="salvaModificaUscita()" style="width:100%;padding:13px;background:var(--green);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:16px;">
+      ✓ Salva modifiche
+    </button>
+  </div>
+</div>
+
+<!-- MODALE MODIFICA LOTTO -->
+<div id="modal-mod-lotto" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center;">
+  <div style="background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-size:14px;font-weight:500;font-family:var(--mono);">Modifica dati ingresso</div>
+      <button onclick="chiudiModificaLotto()" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
+    </div>
+    <div id="modal-mod-lotto-info" style="font-size:11px;color:var(--text2);background:var(--bg2);padding:8px 10px;border-radius:var(--radius);margin-bottom:14px;font-family:var(--mono);"></div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">DATA INGRESSO</div>
+        <input type="date" id="ml-data" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+      </div>
+      <div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">PROVENIENZA</div>
+        <input type="text" id="ml-prov" placeholder="es. PODESTA" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">N° CAPI ENTRATI</div>
+          <input type="number" id="ml-capi" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+        </div>
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">KG TOTALI INGRESSO</div>
+          <input type="number" id="ml-kg" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">MEDIA KG/CAPO</div>
+          <input type="number" step="0.01" id="ml-media" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+        </div>
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">LETTERA DOP</div>
+          <input type="text" id="ml-lettera" placeholder="es. C" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">INCREMENTO KG/GG</div>
+        <input type="number" step="0.001" id="ml-incr" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+      </div>
+      <div style="background:var(--amber-bg);border:0.5px solid #F0DC8A;border-radius:var(--radius);padding:8px 10px;font-size:11px;color:var(--amber);">
+        ⚠️ La modifica aggiorna anche il trasferimento collegato (capi e kg)
+      </div>
+    </div>
+    <button onclick="salvaModificaLotto()" style="width:100%;padding:13px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:16px;">
       ✓ Salva modifiche
     </button>
   </div>
