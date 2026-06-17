@@ -2834,8 +2834,16 @@ function renderArchivioSoccida(socId) {
   // Ogni lotto
   lotti.forEach(lotto => {
     const uscite = allUscite.filter(u => u.lotto_id === lotto.id).sort((a,b) => a.data_uscita.localeCompare(b.data_uscita));
-    // Trasferimenti in uscita (per soccide svezzamento che non vanno al macello)
-    const trasfUscita = (allTrasferimenti||[]).filter(t => t.lotto_id === lotto.id && t.tipo !== 'ACQUISTO').sort((a,b) => a.data_trasferimento.localeCompare(b.data_trasferimento));
+    // Trasferimenti in uscita — cerca per lotto_id (tipo TRASFERIMENTO)
+    // OPPURE per soccida_partenza (quando inseriti come ACQUISTO della soccida destinazione)
+    const socLotto = allSoccide.find(s => s.id === lotto.soccida_id);
+    const trasfUscita = (allTrasferimenti||[]).filter(t => {
+      // Caso 1: collegato direttamente al lotto come trasferimento
+      if(t.lotto_id === lotto.id && t.tipo !== 'ACQUISTO') return true;
+      // Caso 2: inserito come ACQUISTO della destinazione ma partenza è questa soccida
+      if(t.soccida_partenza === socLotto?.nome && t.tipo === 'ACQUISTO') return true;
+      return false;
+    }).sort((a,b) => a.data_trasferimento.localeCompare(b.data_trasferimento));
     const morti = allMortalita.filter(m => m.lotto_id === lotto.id).reduce((s,m) => s+(m.capi_morti||0), 0);
     const capiUsciti = uscite.reduce((s,u) => s+(u.capi||0), 0);
     const capiTrasferiti = trasfUscita.reduce((s,t) => s+(t.capi||0), 0);
