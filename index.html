@@ -2217,15 +2217,16 @@ async function inserisciTrasf() {
   const incr = parseFloat(document.getElementById('acq-incr').value) || null;
 
   if(_tipoTrasf === 'TRASFERIMENTO') {
-    const lottoId = parseInt(document.getElementById('t-lotto').value);
-    if(!lottoId || !data || !capi || !dest) {
-      toastIns('Compila: soccida, lotto, data, capi e destinazione', false); return;
-    }
-    const lotto = allLotti.find(l => l.id === lottoId);
     const tSoccidaVal = document.getElementById('t-soccida').value;
-    const socPart = tSoccidaVal === '__MANUALE__'
+    const isManuale = tSoccidaVal === '__MANUALE__';
+    const lottoId = isManuale ? null : parseInt(document.getElementById('t-lotto').value);
+    const socPart = isManuale
       ? { nome: document.getElementById('t-soccida-manuale').value.trim().toUpperCase() }
-      : allSoccide.find(s => s.id === lotto?.soccida_id);
+      : allSoccide.find(s => s.id === (allLotti.find(l => l.id === lottoId)?.soccida_id));
+    if((!isManuale && !lottoId) || !data || !capi || !dest || (isManuale && !socPart.nome)) {
+      toastIns('Compila tutti i campi obbligatori', false); return;
+    }
+    const lotto = isManuale ? null : allLotti.find(l => l.id === lottoId);
     const socDest = allSoccide.find(s => s.nome === dest);
 
     try {
@@ -2264,7 +2265,7 @@ async function inserisciTrasf() {
       const r = await fetch(`${SUPABASE_URL}/rest/v1/trasferimenti`, {
         method: 'POST', headers: SB_H,
         body: JSON.stringify({
-          lotto_id: lottoIdMov, data_trasferimento: data,
+          lotto_id: lottoIdMov || null, data_trasferimento: data,
           soccida_partenza: socPart?.nome || '', soccida_destinazione: dest,
           capi, kg, lettera_dop: lettera, tipo: tipoMov
         })
@@ -2279,6 +2280,8 @@ async function inserisciTrasf() {
         : `✓ Trasferimento inserito — ${capi} capi da ${socPart?.nome||''} a ${dest}`;
       toastIns(msg, true);
       ['t-capi','t-kg','t-lettera','acq-incr','trasf-codice-dest'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+      document.getElementById('t-soccida').value = '';
+      const manEl = document.getElementById('t-soccida-manuale'); if(manEl){manEl.style.display='none';manEl.value='';}
       document.getElementById('trasf-codice-lotto-block').style.display = 'none';
       document.getElementById('trasf-codice-suggerito').textContent = '';
     } catch(e) {
