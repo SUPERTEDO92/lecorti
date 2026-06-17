@@ -1962,6 +1962,9 @@ function setTipoTrasf(tipo) {
   document.getElementById('trasf-partenza-block').style.display = isTrasf ? 'block' : 'none';
   document.getElementById('acq-fornitore-block').style.display = isAcq ? 'block' : 'none';
   document.getElementById('vend-acquirente-block').style.display = isVend ? 'block' : 'none';
+  // In vendita nascondi il campo destinazione (usa acquirente come destinazione)
+  document.getElementById('t-dest').parentElement.style.display = isVend ? 'none' : 'block';
+  document.getElementById('trasf-codice-lotto-block').style.display = 'none';
   document.getElementById('incr-block').style.display = isTrasf ? 'block' : 'none';
   document.getElementById('vend-valore-block').style.display = isVend ? 'block' : 'none';
   document.getElementById('trasf-dati-label').textContent = isTrasf ? 'Dati trasferimento' : isAcq ? 'Dati acquisto' : 'Dati vendita';
@@ -2392,6 +2395,7 @@ async function inserisciTrasf() {
     const socPart = vendSocVal === '__MANUALE__'
       ? { nome: document.getElementById('vend-soccida-manuale').value.trim().toUpperCase() }
       : allSoccide.find(s => s.id === lotto?.soccida_id);
+    const dest = acquirente; // In vendita la destinazione è l'acquirente
     if((!lottoId && vendSocVal !== '__MANUALE__') || !data || !capi || !acquirente || !socPart?.nome) {
       toastIns('Compila tutti i campi obbligatori', false); return;
     }
