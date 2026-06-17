@@ -531,10 +531,20 @@
         <div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px;">
           <div>
             <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">PROVENIENZA</div>
-            <select id="acq-fornitore" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text);">
+            <select id="acq-fornitore" onchange="toggleFornitoreManuale(this)" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text);">
               <option value="">— seleziona fornitore —</option>
-              <option value="PERCALLO">PERCALLO</option><option value="BURONI">BURONI</option><option value="BETTONI">BETTONI</option><option value="MINERBIO">MINERBIO</option><option value="GIEFFEGI">GIEFFEGI</option><option value="FIORITA">FIORITA</option><option value="DMB BETTONI">DMB BETTONI</option><option value="AIANO / CASTELDAIANO">AIANO / CASTELDAIANO</option><option value="MOSTARDA">MOSTARDA</option><option value="PODESTA">PODESTA</option>
+              <option value="PERCALLO">PERCALLO</option>
+              <option value="GIEFFEGI">GIEFFEGI</option>
+              <option value="BETTONI">BETTONI</option>
+              <option value="DMB BETTONI">DMB BETTONI</option>
+              <option value="MINERBIO">MINERBIO</option>
+              <option value="PODESTA">PODESTA</option>
+              <option value="CASTELDAIANO">CASTELDAIANO</option>
+              <option value="FIORITA">FIORITA</option>
+              <option value="BURONI">BURONI</option>
+              <option value="__MANUALE__">✏️ Inserisci manualmente...</option>
             </select>
+          <input type="text" id="acq-fornitore-manuale" placeholder="Nome fornitore..." style="display:none;width:100%;padding:9px 10px;border:0.5px solid var(--accent);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text);margin-top:6px;box-sizing:border-box;">
           </div>
           <div>
             <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">CODICE LOTTO</div>
@@ -2025,6 +2035,17 @@ async function inserisciUscita() {
   }
 }
 
+function toggleFornitoreManuale(sel) {
+  const input = document.getElementById('acq-fornitore-manuale');
+  if(sel.value === '__MANUALE__') {
+    input.style.display = 'block';
+    input.focus();
+  } else {
+    input.style.display = 'none';
+    input.value = '';
+  }
+}
+
 function aggiornaTrasfDestinazione() {
   const dest = document.getElementById('t-dest').value;
   const socDest = allSoccide.find(s => s.nome === dest);
@@ -2245,7 +2266,10 @@ async function inserisciTrasf() {
     }
 
   } else if(_tipoTrasf === 'ACQUISTO') {
-    const fornitore = document.getElementById('acq-fornitore').value;
+    const selFor = document.getElementById('acq-fornitore').value;
+    const fornitore = selFor === '__MANUALE__'
+      ? (document.getElementById('acq-fornitore-manuale').value.trim().toUpperCase() || '')
+      : selFor;
     const codice = document.getElementById('acq-codice').value;
     const socDest = allSoccide.find(s => s.nome === dest);
     if(!fornitore || !codice || !data || !capi || !dest || !socDest) {
@@ -2284,6 +2308,8 @@ async function inserisciTrasf() {
       toastIns(`✓ Acquisto inserito — ${capi} capi da ${fornitore} → ${dest} · Lotto ${codice}`, true);
       ['t-capi','t-kg','t-lettera','acq-incr','acq-codice'].forEach(id => document.getElementById(id).value = '');
       document.getElementById('acq-fornitore').value = '';
+      document.getElementById('acq-fornitore-manuale').style.display = 'none';
+      document.getElementById('acq-fornitore-manuale').value = '';
     } catch(e) {
       toastIns('Errore: ' + e.message, false);
     }
