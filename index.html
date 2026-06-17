@@ -569,6 +569,7 @@
             <select id="vend-soccida" onchange="aggiornaLottiVendita()" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text);">
               <option value="">— seleziona soccida —</option>
             </select>
+            <input type="text" id="vend-soccida-manuale" placeholder="Nome soccida..." style="display:none;width:100%;padding:9px 10px;border:0.5px solid var(--accent);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text);margin-top:6px;box-sizing:border-box;">
           </div>
           <div>
             <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">LOTTO</div>
@@ -1965,11 +1966,13 @@ function setTipoTrasf(tipo) {
   document.getElementById('vend-valore-block').style.display = isVend ? 'block' : 'none';
   document.getElementById('trasf-dati-label').textContent = isTrasf ? 'Dati trasferimento' : isAcq ? 'Dati acquisto' : 'Dati vendita';
   document.getElementById('trasf-submit-btn').textContent = isTrasf ? '✓ Inserisci trasferimento' : isAcq ? '✓ Inserisci acquisto' : '✓ Inserisci vendita';
-  // Popola soccide nel blocco vendita
+  // Popola soccide nel blocco vendita — solo ingrasso + manuale
   if(isVend) {
     const sel = document.getElementById('vend-soccida');
+    const svezz = ['PODESTA','CASTELDAIANO','MINERBIO'];
     sel.innerHTML = '<option value="">— seleziona soccida —</option>' +
-      allSoccide.map(s => `<option value="${s.id}">${s.nome}</option>`).join('');
+      allSoccide.filter(s => !svezz.includes(s.nome)).map(s => `<option value="${s.id}">${s.nome}</option>`).join('') +
+      '<option value="__MANUALE__">✏️ Inserisci manualmente...</option>';
   }
 }
 
@@ -2116,8 +2119,18 @@ function aggiornaTrasfDestinazione() {
 }
 
 function aggiornaLottiVendita() {
-  const socId = parseInt(document.getElementById('vend-soccida').value);
+  const val = document.getElementById('vend-soccida').value;
+  const manuale = document.getElementById('vend-soccida-manuale');
   const sel = document.getElementById('vend-lotto');
+  if(val === '__MANUALE__') {
+    manuale.style.display = 'block';
+    manuale.focus();
+    sel.innerHTML = '<option value="">— lotto non applicabile —</option>';
+    return;
+  }
+  manuale.style.display = 'none';
+  manuale.value = '';
+  const socId = parseInt(val);
   if(!socId) { sel.innerHTML = '<option value="">— seleziona prima soccida —</option>'; return; }
   const lotti = allLotti.filter(l => l.soccida_id === socId && l.attivo);
   sel.innerHTML = '<option value="">— seleziona lotto —</option>' +
@@ -2371,14 +2384,17 @@ async function inserisciTrasf() {
     }
 
   } else if(_tipoTrasf === 'VENDITA') {
-    const lottoId = parseInt(document.getElementById('vend-lotto').value);
+    const vendSocVal = document.getElementById('vend-soccida').value;
+    const lottoId = vendSocVal === '__MANUALE__' ? null : parseInt(document.getElementById('vend-lotto').value);
     const acquirente = document.getElementById('vend-acquirente').value.trim().toUpperCase();
     const valore = parseFloat(document.getElementById('vend-valore').value) || null;
-    if(!lottoId || !data || !capi || !acquirente) {
-      toastIns('Compila: soccida, lotto, data, capi e acquirente', false); return;
+    const lotto = lottoId ? allLotti.find(l => l.id === lottoId) : null;
+    const socPart = vendSocVal === '__MANUALE__'
+      ? { nome: document.getElementById('vend-soccida-manuale').value.trim().toUpperCase() }
+      : allSoccide.find(s => s.id === lotto?.soccida_id);
+    if((!lottoId && vendSocVal !== '__MANUALE__') || !data || !capi || !acquirente || !socPart?.nome) {
+      toastIns('Compila tutti i campi obbligatori', false); return;
     }
-    const lotto = allLotti.find(l => l.id === lottoId);
-    const socPart = allSoccide.find(s => s.id === lotto?.soccida_id);
     try {
       const r = await fetch(`${SUPABASE_URL}/rest/v1/trasferimenti`, {
         method: 'POST', headers: SB_H,
@@ -2395,6 +2411,7 @@ async function inserisciTrasf() {
       ['t-capi','t-kg','t-lettera','vend-acquirente','vend-valore'].forEach(id => document.getElementById(id).value = '');
       document.getElementById('vend-soccida').value = '';
       document.getElementById('vend-lotto').innerHTML = '<option value="">— seleziona prima soccida —</option>';
+      const vendMan = document.getElementById('vend-soccida-manuale'); if(vendMan){vendMan.style.display='none';vendMan.value='';}
     } catch(e) {
       toastIns('Errore: ' + e.message, false);
     }
