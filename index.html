@@ -1410,6 +1410,12 @@ function apriCostoAcquisto(trId) {
   document.getElementById('modal-costo-info').textContent =
     `${t?.soccida_destinazione || '—'} · Lotto ${lotto?.codice || '—'} · ${t?.capi} capi · ${fmtDate(t?.data_trasferimento)}`;
   document.getElementById('costo-val').value = '';
+
+  // Pre-compila kg e capi nel calcolatore integrato
+  if(t?.kg) document.getElementById('c-kg').value = t.kg;
+  if(t?.capi) document.getElementById('c-capi').value = t.capi;
+  cCalcola();
+
   document.getElementById('modal-costo').style.display = 'flex';
 }
 function chiudiCostoAcquisto() {
