@@ -1225,6 +1225,7 @@ function renderStoricoList() {
           <div class="sc"><div class="sc-label">liquid.</div><div class="sc-val green">${u.liquidazione ? fmt(u.liquidazione) + ' €' : '—'}</div></div>
         </div>
         ${!u.liquidazione ? `<button onclick="apriLiquidazione(${u.id})" style="margin-top:6px;width:100%;padding:7px;background:var(--amber-bg);color:var(--amber);border:0.5px solid #F0DC8A;border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">+ Inserisci liquidazione</button>` : ''}
+        <button onclick="apriModificaUscita(${u.id})" style="margin-top:4px;width:100%;padding:7px;background:var(--bg2);color:var(--text2);border:0.5px solid var(--border);border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">✎ Modifica uscita</button>
       </div>`;
     }).join('');
   });
@@ -2393,6 +2394,56 @@ async function salvaIncr() {
   }
 }
 
+// ── MODIFICA USCITA ──
+let _modUscitaId = null;
+function apriModificaUscita(uscitaId) {
+  _modUscitaId = uscitaId;
+  const u = allUscite.find(x => x.id === uscitaId);
+  const lotto = allLotti.find(l => l.id === u?.lotto_id);
+  const soc = allSoccide.find(s => s.id === lotto?.soccida_id);
+  document.getElementById('modal-mod-info').textContent =
+    `${soc?.nome || '—'} · Lotto ${lotto?.codice || '—'} · ${fmtDateFull(u?.data_uscita)}`;
+  document.getElementById('mod-data').value = u?.data_uscita || '';
+  document.getElementById('mod-ddt').value = u?.numero_ddt || '';
+  document.getElementById('mod-macello').value = u?.macello || '';
+  document.getElementById('mod-capi').value = u?.capi || '';
+  document.getElementById('mod-kg').value = u?.kg_totali || '';
+  document.getElementById('mod-prezzo').value = u?.prezzo_kg || '';
+  document.getElementById('mod-liq').value = u?.liquidazione || '';
+  document.getElementById('modal-mod-uscita').style.display = 'flex';
+}
+function chiudiModificaUscita() {
+  document.getElementById('modal-mod-uscita').style.display = 'none';
+  _modUscitaId = null;
+}
+async function salvaModificaUscita() {
+  const data = document.getElementById('mod-data').value;
+  const ddt = document.getElementById('mod-ddt').value.trim() || null;
+  const macello = document.getElementById('mod-macello').value.trim().toUpperCase() || null;
+  const capi = parseInt(document.getElementById('mod-capi').value) || null;
+  const kg = parseFloat(document.getElementById('mod-kg').value) || null;
+  const prezzo = parseFloat(document.getElementById('mod-prezzo').value) || null;
+  const liq = parseFloat(document.getElementById('mod-liq').value) || null;
+  if(!data || !capi) { alert('Data e capi sono obbligatori'); return; }
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/uscite?id=eq.${_modUscitaId}`, {
+      method: 'PATCH', headers: SB_H,
+      body: JSON.stringify({ data_uscita: data, numero_ddt: ddt, macello, capi, kg_totali: kg, prezzo_kg: prezzo, liquidazione: liq })
+    });
+    if(!r.ok) throw new Error(await r.text());
+    const u = allUscite.find(x => x.id === _modUscitaId);
+    if(u) {
+      u.data_uscita = data; u.numero_ddt = ddt; u.macello = macello;
+      u.capi = capi; u.kg_totali = kg; u.prezzo_kg = prezzo; u.liquidazione = liq;
+    }
+    chiudiModificaUscita();
+    renderStoricoList();
+    if(currentLottoId) renderDetail(currentLottoId);
+  } catch(e) {
+    alert('Errore: ' + e.message);
+  }
+}
+
 // Start
 loadAll();
 </script>
@@ -2755,6 +2806,57 @@ async function salvaLiquidazione() {
 document.getElementById('modal-liq').addEventListener('click', function(e) {
   if(e.target === this) chiudiLiquidazione();
 });
+document.getElementById('modal-mod-uscita')?.addEventListener('click', function(e) {
+  if(e.target === this) chiudiModificaUscita();
+});
 </script>
+<!-- MODALE MODIFICA USCITA -->
+<div id="modal-mod-uscita" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center;">
+  <div style="background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-size:14px;font-weight:500;font-family:var(--mono);">Modifica uscita</div>
+      <button onclick="chiudiModificaUscita()" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
+    </div>
+    <div id="modal-mod-info" style="font-size:11px;color:var(--text2);background:var(--bg2);padding:8px 10px;border-radius:var(--radius);margin-bottom:14px;font-family:var(--mono);"></div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">DATA USCITA</div>
+        <input type="date" id="mod-data" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+      </div>
+      <div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">N° DDT</div>
+        <input type="text" id="mod-ddt" placeholder="es. 12/26" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
+      </div>
+      <div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">MACELLO</div>
+        <input type="text" id="mod-macello" placeholder="es. ANNONI" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">N° CAPI</div>
+          <input type="number" id="mod-capi" placeholder="es. 125" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+        </div>
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">KG TOTALI</div>
+          <input type="number" id="mod-kg" placeholder="es. 22500" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">PREZZO €/KG</div>
+          <input type="number" step="0.001" id="mod-prezzo" placeholder="es. 1.750" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
+        </div>
+        <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">LIQUIDAZIONE €</div>
+          <input type="number" step="0.01" id="mod-liq" placeholder="es. 38500.00" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
+        </div>
+      </div>
+    </div>
+    <button onclick="salvaModificaUscita()" style="width:100%;padding:13px;background:var(--green);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:16px;">
+      ✓ Salva modifiche
+    </button>
+  </div>
+</div>
+
 </body>
 </html>
