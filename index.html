@@ -1971,7 +1971,7 @@ function setTipoTrasf(tipo) {
     const sel = document.getElementById('vend-soccida');
     const svezz = ['PODESTA','CASTELDAIANO','MINERBIO'];
     sel.innerHTML = '<option value="">— seleziona soccida —</option>' +
-      allSoccide.filter(s => !svezz.includes(s.nome)).map(s => `<option value="${s.id}">${s.nome}</option>`).join('') +
+      allSoccide.filter(s => svezz.includes(s.nome)).map(s => `<option value="${s.id}">${s.nome}</option>`).join('') +
       '<option value="__MANUALE__">✏️ Inserisci manualmente...</option>';
   }
 }
