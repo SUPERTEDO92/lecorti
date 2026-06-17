@@ -2715,70 +2715,235 @@ loadAll();
 
 <script>
 // ── ARCHIVIO ──
+let _archivioSocId = null;
+
 function renderArchivio() {
+  _archivioSocId = null;
   const lottiArchiviati = allLotti.filter(l => !l.attivo);
+
   if(!lottiArchiviati.length) {
     document.getElementById('archivio-content').innerHTML = '<div class="empty" style="padding:40px 0;text-align:center;color:var(--text3);">Nessun lotto archiviato.</div>';
     return;
   }
 
   // Raggruppa per soccida
-  const bySoc = {};
+  const bySocId = {};
   lottiArchiviati.forEach(l => {
-    const soc = allSoccide.find(s => s.id === l.soccida_id);
-    const nome = soc?.nome || '—';
-    if(!bySoc[nome]) bySoc[nome] = [];
-    bySoc[nome].push(l);
+    if(!bySocId[l.soccida_id]) bySocId[l.soccida_id] = [];
+    bySocId[l.soccida_id].push(l);
   });
 
-  let html = '';
-  Object.keys(bySoc).sort().forEach(nomeSoc => {
-    const lotti = bySoc[nomeSoc].sort((a,b) => b.data_ingresso.localeCompare(a.data_ingresso));
-    html += `<div style="margin-bottom:20px;">
-      <div style="font-size:13px;font-weight:500;font-family:var(--mono);padding:8px 0;border-bottom:1px solid var(--border);margin-bottom:8px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;">${nomeSoc}</div>`;
+  let html = '<div style="margin-bottom:12px;font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.1em;">Seleziona soccida</div>';
+  html += '<div style="display:flex;flex-direction:column;gap:6px;">';
 
-    lotti.forEach(lotto => {
-      const uscite = allUscite.filter(u => u.lotto_id === lotto.id).sort((a,b) => a.data_uscita.localeCompare(b.data_uscita));
-      const capiUsciti = uscite.reduce((s,u) => s+(u.capi||0), 0);
-      const totLiq = uscite.reduce((s,u) => s+(u.liquidazione||0), 0);
-      const ggStalla = lotto.data_ingresso && uscite.length
-        ? Math.round((new Date(uscite[uscite.length-1].data_uscita) - new Date(lotto.data_ingresso)) / 86400000) : '—';
+  Object.keys(bySocId).forEach(socId => {
+    const soc = allSoccide.find(s => s.id === parseInt(socId));
+    const lotti = bySocId[socId];
+    const totLiq = lotti.reduce((sum, l) => {
+      return sum + allUscite.filter(u => u.lotto_id === l.id).reduce((s,u) => s+(u.liquidazione||0), 0);
+    }, 0);
+    const ultLotto = lotti.sort((a,b) => b.data_ingresso.localeCompare(a.data_ingresso))[0];
 
-      html += `<div style="background:#FFF;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:10px 14px;margin-bottom:6px;">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
-          <div>
-            <span style="font-size:13px;font-weight:500;font-family:var(--mono);">Lotto ${lotto.codice}</span>
-            ${lotto.lettera_dop ? `<span style="font-size:11px;color:var(--text2);margin-left:6px;">${lotto.lettera_dop}</span>` : ''}
-          </div>
-          <span style="font-size:10px;color:var(--text3);font-family:var(--mono);">${lotto.provenienza || ''}</span>
+    html += `<div class="soccida-card" onclick="renderArchivioSoccida(${socId})">
+      <div class="dot dot-gray"></div>
+      <div class="soc-main">
+        <div class="soc-nome">${soc?.nome || '—'}</div>
+        <div class="soc-meta">${lotti.length} lott${lotti.length > 1 ? 'i' : 'o'} · ultimo ingresso ${fmtDateFull(ultLotto.data_ingresso)}${totLiq > 0 ? ' · ' + fmt(totLiq) + ' € liquidati' : ''}</div>
+      </div>
+      <span class="soc-arrow">›</span>
+    </div>`;
+  });
+
+  html += '</div>';
+  document.getElementById('archivio-content').innerHTML = html;
+}
+
+function renderArchivioSoccida(socId) {
+  _archivioSocId = socId;
+  const soc = allSoccide.find(s => s.id === parseInt(socId));
+  const lotti = allLotti.filter(l => l.soccida_id === parseInt(socId) && !l.attivo)
+    .sort((a,b) => b.data_ingresso.localeCompare(a.data_ingresso));
+
+  let html = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      <button onclick="renderArchivio()" style="background:none;border:none;font-size:12px;color:var(--text2);cursor:pointer;font-family:var(--font);padding:0;">← Archivio</button>
+      <button onclick="stampaArchivioSoccida(${socId})" style="margin-left:auto;padding:6px 14px;background:var(--text);color:#FFF;border:none;border-radius:var(--radius);font-size:11px;font-family:var(--font);cursor:pointer;">🖨 Stampa</button>
+    </div>
+    <div style="background:var(--text);color:#F5F3EE;border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:14px;">
+      <div style="font-size:17px;font-weight:500;font-family:var(--mono);">${soc?.nome || '—'}</div>
+      <div style="font-size:11px;color:#AAA;margin-top:3px;">${lotti.length} cicl${lotti.length > 1 ? 'i' : 'o'} archiviato${lotti.length > 1 ? 'i' : ''}</div>
+    </div>`;
+
+  // Totali soccida
+  const totCapiSoc = lotti.reduce((s,l) => s+(l.capi_entrati||0), 0);
+  const totLiqSoc = lotti.reduce((sum,l) => sum + allUscite.filter(u => u.lotto_id === l.id).reduce((s,u) => s+(u.liquidazione||0), 0), 0);
+  html += `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:16px;">
+    <div class="stat-box"><div class="stat-label">Cicli totali</div><div class="stat-val" style="font-size:18px;">${lotti.length}</div></div>
+    <div class="stat-box"><div class="stat-label">Capi totali</div><div class="stat-val" style="font-size:18px;">${fmt(totCapiSoc)}</div></div>
+    <div class="stat-box hl"><div class="stat-label">Tot. liquidato</div><div class="stat-val green" style="font-size:16px;">${totLiqSoc > 0 ? fmt(totLiqSoc)+' €' : '—'}</div></div>
+  </div>`;
+
+  // Ogni lotto
+  lotti.forEach(lotto => {
+    const uscite = allUscite.filter(u => u.lotto_id === lotto.id).sort((a,b) => a.data_uscita.localeCompare(b.data_uscita));
+    const morti = allMortalita.filter(m => m.lotto_id === lotto.id).reduce((s,m) => s+(m.capi_morti||0), 0);
+    const capiUsciti = uscite.reduce((s,u) => s+(u.capi||0), 0);
+    const totKg = uscite.reduce((s,u) => s+(u.kg_totali||0), 0);
+    const totLiq = uscite.reduce((s,u) => s+(u.liquidazione||0), 0);
+    const mediaKg = capiUsciti > 0 ? totKg/capiUsciti : 0;
+    const primaUscita = uscite[0];
+    const ultimaUscita = uscite[uscite.length-1];
+    const ggStalla = lotto.data_ingresso && ultimaUscita
+      ? Math.round((new Date(ultimaUscita.data_uscita) - new Date(lotto.data_ingresso)) / 86400000) : null;
+    const incr = ggStalla && mediaKg && lotto.media_ingresso
+      ? ((mediaKg - lotto.media_ingresso) / ggStalla).toFixed(3) : null;
+
+    html += `<div style="background:#FFF;border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:10px;">
+      <!-- Header lotto -->
+      <div style="background:var(--bg2);padding:10px 14px;border-bottom:0.5px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <span style="font-size:14px;font-weight:600;font-family:var(--mono);">Lotto ${lotto.codice}</span>
+          ${lotto.lettera_dop ? `<span style="font-size:11px;background:var(--bg3);color:var(--text2);padding:2px 7px;border-radius:10px;margin-left:6px;font-family:var(--mono);">${lotto.lettera_dop}</span>` : ''}
         </div>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px;">
-          <div style="text-align:center;">
+        <span style="font-size:10px;color:var(--text3);font-family:var(--mono);">${lotto.provenienza || ''}</span>
+      </div>
+      <!-- Dati ingresso/uscita -->
+      <div style="padding:10px 14px;border-bottom:0.5px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:6px;">
+          <span>Ingresso: <strong style="color:var(--text);">${fmtDateFull(lotto.data_ingresso)}</strong></span>
+          <span>Ultima uscita: <strong style="color:var(--text);">${ultimaUscita ? fmtDateFull(ultimaUscita.data_uscita) : '—'}</strong></span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;">
+          <div style="text-align:center;background:var(--bg);border-radius:var(--radius);padding:6px;">
             <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">Entrati</div>
-            <div style="font-size:13px;font-weight:500;font-family:var(--mono);">${fmt(lotto.capi_entrati)}</div>
+            <div style="font-size:16px;font-weight:600;font-family:var(--mono);">${fmt(lotto.capi_entrati)}</div>
           </div>
-          <div style="text-align:center;">
+          <div style="text-align:center;background:var(--bg);border-radius:var(--radius);padding:6px;">
             <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">Macellati</div>
-            <div style="font-size:13px;font-weight:500;font-family:var(--mono);">${fmt(capiUsciti)}</div>
+            <div style="font-size:16px;font-weight:600;font-family:var(--mono);">${fmt(capiUsciti)}</div>
           </div>
-          <div style="text-align:center;">
+          <div style="text-align:center;background:var(--bg);border-radius:var(--radius);padding:6px;">
+            <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">Morti</div>
+            <div style="font-size:16px;font-weight:600;font-family:var(--mono);color:${morti>0?'var(--red)':'inherit'};">${morti}</div>
+          </div>
+          <div style="text-align:center;background:var(--bg);border-radius:var(--radius);padding:6px;">
             <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">Gg stalla</div>
-            <div style="font-size:13px;font-weight:500;font-family:var(--mono);">${ggStalla}</div>
+            <div style="font-size:16px;font-weight:600;font-family:var(--mono);">${ggStalla || '—'}</div>
           </div>
-          <div style="text-align:center;">
-            <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">Liquidato</div>
-            <div style="font-size:13px;font-weight:500;font-family:var(--mono);color:var(--green);">${totLiq ? fmt(totLiq)+' €' : '—'}</div>
+          <div style="text-align:center;background:var(--bg);border-radius:var(--radius);padding:6px;">
+            <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">Media kg usc.</div>
+            <div style="font-size:16px;font-weight:600;font-family:var(--mono);">${mediaKg ? fmt(mediaKg,1) : '—'}</div>
+          </div>
+          <div style="text-align:center;background:var(--bg);border-radius:var(--radius);padding:6px;">
+            <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">Incremento</div>
+            <div style="font-size:16px;font-weight:600;font-family:var(--mono);">${incr || '—'}</div>
           </div>
         </div>
-        ${uscite.length ? `<div style="font-size:10px;color:var(--text2);font-family:var(--mono);">
-          ${uscite.map(u => `${fmtDate(u.data_uscita)} · ${u.macello||'—'} · ${fmt(u.capi)} capi · ${fmt(u.kg_totali)} kg${u.liquidazione ? ' · '+fmt(u.liquidazione)+' €' : ''}`).join('<br>')}
-        </div>` : ''}
-      </div>`;
-    });
-    html += `</div>`;
+      </div>
+      <!-- Uscite dettaglio -->
+      ${uscite.length ? `<div style="padding:10px 14px;border-bottom:0.5px solid var(--border);">
+        <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);margin-bottom:6px;">Uscite</div>
+        ${uscite.map(u => `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid var(--bg2);">
+          <div style="font-size:12px;"><strong>${fmtDateFull(u.data_uscita)}</strong>${u.numero_ddt ? ' · DDT '+u.numero_ddt : ''} · ${u.macello||'—'}</div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);">${fmt(u.capi)} capi · ${fmt(u.kg_totali)} kg${u.liquidazione ? ' · <span style="color:var(--green);font-weight:500;">'+fmt(u.liquidazione)+' €</span>' : ''}</div>
+        </div>`).join('')}
+      </div>` : ''}
+      <!-- Totale lotto -->
+      <div style="padding:10px 14px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:12px;color:var(--text2);">Totale liquidato lotto ${lotto.codice}</span>
+        <span style="font-size:16px;font-weight:600;font-family:var(--mono);color:${totLiq>0?'var(--green)':'var(--text3)'};">${totLiq > 0 ? fmt(totLiq)+' €' : '—'}</span>
+      </div>
+    </div>`;
   });
 
   document.getElementById('archivio-content').innerHTML = html;
+}
+
+function stampaArchivioSoccida(socId) {
+  const soc = allSoccide.find(s => s.id === parseInt(socId));
+  const lotti = allLotti.filter(l => l.soccida_id === parseInt(socId) && !l.attivo)
+    .sort((a,b) => b.data_ingresso.localeCompare(a.data_ingresso));
+
+  let html = `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8">
+  <title>Archivio ${soc?.nome}</title>
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:-apple-system,Arial,sans-serif; font-size:11px; color:#1A1A18; padding:20px 24px; }
+    h1 { font-size:18px; font-weight:600; margin-bottom:4px; }
+    .sub { font-size:10px; color:#666; margin-bottom:20px; }
+    .lotto { border:1px solid #D4D0C8; border-radius:8px; margin-bottom:16px; overflow:hidden; }
+    .lotto-head { background:#1A1A18; color:#FFF; padding:10px 14px; display:flex; justify-content:space-between; }
+    .lotto-head h2 { font-size:14px; font-weight:600; font-family:monospace; }
+    .lotto-head span { font-size:10px; color:#AAA; }
+    .stats { display:grid; grid-template-columns:repeat(6,1fr); gap:6px; padding:10px 14px; background:#F5F3EE; }
+    .stat { text-align:center; }
+    .stat-l { font-size:8px; text-transform:uppercase; color:#888; letter-spacing:.05em; }
+    .stat-v { font-size:14px; font-weight:600; font-family:monospace; margin-top:2px; }
+    table { width:100%; border-collapse:collapse; }
+    th { font-size:9px; text-transform:uppercase; color:#888; text-align:left; padding:5px 14px; border-bottom:0.5px solid #D4D0C8; }
+    td { padding:5px 14px; border-bottom:0.5px solid #EDEAE3; font-size:11px; }
+    td.num { text-align:right; font-family:monospace; }
+    td.green { color:#2A7A4B; font-weight:500; }
+    .tot { display:flex; justify-content:space-between; padding:8px 14px; font-size:12px; font-weight:600; }
+    .tot span:last-child { color:#2A7A4B; font-family:monospace; }
+    @media print { @page { margin:1.5cm; } }
+  </style></head><body>
+  <h1>SOC. AGR. LE CORTI SRL — ${soc?.nome || '—'}</h1>
+  <div class="sub">Archivio cicli · Stampato il ${new Date().toLocaleDateString('it-IT')}</div>`;
+
+  lotti.forEach(lotto => {
+    const uscite = allUscite.filter(u => u.lotto_id === lotto.id).sort((a,b) => a.data_uscita.localeCompare(b.data_uscita));
+    const morti = allMortalita.filter(m => m.lotto_id === lotto.id).reduce((s,m) => s+(m.capi_morti||0), 0);
+    const capiUsciti = uscite.reduce((s,u) => s+(u.capi||0), 0);
+    const totKg = uscite.reduce((s,u) => s+(u.kg_totali||0), 0);
+    const totLiq = uscite.reduce((s,u) => s+(u.liquidazione||0), 0);
+    const mediaKg = capiUsciti > 0 ? (totKg/capiUsciti).toFixed(1) : '—';
+    const ultimaUscita = uscite[uscite.length-1];
+    const ggStalla = lotto.data_ingresso && ultimaUscita
+      ? Math.round((new Date(ultimaUscita.data_uscita) - new Date(lotto.data_ingresso)) / 86400000) : '—';
+    const incr = ggStalla !== '—' && mediaKg !== '—' && lotto.media_ingresso
+      ? ((parseFloat(mediaKg) - lotto.media_ingresso) / ggStalla).toFixed(3) : '—';
+
+    const [y,m,d] = lotto.data_ingresso.split('-');
+    html += `<div class="lotto">
+      <div class="lotto-head">
+        <h2>Lotto ${lotto.codice}${lotto.lettera_dop ? ' · '+lotto.lettera_dop : ''}</h2>
+        <span>${lotto.provenienza||''} · ingresso ${d}/${m}/${y}</span>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="stat-l">Entrati</div><div class="stat-v">${fmt(lotto.capi_entrati)}</div></div>
+        <div class="stat"><div class="stat-l">Macellati</div><div class="stat-v">${fmt(capiUsciti)}</div></div>
+        <div class="stat"><div class="stat-l">Morti</div><div class="stat-v" style="${morti>0?'color:#A03030':''}">${morti}</div></div>
+        <div class="stat"><div class="stat-l">Gg stalla</div><div class="stat-v">${ggStalla}</div></div>
+        <div class="stat"><div class="stat-l">Media kg usc.</div><div class="stat-v">${mediaKg}</div></div>
+        <div class="stat"><div class="stat-l">Incremento</div><div class="stat-v">${incr}</div></div>
+      </div>
+      <table>
+        <thead><tr><th>Data</th><th>DDT</th><th>Macello</th><th style="text-align:right">Capi</th><th style="text-align:right">Kg</th><th style="text-align:right">Media</th><th style="text-align:right">Liquidazione €</th></tr></thead>
+        <tbody>
+        ${uscite.map(u => {
+          const [uy,um,ud] = u.data_uscita.split('-');
+          return `<tr>
+            <td>${ud}/${um}/${uy}</td>
+            <td>${u.numero_ddt||'—'}</td>
+            <td>${u.macello||'—'}</td>
+            <td class="num">${fmt(u.capi)}</td>
+            <td class="num">${fmt(u.kg_totali)}</td>
+            <td class="num">${u.kg_totali&&u.capi?fmt(u.kg_totali/u.capi,1):'—'}</td>
+            <td class="num ${u.liquidazione?'green':''}">${u.liquidazione?fmt(u.liquidazione)+' €':'—'}</td>
+          </tr>`;
+        }).join('')}
+        </tbody>
+      </table>
+      <div class="tot"><span>Totale liquidato</span><span>${totLiq>0?fmt(totLiq)+' €':'—'}</span></div>
+    </div>`;
+  });
+
+  html += `</body></html>`;
+  const w = window.open('','_blank');
+  w.document.write(html);
+  w.document.close();
+  w.print();
 }
 
 
