@@ -984,6 +984,26 @@ function renderDetail(socId) {
       Incremento: +${lotto.incremento_giornaliero ? lotto.incremento_giornaliero.toFixed(3) : '—'} kg/gg &nbsp;✎ modifica
     </button>`;
 
+    // Costo acquisto dal trasferimento ACQUISTO collegato
+    const trasfAcq = (allTrasferimenti||[]).find(t => t.lotto_id === lotto.id && t.tipo === 'ACQUISTO');
+    const costoAcq = trasfAcq?.costo_acquisto || null;
+    const costoPerCapo = costoAcq && lotto.capi_entrati ? (costoAcq / lotto.capi_entrati).toFixed(2) : null;
+
+    if(costoAcq) {
+      html += `<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:8px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:11px;color:var(--text2);">💰 Costo acquisto suinetti</div>
+        <div style="text-align:right;">
+          <div style="font-size:15px;font-weight:600;font-family:var(--mono);color:var(--accent);">${fmt(costoAcq)} €</div>
+          <div style="font-size:10px;color:var(--text2);font-family:var(--mono);">${costoPerCapo} €/capo</div>
+        </div>
+      </div>`;
+    } else if(trasfAcq) {
+      html += `<div style="background:var(--amber-bg);border:0.5px solid #F0DC8A;border-radius:var(--radius);padding:8px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:11px;color:var(--amber);">💰 Costo acquisto — da inserire</div>
+        <button onclick="apriCostoAcquisto(${trasfAcq.id})" style="padding:5px 12px;background:var(--amber);color:#FFF;border:none;border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">+ Inserisci</button>
+      </div>`;
+    }
+
     // Stat grid lotto
     html += `<div class="stat-grid" style="margin-bottom:10px;grid-template-columns:repeat(3,1fr);">
       <div class="stat-box">
@@ -2798,6 +2818,11 @@ function renderArchivioSoccida(socId) {
     const incr = ggStalla && mediaKg && lotto.media_ingresso
       ? ((mediaKg - lotto.media_ingresso) / ggStalla).toFixed(3) : null;
 
+    // Costo acquisto e margine
+    const trasfAcqArch = (allTrasferimenti||[]).find(t => t.lotto_id === lotto.id && t.tipo === 'ACQUISTO');
+    const costoAcqArch = trasfAcqArch?.costo_acquisto || null;
+    const margineArch = costoAcqArch && totLiq ? totLiq - costoAcqArch : null;
+
     html += `<div style="background:#FFF;border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:10px;">
       <!-- Header lotto -->
       <div style="background:var(--bg2);padding:10px 14px;border-bottom:0.5px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
@@ -2849,9 +2874,19 @@ function renderArchivioSoccida(socId) {
         </div>`).join('')}
       </div>` : ''}
       <!-- Totale lotto -->
-      <div style="padding:10px 14px;display:flex;justify-content:space-between;align-items:center;">
-        <span style="font-size:12px;color:var(--text2);">Totale liquidato lotto ${lotto.codice}</span>
-        <span style="font-size:16px;font-weight:600;font-family:var(--mono);color:${totLiq>0?'var(--green)':'var(--text3)'};">${totLiq > 0 ? fmt(totLiq)+' €' : '—'}</span>
+      <div style="padding:10px 14px;border-top:0.5px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-size:12px;color:var(--text2);">Totale liquidato</span>
+          <span style="font-size:15px;font-weight:600;font-family:var(--mono);color:${totLiq>0?'var(--green)':'var(--text3)'};">${totLiq > 0 ? fmt(totLiq)+' €' : '—'}</span>
+        </div>
+        ${costoAcqArch ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-size:12px;color:var(--text2);">Costo acquisto suinetti</span>
+          <span style="font-size:15px;font-weight:600;font-family:var(--mono);color:var(--accent);">- ${fmt(costoAcqArch)} €</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-top:6px;border-top:0.5px solid var(--border);">
+          <span style="font-size:13px;font-weight:600;">Margine lordo</span>
+          <span style="font-size:17px;font-weight:700;font-family:var(--mono);color:${margineArch>0?'var(--green)':'var(--red)'};">${margineArch !== null ? fmt(margineArch)+' €' : '—'}</span>
+        </div>` : ''}
       </div>
     </div>`;
   });
@@ -2905,6 +2940,10 @@ function stampaArchivioSoccida(socId) {
       ? ((parseFloat(mediaKg) - lotto.media_ingresso) / ggStalla).toFixed(3) : '—';
 
     const [y,m,d] = lotto.data_ingresso.split('-');
+    const trasfAcqSt = (allTrasferimenti||[]).find(t => t.lotto_id === lotto.id && t.tipo === 'ACQUISTO');
+    const costoAcqSt = trasfAcqSt?.costo_acquisto || null;
+    const margineSt = costoAcqSt && totLiq ? totLiq - costoAcqSt : null;
+
     html += `<div class="lotto">
       <div class="lotto-head">
         <h2>Lotto ${lotto.codice}${lotto.lettera_dop ? ' · '+lotto.lettera_dop : ''}</h2>
@@ -2935,7 +2974,9 @@ function stampaArchivioSoccida(socId) {
         }).join('')}
         </tbody>
       </table>
-      <div class="tot"><span>Totale liquidato</span><span>${totLiq>0?fmt(totLiq)+' €':'—'}</span></div>
+      <div class="tot"><span>Totale liquidato</span><span style="color:#2A7A4B">${totLiq>0?fmt(totLiq)+' €':'—'}</span></div>
+      ${costoAcqSt ? `<div class="tot" style="font-size:11px;"><span>Costo acquisto suinetti</span><span style="color:#C17B2A">- ${fmt(costoAcqSt)} €</span></div>
+      <div class="tot" style="border-top:1px solid #1A1A18;padding-top:6px;"><span style="font-weight:700;">Margine lordo</span><span style="color:${margineSt>0?'#2A7A4B':'#A03030'};font-weight:700;">${margineSt!==null?fmt(margineSt)+' €':'—'}</span></div>` : ''}
     </div>`;
   });
 
