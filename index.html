@@ -2834,15 +2834,20 @@ function renderArchivioSoccida(socId) {
   // Ogni lotto
   lotti.forEach(lotto => {
     const uscite = allUscite.filter(u => u.lotto_id === lotto.id).sort((a,b) => a.data_uscita.localeCompare(b.data_uscita));
+    // Trasferimenti in uscita (per soccide svezzamento che non vanno al macello)
+    const trasfUscita = (allTrasferimenti||[]).filter(t => t.lotto_id === lotto.id && t.tipo !== 'ACQUISTO').sort((a,b) => a.data_trasferimento.localeCompare(b.data_trasferimento));
     const morti = allMortalita.filter(m => m.lotto_id === lotto.id).reduce((s,m) => s+(m.capi_morti||0), 0);
     const capiUsciti = uscite.reduce((s,u) => s+(u.capi||0), 0);
-    const totKg = uscite.reduce((s,u) => s+(u.kg_totali||0), 0);
-    const totLiq = uscite.reduce((s,u) => s+(u.liquidazione||0), 0);
-    const mediaKg = capiUsciti > 0 ? totKg/capiUsciti : 0;
-    const primaUscita = uscite[0];
-    const ultimaUscita = uscite[uscite.length-1];
-    const ggStalla = lotto.data_ingresso && ultimaUscita
-      ? Math.round((new Date(ultimaUscita.data_uscita) - new Date(lotto.data_ingresso)) / 86400000) : null;
+    const capiTrasferiti = trasfUscita.reduce((s,t) => s+(t.capi||0), 0);
+    const capiUscTot = capiUsciti + capiTrasferiti;
+    const totKg = uscite.reduce((s,u) => s+(u.kg_totali||0), 0) + trasfUscita.reduce((s,t) => s+(t.kg||0), 0);
+    const totLiq = uscite.reduce((s,u) => s+(u.liquidazione||0), 0) + trasfUscita.reduce((s,t) => s+(t.costo_acquisto||0), 0);
+    const mediaKg = capiUscTot > 0 ? totKg/capiUscTot : 0;
+    // Data ultima uscita — considera sia macello che trasferimento
+    const dateUscite = [...uscite.map(u => u.data_uscita), ...trasfUscita.map(t => t.data_trasferimento)].filter(Boolean).sort();
+    const ultimaData = dateUscite[dateUscite.length-1];
+    const ggStalla = lotto.data_ingresso && ultimaData
+      ? Math.round((new Date(ultimaData) - new Date(lotto.data_ingresso)) / 86400000) : null;
     const incr = ggStalla && mediaKg && lotto.media_ingresso
       ? ((mediaKg - lotto.media_ingresso) / ggStalla).toFixed(3) : null;
 
@@ -2864,7 +2869,7 @@ function renderArchivioSoccida(socId) {
       <div style="padding:10px 14px;border-bottom:0.5px solid var(--border);">
         <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:6px;">
           <span>Ingresso: <strong style="color:var(--text);">${fmtDateFull(lotto.data_ingresso)}</strong></span>
-          <span>Ultima uscita: <strong style="color:var(--text);">${ultimaUscita ? fmtDateFull(ultimaUscita.data_uscita) : '—'}</strong></span>
+          <span>Ultima uscita: <strong style="color:var(--text);">${ultimaData ? fmtDateFull(ultimaData) : '—'}</strong></span>
         </div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;">
           <div style="text-align:center;background:var(--bg);border-radius:var(--radius);padding:6px;">
@@ -2872,8 +2877,8 @@ function renderArchivioSoccida(socId) {
             <div style="font-size:16px;font-weight:600;font-family:var(--mono);">${fmt(lotto.capi_entrati)}</div>
           </div>
           <div style="text-align:center;background:var(--bg);border-radius:var(--radius);padding:6px;">
-            <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">Macellati</div>
-            <div style="font-size:16px;font-weight:600;font-family:var(--mono);">${fmt(capiUsciti)}</div>
+            <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">${capiTrasferiti > 0 ? 'Trasferiti' : 'Macellati'}</div>
+            <div style="font-size:16px;font-weight:600;font-family:var(--mono);">${fmt(capiUscTot)}</div>
           </div>
           <div style="text-align:center;background:var(--bg);border-radius:var(--radius);padding:6px;">
             <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">Morti</div>
@@ -2895,10 +2900,17 @@ function renderArchivioSoccida(socId) {
       </div>
       <!-- Uscite dettaglio -->
       ${uscite.length ? `<div style="padding:10px 14px;border-bottom:0.5px solid var(--border);">
-        <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);margin-bottom:6px;">Uscite</div>
+        <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);margin-bottom:6px;">Uscite macello</div>
         ${uscite.map(u => `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid var(--bg2);">
           <div style="font-size:12px;"><strong>${fmtDateFull(u.data_uscita)}</strong>${u.numero_ddt ? ' · DDT '+u.numero_ddt : ''} · ${u.macello||'—'}</div>
           <div style="font-size:11px;font-family:var(--mono);color:var(--text2);">${fmt(u.capi)} capi · ${fmt(u.kg_totali)} kg${u.liquidazione ? ' · <span style="color:var(--green);font-weight:500;">'+fmt(u.liquidazione)+' €</span>' : ''}</div>
+        </div>`).join('')}
+      </div>` : ''}
+      ${trasfUscita.length ? `<div style="padding:10px 14px;border-bottom:0.5px solid var(--border);">
+        <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);margin-bottom:6px;">Trasferimenti in uscita</div>
+        ${trasfUscita.map(t => `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid var(--bg2);">
+          <div style="font-size:12px;"><strong>${fmtDateFull(t.data_trasferimento)}</strong> · → ${t.soccida_destinazione||'—'}${t.lettera_dop ? ' · '+t.lettera_dop : ''}</div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);">${fmt(t.capi)} capi · ${t.kg ? fmt(t.kg)+' kg' : '—'}${t.costo_acquisto ? ' · <span style="color:var(--green);font-weight:500;">'+fmt(t.costo_acquisto)+' €</span>' : ''}</div>
         </div>`).join('')}
       </div>` : ''}
       <!-- Totale lotto -->
