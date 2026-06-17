@@ -1407,8 +1407,9 @@ function apriCostoAcquisto(trId) {
   _costoTrId = trId;
   const t = allTrasferimenti.find(x => x.id === trId);
   const lotto = allLotti.find(l => l.id === t?.lotto_id);
+  const mediaKgTrasf = t?.kg && t?.capi ? (t.kg / t.capi).toFixed(2) : null;
   document.getElementById('modal-costo-info').textContent =
-    `${t?.soccida_destinazione || '—'} · Lotto ${lotto?.codice || '—'} · ${t?.capi} capi · ${fmtDate(t?.data_trasferimento)}`;
+    `${t?.soccida_destinazione || '—'} · Lotto ${lotto?.codice || '—'} · ${t?.capi} capi · ${t?.kg ? fmt(t.kg)+' kg' : ''} · ${mediaKgTrasf ? 'media '+mediaKgTrasf+' kg/capo' : ''} · ${fmtDate(t?.data_trasferimento)}`;
   document.getElementById('costo-val').value = '';
 
   // Pre-compila kg e capi nel calcolatore integrato
