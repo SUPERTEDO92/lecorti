@@ -1049,6 +1049,7 @@ function renderDetail(socId) {
       <div class="stat-box">
         <div class="stat-label">Mortalità</div>
         <div class="stat-val" style="font-size:18px;color:${capiMorti > 0 ? 'var(--red)' : 'inherit'}">${capiMorti} <span class="stat-unit">capi</span></div>
+        <div style="font-size:11px;color:${capiMorti > 0 ? 'var(--red)' : 'var(--text3)'};margin-top:1px;">${lotto.capi_entrati > 0 ? ((capiMorti/lotto.capi_entrati)*100).toFixed(1)+'%' : '—'}</div>
       </div>
     </div>`;
 
@@ -2925,6 +2926,7 @@ function renderArchivioSoccida(socId) {
           <div style="text-align:center;background:var(--bg);border-radius:var(--radius);padding:6px;">
             <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">Morti</div>
             <div style="font-size:16px;font-weight:600;font-family:var(--mono);color:${morti>0?'var(--red)':'inherit'};">${morti}</div>
+            <div style="font-size:10px;color:${morti>0?'var(--red)':'var(--text3)'};font-family:var(--mono);margin-top:1px;">${lotto.capi_entrati > 0 ? ((morti/lotto.capi_entrati)*100).toFixed(1)+'%' : '—'}</div>
           </div>
           <div style="text-align:center;background:var(--bg);border-radius:var(--radius);padding:6px;">
             <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">Gg stalla</div>
