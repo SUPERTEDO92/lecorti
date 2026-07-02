@@ -3073,14 +3073,58 @@ function stampaArchivioSoccida(socId) {
 
 // ── ARCHIVIA LOTTO ──
 async function archiviaLotto(lottoId, codice) {
-  if(!confirm(`Archiviare il lotto ${codice}? Verrà impostato come non attivo e non apparirà più in home.`)) return;
+  const lotto = allLotti.find(l => l.id === lottoId);
+  const soc = allSoccide.find(s => s.id === lotto?.soccida_id);
+
+  // Calcola discrepanza capi
+  const capiEntrati = lotto?.capi_entrati || 0;
+  const capiUsciti = allUscite.filter(u => u.lotto_id === lottoId).reduce((s,u) => s+(u.capi||0), 0);
+  const capiMorti = allMortalita.filter(m => m.lotto_id === lottoId).reduce((s,m) => s+(m.capi_morti||0), 0);
+  const capiTrasf = allTrasferimenti.filter(t => t.lotto_id === lottoId && t.tipo === 'TRASFERIMENTO').reduce((s,t) => s+(t.capi||0), 0);
+  const discrepanza = capiEntrati - capiUsciti - capiMorti - capiTrasf;
+
+  // Se c'è discrepanza chiedi se registrare come mortalità
+  let registraMortalita = false;
+  if(discrepanza > 0) {
+    const risposta = confirm(`⚠️ Lotto ${codice} — ${soc?.nome || ''}
+
+Risultano ancora ${discrepanza} capi non contabilizzati.
+
+Vuoi registrarli come mortalità prima di archiviare?
+
+OK = Sì, registra mortalità
+Annulla = Archivia senza registrare`);
+    registraMortalita = risposta;
+  } else {
+    if(!confirm(`Archiviare il lotto ${codice}? Verrà impostato come non attivo.`)) return;
+  }
+
   try {
+    // Registra mortalità se richiesto
+    if(registraMortalita && discrepanza > 0) {
+      const rM = await fetch(`${SUPABASE_URL}/rest/v1/mortalita`, {
+        method: 'POST', headers: SB_H,
+        body: JSON.stringify({
+          lotto_id: lottoId,
+          soccida: soc?.nome || '',
+          data_evento: new Date().toISOString().split('T')[0],
+          lettera_dop: lotto?.lettera_dop || null,
+          capi_morti: discrepanza,
+          trattamento: null,
+          note: 'Registrati automaticamente in fase di archiviazione'
+        })
+      });
+      if(!rM.ok) throw new Error(await rM.text());
+      const nuovaMort = await rM.json();
+      if(Array.isArray(nuovaMort)) allMortalita.push(...nuovaMort); else allMortalita.push(nuovaMort);
+    }
+
+    // Archivia il lotto
     const r = await fetch(`${SUPABASE_URL}/rest/v1/lotti?id=eq.${lottoId}`, {
       method: 'PATCH', headers: SB_H,
       body: JSON.stringify({ attivo: false })
     });
     if(!r.ok) throw new Error(await r.text());
-    // Aggiorna dato locale
     const l = allLotti.find(x => x.id === lottoId);
     if(l) l.attivo = false;
     showPage('home');
