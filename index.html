@@ -1258,6 +1258,17 @@ function renderStoricoList() {
 function stampaTrasferimenti() {
   const lista = [...allTrasferimenti]
     .filter(t => t.data_trasferimento)
+    .filter(t => {
+      if(t.tipo !== 'ACQUISTO') return true;
+      const speculare = allTrasferimenti.find(x =>
+        x.tipo === 'TRASFERIMENTO' &&
+        x.data_trasferimento === t.data_trasferimento &&
+        x.soccida_partenza === t.soccida_partenza &&
+        x.soccida_destinazione === t.soccida_destinazione &&
+        x.capi === t.capi
+      );
+      return !speculare;
+    })
     .sort((a,b) => b.data_trasferimento.localeCompare(a.data_trasferimento));
 
   const nomiMese = ['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
@@ -1354,8 +1365,21 @@ function renderTrasferimenti() {
   }
 
   // Lista cronologica filtrata per mese
+  // Nascondi ACQUISTO che hanno già un TRASFERIMENTO speculare (trasferimenti interni)
   let lista = [...allTrasferimenti]
     .filter(t => t.data_trasferimento)
+    .filter(t => {
+      if(t.tipo !== 'ACQUISTO') return true;
+      // Cerca se esiste già una riga TRASFERIMENTO con stessa data/soccide/capi
+      const speculare = allTrasferimenti.find(x =>
+        x.tipo === 'TRASFERIMENTO' &&
+        x.data_trasferimento === t.data_trasferimento &&
+        x.soccida_partenza === t.soccida_partenza &&
+        x.soccida_destinazione === t.soccida_destinazione &&
+        x.capi === t.capi
+      );
+      return !speculare; // Mostra ACQUISTO solo se non ha speculare
+    })
     .sort((a,b) => b.data_trasferimento.localeCompare(a.data_trasferimento));
   if(trasfFilter !== 'tutti') lista = lista.filter(t => t.data_trasferimento.startsWith(trasfFilter));
 
@@ -2073,6 +2097,8 @@ async function inserisciUscita() {
     const nuova = await r.json();
     if(Array.isArray(nuova)) allUscite.push(...nuova); else allUscite.push(nuova);
     renderHome();
+    renderStorico();
+    if(currentLottoId) renderDetail(currentLottoId);
 
     toastIns(`✓ Uscita inserita — ${capi} capi · ${kg.toLocaleString('it-IT')} kg · ${macello}`, true);
     // Reset form
@@ -2102,9 +2128,8 @@ function aggiornaTrasfDestinazione() {
   const socDest = allSoccide.find(s => s.nome === dest);
   const block = document.getElementById('trasf-codice-lotto-block');
   const sugg = document.getElementById('trasf-codice-suggerito');
-  // Mostra campo lotto solo per soccide da ingrasso (non svezzamento)
-  const svezz = ['PODESTA','CASTELDAIANO','MINERBIO'];
-  const isIngrassoInterno = socDest && !svezz.includes(socDest.nome);
+  // Mostra campo lotto per qualsiasi soccida nostra
+  const isIngrassoInterno = socDest != null;
   if(isIngrassoInterno) {
     block.style.display = 'block';
     // Suggerisci prossimo codice lotto
@@ -2275,8 +2300,8 @@ async function inserisciTrasf() {
     }
     const lotto = isManuale ? null : allLotti.find(l => l.id === lottoId);
     const socDest = allSoccide.find(s => s.nome === dest);
-    const svezzDest = ['PODESTA','CASTELDAIANO','MINERBIO'];
-    const isIngrassoDest = socDest && !svezzDest.includes(socDest.nome);
+    // Crea lotto per qualsiasi soccida nostra (ingrasso O svezzamento)
+    const isIngrassoDest = socDest != null;
 
     try {
       let lottoDestId = null;
@@ -2306,11 +2331,26 @@ async function inserisciTrasf() {
         lottoDestId = lottoNew.id;
       }
 
-      // Registra il trasferimento
-      // Se destinazione è soccida interna → ACQUISTO (capi entrano nel lotto dest)
-      // Se destinazione è esterna → TRASFERIMENTO
-      const tipoMov = isIngrassoDest ? 'ACQUISTO' : 'TRASFERIMENTO';
+      // Registra sempre 2 righe se soccida interna:
+      // 1. TRASFERIMENTO sul lotto partenza (uscita)
+      // 2. ACQUISTO sul lotto destinazione (ingresso)
+      if(isIngrassoDest && lottoId) {
+        // Riga uscita dalla partenza
+        const rOut = await fetch(`${SUPABASE_URL}/rest/v1/trasferimenti`, {
+          method: 'POST', headers: SB_H,
+          body: JSON.stringify({
+            lotto_id: lottoId, data_trasferimento: data,
+            soccida_partenza: socPart?.nome || '', soccida_destinazione: dest,
+            capi, kg, lettera_dop: lettera, tipo: 'TRASFERIMENTO'
+          })
+        });
+        if(!rOut.ok) throw new Error(await rOut.text());
+        const outData = await rOut.json();
+        if(Array.isArray(outData)) allTrasferimenti.push(...outData); else allTrasferimenti.push(outData);
+      }
+      // Riga ingresso nella destinazione (o unica riga se esterno)
       const lottoIdMov = isIngrassoDest ? lottoDestId : lottoId;
+      const tipoMov = isIngrassoDest ? 'ACQUISTO' : 'TRASFERIMENTO';
       const r = await fetch(`${SUPABASE_URL}/rest/v1/trasferimenti`, {
         method: 'POST', headers: SB_H,
         body: JSON.stringify({
