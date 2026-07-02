@@ -551,6 +551,12 @@
             <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">CODICE LOTTO</div>
             <input type="text" id="acq-codice" placeholder="es. 04/26" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
           </div>
+          <div>
+            <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">SOCCIDA DESTINAZIONE</div>
+            <select id="acq-dest" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text);">
+              <option value="">— seleziona soccida —</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -844,28 +850,9 @@ async function loadAll() {
     sb('mortalita', '?order=data_evento.desc'),
     sb('sanitario', '?order=data_referto.desc'),
   ]);
-  // Pre-calcola trasferimenti senza duplicati (usato ovunque)
-  buildTrasferimentiNoDup();
   renderHome();
   renderStorico();
   renderTrasferimenti();
-}
-
-// Trasferimenti deduplificati — usare questa invece di allTrasferimenti nelle viste
-let allTrasferimentiView = [];
-function buildTrasferimentiNoDup() {
-  allTrasferimentiView = allTrasferimenti.filter(t => {
-    if(t.tipo !== 'ACQUISTO') return true;
-    // Nascondi ACQUISTO se esiste già TRASFERIMENTO speculare
-    const speculare = allTrasferimenti.find(x =>
-      x.tipo === 'TRASFERIMENTO' &&
-      x.data_trasferimento === t.data_trasferimento &&
-      x.soccida_partenza === t.soccida_partenza &&
-      x.soccida_destinazione === t.soccida_destinazione &&
-      parseInt(x.capi) === parseInt(t.capi)
-    );
-    return !speculare;
-  });
 }
 
 function showPage(name, lottoId) {
@@ -1049,7 +1036,6 @@ function renderDetail(socId) {
       <div class="stat-box">
         <div class="stat-label">Mortalità</div>
         <div class="stat-val" style="font-size:18px;color:${capiMorti > 0 ? 'var(--red)' : 'inherit'}">${capiMorti} <span class="stat-unit">capi</span></div>
-        <div style="font-size:11px;color:${capiMorti > 0 ? 'var(--red)' : 'var(--text3)'};margin-top:1px;">${lotto.capi_entrati > 0 ? ((capiMorti/lotto.capi_entrati)*100).toFixed(1)+'%' : '—'}</div>
       </div>
     </div>`;
 
@@ -1276,8 +1262,19 @@ function renderStoricoList() {
 
 // TRASFERIMENTI
 function stampaTrasferimenti() {
-  const lista = [...allTrasferimentiView]
+  const lista = [...allTrasferimenti]
     .filter(t => t.data_trasferimento)
+    .filter(t => {
+      if(t.tipo !== 'ACQUISTO') return true;
+      const speculare = allTrasferimenti.find(x =>
+        x.tipo === 'TRASFERIMENTO' &&
+        x.data_trasferimento === t.data_trasferimento &&
+        x.soccida_partenza === t.soccida_partenza &&
+        x.soccida_destinazione === t.soccida_destinazione &&
+        x.capi === t.capi
+      );
+      return !speculare;
+    })
     .sort((a,b) => b.data_trasferimento.localeCompare(a.data_trasferimento));
 
   const nomiMese = ['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
@@ -1375,8 +1372,20 @@ function renderTrasferimenti() {
 
   // Lista cronologica filtrata per mese
   // Nascondi ACQUISTO che hanno già un TRASFERIMENTO speculare (trasferimenti interni)
-  let lista = [...allTrasferimentiView]
+  let lista = [...allTrasferimenti]
     .filter(t => t.data_trasferimento)
+    .filter(t => {
+      if(t.tipo !== 'ACQUISTO') return true;
+      // Cerca se esiste già una riga TRASFERIMENTO con stessa data/soccide/capi
+      const speculare = allTrasferimenti.find(x =>
+        x.tipo === 'TRASFERIMENTO' &&
+        x.data_trasferimento === t.data_trasferimento &&
+        x.soccida_partenza === t.soccida_partenza &&
+        x.soccida_destinazione === t.soccida_destinazione &&
+        x.capi === t.capi
+      );
+      return !speculare; // Mostra ACQUISTO solo se non ha speculare
+    })
     .sort((a,b) => b.data_trasferimento.localeCompare(a.data_trasferimento));
   if(trasfFilter !== 'tutti') lista = lista.filter(t => t.data_trasferimento.startsWith(trasfFilter));
 
@@ -1982,6 +1991,8 @@ function setTipoTrasf(tipo) {
   // Mostra/nascondi blocchi
   document.getElementById('trasf-partenza-block').style.display = isTrasf ? 'block' : 'none';
   document.getElementById('acq-fornitore-block').style.display = isAcq ? 'block' : 'none';
+  // In acquisto nascondi t-dest (ha il suo select dedicato acq-dest)
+  if(isAcq) document.getElementById('t-dest').parentElement.style.display = 'none';
   document.getElementById('vend-acquirente-block').style.display = isVend ? 'block' : 'none';
   // In vendita nascondi il campo destinazione (usa acquirente come destinazione)
   document.getElementById('t-dest').parentElement.style.display = isVend ? 'none' : 'block';
@@ -1990,6 +2001,13 @@ function setTipoTrasf(tipo) {
   document.getElementById('vend-valore-block').style.display = isVend ? 'block' : 'none';
   document.getElementById('trasf-dati-label').textContent = isTrasf ? 'Dati trasferimento' : isAcq ? 'Dati acquisto' : 'Dati vendita';
   document.getElementById('trasf-submit-btn').textContent = isTrasf ? '✓ Inserisci trasferimento' : isAcq ? '✓ Inserisci acquisto' : '✓ Inserisci vendita';
+  // Popola acq-dest con soccide da ingrasso
+  const selAcqDest = document.getElementById('acq-dest');
+  if(selAcqDest) {
+    selAcqDest.innerHTML = '<option value="">— seleziona soccida —</option>' +
+      allSoccide.filter(s => s.tipo !== 'svezzamento').map(s => `<option value="${s.nome}">${s.nome}</option>`).join('');
+  }
+
   // Popola soccide nel blocco vendita — solo ingrasso + manuale
   if(isVend) {
     const sel = document.getElementById('vend-soccida');
@@ -2360,7 +2378,6 @@ async function inserisciTrasf() {
       const nuova = await r.json();
       if(Array.isArray(nuova)) allTrasferimenti.push(...nuova); else allTrasferimenti.push(nuova);
 
-      buildTrasferimentiNoDup();
       renderHome();
       const msg = isIngrassoDest
         ? `✓ Trasferimento inserito — ${capi} capi da ${socPart?.nome||''} a ${dest} · Lotto ${document.getElementById('trasf-codice-dest').value} creato`
@@ -2381,9 +2398,10 @@ async function inserisciTrasf() {
       ? (document.getElementById('acq-fornitore-manuale').value.trim().toUpperCase() || '')
       : selFor;
     const codice = document.getElementById('acq-codice').value;
-    const socDest = allSoccide.find(s => s.nome === dest);
-    if(!fornitore || !codice || !data || !capi || !dest || !socDest) {
-      toastIns('Compila tutti i campi: fornitore, codice lotto, data, soccida, capi', false); return;
+    const destAcq = document.getElementById('acq-dest').value;
+    const socDest = allSoccide.find(s => s.nome === destAcq);
+    if(!fornitore || !codice || !data || !capi || !destAcq || !socDest) {
+      toastIns('Compila tutti i campi: fornitore, codice lotto, soccida, data, capi', false); return;
     }
     try {
       const media = kg && capi ? parseFloat((kg/capi).toFixed(2)) : null;
@@ -2406,7 +2424,7 @@ async function inserisciTrasf() {
         method: 'POST', headers: SB_H,
         body: JSON.stringify({
           lotto_id: lottoNew.id, data_trasferimento: data,
-          soccida_partenza: fornitore, soccida_destinazione: dest,
+          soccida_partenza: fornitore, soccida_destinazione: destAcq,
           capi, kg, lettera_dop: lettera, tipo: 'ACQUISTO'
         })
       });
@@ -2414,12 +2432,14 @@ async function inserisciTrasf() {
         const nuovoT = await rT.json();
         if(Array.isArray(nuovoT)) allTrasferimenti.push(...nuovoT); else allTrasferimenti.push(nuovoT);
       }
+      buildTrasferimentiNoDup();
       renderHome();
-      toastIns(`✓ Acquisto inserito — ${capi} capi da ${fornitore} → ${dest} · Lotto ${codice}`, true);
+      toastIns(`✓ Acquisto inserito — ${capi} capi da ${fornitore} → ${destAcq} · Lotto ${codice}`, true);
       ['t-capi','t-kg','t-lettera','acq-incr','acq-codice'].forEach(id => document.getElementById(id).value = '');
       document.getElementById('acq-fornitore').value = '';
       document.getElementById('acq-fornitore-manuale').style.display = 'none';
       document.getElementById('acq-fornitore-manuale').value = '';
+      document.getElementById('acq-dest').value = '';
     } catch(e) {
       toastIns('Errore: ' + e.message, false);
     }
@@ -2875,10 +2895,13 @@ function renderArchivioSoccida(socId) {
     // Trasferimenti in uscita — cerca per lotto_id (tipo TRASFERIMENTO)
     // OPPURE per soccida_partenza (quando inseriti come ACQUISTO della soccida destinazione)
     const socLotto = allSoccide.find(s => s.id === lotto.soccida_id);
-    const trasfUscita = (allTrasferimentiView||[]).filter(t =>
-      (t.lotto_id === lotto.id && t.tipo === 'TRASFERIMENTO') ||
-      (t.soccida_partenza === socLotto?.nome && t.tipo === 'ACQUISTO')
-    ).sort((a,b) => a.data_trasferimento.localeCompare(b.data_trasferimento));
+    const trasfUscita = (allTrasferimenti||[]).filter(t => {
+      // Caso 1: collegato direttamente al lotto come trasferimento
+      if(t.lotto_id === lotto.id && t.tipo !== 'ACQUISTO') return true;
+      // Caso 2: inserito come ACQUISTO della destinazione ma partenza è questa soccida
+      if(t.soccida_partenza === socLotto?.nome && t.tipo === 'ACQUISTO') return true;
+      return false;
+    }).sort((a,b) => a.data_trasferimento.localeCompare(b.data_trasferimento));
     const morti = allMortalita.filter(m => m.lotto_id === lotto.id).reduce((s,m) => s+(m.capi_morti||0), 0);
     const capiUsciti = uscite.reduce((s,u) => s+(u.capi||0), 0);
     const capiTrasferiti = trasfUscita.reduce((s,t) => s+(t.capi||0), 0);
@@ -2926,7 +2949,6 @@ function renderArchivioSoccida(socId) {
           <div style="text-align:center;background:var(--bg);border-radius:var(--radius);padding:6px;">
             <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">Morti</div>
             <div style="font-size:16px;font-weight:600;font-family:var(--mono);color:${morti>0?'var(--red)':'inherit'};">${morti}</div>
-            <div style="font-size:10px;color:${morti>0?'var(--red)':'var(--text3)'};font-family:var(--mono);margin-top:1px;">${lotto.capi_entrati > 0 ? ((morti/lotto.capi_entrati)*100).toFixed(1)+'%' : '—'}</div>
           </div>
           <div style="text-align:center;background:var(--bg);border-radius:var(--radius);padding:6px;">
             <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">Gg stalla</div>
@@ -3075,58 +3097,14 @@ function stampaArchivioSoccida(socId) {
 
 // ── ARCHIVIA LOTTO ──
 async function archiviaLotto(lottoId, codice) {
-  const lotto = allLotti.find(l => l.id === lottoId);
-  const soc = allSoccide.find(s => s.id === lotto?.soccida_id);
-
-  // Calcola discrepanza capi
-  const capiEntrati = lotto?.capi_entrati || 0;
-  const capiUsciti = allUscite.filter(u => u.lotto_id === lottoId).reduce((s,u) => s+(u.capi||0), 0);
-  const capiMorti = allMortalita.filter(m => m.lotto_id === lottoId).reduce((s,m) => s+(m.capi_morti||0), 0);
-  const capiTrasf = allTrasferimenti.filter(t => t.lotto_id === lottoId && t.tipo === 'TRASFERIMENTO').reduce((s,t) => s+(t.capi||0), 0);
-  const discrepanza = capiEntrati - capiUsciti - capiMorti - capiTrasf;
-
-  // Se c'è discrepanza chiedi se registrare come mortalità
-  let registraMortalita = false;
-  if(discrepanza > 0) {
-    const risposta = confirm(`⚠️ Lotto ${codice} — ${soc?.nome || ''}
-
-Risultano ancora ${discrepanza} capi non contabilizzati.
-
-Vuoi registrarli come mortalità prima di archiviare?
-
-OK = Sì, registra mortalità
-Annulla = Archivia senza registrare`);
-    registraMortalita = risposta;
-  } else {
-    if(!confirm(`Archiviare il lotto ${codice}? Verrà impostato come non attivo.`)) return;
-  }
-
+  if(!confirm(`Archiviare il lotto ${codice}? Verrà impostato come non attivo e non apparirà più in home.`)) return;
   try {
-    // Registra mortalità se richiesto
-    if(registraMortalita && discrepanza > 0) {
-      const rM = await fetch(`${SUPABASE_URL}/rest/v1/mortalita`, {
-        method: 'POST', headers: SB_H,
-        body: JSON.stringify({
-          lotto_id: lottoId,
-          soccida: soc?.nome || '',
-          data_evento: new Date().toISOString().split('T')[0],
-          lettera_dop: lotto?.lettera_dop || null,
-          capi_morti: discrepanza,
-          trattamento: null,
-          note: 'Registrati automaticamente in fase di archiviazione'
-        })
-      });
-      if(!rM.ok) throw new Error(await rM.text());
-      const nuovaMort = await rM.json();
-      if(Array.isArray(nuovaMort)) allMortalita.push(...nuovaMort); else allMortalita.push(nuovaMort);
-    }
-
-    // Archivia il lotto
     const r = await fetch(`${SUPABASE_URL}/rest/v1/lotti?id=eq.${lottoId}`, {
       method: 'PATCH', headers: SB_H,
       body: JSON.stringify({ attivo: false })
     });
     if(!r.ok) throw new Error(await r.text());
+    // Aggiorna dato locale
     const l = allLotti.find(x => x.id === lottoId);
     if(l) l.attivo = false;
     showPage('home');
