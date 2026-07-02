@@ -1265,7 +1265,7 @@ function stampaTrasferimenti() {
         x.data_trasferimento === t.data_trasferimento &&
         x.soccida_partenza === t.soccida_partenza &&
         x.soccida_destinazione === t.soccida_destinazione &&
-        x.capi === t.capi
+        parseInt(x.capi) === parseInt(t.capi)
       );
       return !speculare;
     })
@@ -1376,7 +1376,7 @@ function renderTrasferimenti() {
         x.data_trasferimento === t.data_trasferimento &&
         x.soccida_partenza === t.soccida_partenza &&
         x.soccida_destinazione === t.soccida_destinazione &&
-        x.capi === t.capi
+        parseInt(x.capi) === parseInt(t.capi)
       );
       return !speculare; // Mostra ACQUISTO solo se non ha speculare
     })
