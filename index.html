@@ -1421,6 +1421,7 @@ function renderTrasferimenti() {
           <div class="tc"><div class="tc-label">lotto</div><div class="tc-val">${lotto?.codice || '—'}</div></div>
           <div class="tc"><div class="tc-label">capi</div><div class="tc-val">${fmt(t.capi)}</div></div>
           <div class="tc"><div class="tc-label">kg</div><div class="tc-val">${t.kg ? fmt(t.kg) : '—'}</div></div>
+          <div class="tc"><div class="tc-label">media</div><div class="tc-val">${t.kg && t.capi ? fmt(t.kg/t.capi,1) : '—'}</div></div>
           <div class="tc"><div class="tc-label">lettera</div><div class="tc-val">${t.lettera_dop || '—'}</div></div>
           <div class="tc"><div class="tc-label">valore</div><div class="tc-val ${t.costo_acquisto ? 'green' : ''}">${t.costo_acquisto ? fmt(t.costo_acquisto)+' €' : '—'}</div></div>
         </div>
