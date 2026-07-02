@@ -548,14 +548,15 @@
           <input type="text" id="acq-fornitore-manuale" placeholder="Nome fornitore..." style="display:none;width:100%;padding:9px 10px;border:0.5px solid var(--accent);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text);margin-top:6px;box-sizing:border-box;">
           </div>
           <div>
-            <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">CODICE LOTTO</div>
-            <input type="text" id="acq-codice" placeholder="es. 04/26" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
-          </div>
-          <div>
             <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">SOCCIDA DESTINAZIONE</div>
-            <select id="acq-dest" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text);">
+            <select id="acq-dest" onchange="suggerisciLottoAcquisto()" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text);">
               <option value="">— seleziona soccida —</option>
             </select>
+          </div>
+          <div>
+            <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">CODICE LOTTO</div>
+            <input type="text" id="acq-codice" placeholder="es. 01/26" style="width:100%;padding:9px 10px;border:0.5px solid var(--accent);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
+            <div style="font-size:10px;color:var(--accent);font-family:var(--mono);margin-top:4px;" id="acq-codice-suggerito"></div>
           </div>
         </div>
       </div>
@@ -2128,6 +2129,22 @@ async function inserisciUscita() {
   }
 }
 
+function suggerisciLottoAcquisto() {
+  const destNome = document.getElementById('acq-dest').value;
+  const sugg = document.getElementById('acq-codice-suggerito');
+  const input = document.getElementById('acq-codice');
+  if(!destNome) { sugg.textContent = ''; return; }
+  const socDest = allSoccide.find(s => s.nome === destNome);
+  if(!socDest) return;
+  const anno = new Date().getFullYear().toString().slice(-2);
+  const lottiEsistenti = allLotti.filter(l => l.soccida_id === socDest.id && l.codice && l.codice.endsWith('/'+anno));
+  const numeri = lottiEsistenti.map(l => parseInt(l.codice)).filter(n => !isNaN(n));
+  const prossimo = numeri.length > 0 ? (Math.max(...numeri) + 1).toString().padStart(2,'0') : '01';
+  const codSugg = prossimo + '/' + anno;
+  input.value = codSugg;
+  sugg.textContent = 'Suggerito: ' + codSugg + ' (modificabile)';
+}
+
 function toggleFornitoreManuale(sel) {
   const input = document.getElementById('acq-fornitore-manuale');
   if(sel.value === '__MANUALE__') {
@@ -2398,7 +2415,7 @@ async function inserisciTrasf() {
     const fornitore = selFor === '__MANUALE__'
       ? (document.getElementById('acq-fornitore-manuale').value.trim().toUpperCase() || '')
       : selFor;
-    const codice = document.getElementById('acq-codice').value;
+    const codice = document.getElementById('acq-codice').value.trim();
     const destAcq = document.getElementById('acq-dest').value;
     const socDest = allSoccide.find(s => s.nome === destAcq);
     if(!fornitore || !codice || !data || !capi || !destAcq || !socDest) {
@@ -2441,6 +2458,7 @@ async function inserisciTrasf() {
       document.getElementById('acq-fornitore-manuale').style.display = 'none';
       document.getElementById('acq-fornitore-manuale').value = '';
       document.getElementById('acq-dest').value = '';
+      if(document.getElementById('acq-codice-suggerito')) document.getElementById('acq-codice-suggerito').textContent = '';
     } catch(e) {
       toastIns('Errore: ' + e.message, false);
     }
