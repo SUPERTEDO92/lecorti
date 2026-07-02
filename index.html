@@ -844,9 +844,28 @@ async function loadAll() {
     sb('mortalita', '?order=data_evento.desc'),
     sb('sanitario', '?order=data_referto.desc'),
   ]);
+  // Pre-calcola trasferimenti senza duplicati (usato ovunque)
+  buildTrasferimentiNoDup();
   renderHome();
   renderStorico();
   renderTrasferimenti();
+}
+
+// Trasferimenti deduplificati — usare questa invece di allTrasferimenti nelle viste
+let allTrasferimentiView = [];
+function buildTrasferimentiNoDup() {
+  allTrasferimentiView = allTrasferimenti.filter(t => {
+    if(t.tipo !== 'ACQUISTO') return true;
+    // Nascondi ACQUISTO se esiste già TRASFERIMENTO speculare
+    const speculare = allTrasferimenti.find(x =>
+      x.tipo === 'TRASFERIMENTO' &&
+      x.data_trasferimento === t.data_trasferimento &&
+      x.soccida_partenza === t.soccida_partenza &&
+      x.soccida_destinazione === t.soccida_destinazione &&
+      parseInt(x.capi) === parseInt(t.capi)
+    );
+    return !speculare;
+  });
 }
 
 function showPage(name, lottoId) {
@@ -1256,19 +1275,8 @@ function renderStoricoList() {
 
 // TRASFERIMENTI
 function stampaTrasferimenti() {
-  const lista = [...allTrasferimenti]
+  const lista = [...allTrasferimentiView]
     .filter(t => t.data_trasferimento)
-    .filter(t => {
-      if(t.tipo !== 'ACQUISTO') return true;
-      const speculare = allTrasferimenti.find(x =>
-        x.tipo === 'TRASFERIMENTO' &&
-        x.data_trasferimento === t.data_trasferimento &&
-        x.soccida_partenza === t.soccida_partenza &&
-        x.soccida_destinazione === t.soccida_destinazione &&
-        parseInt(x.capi) === parseInt(t.capi)
-      );
-      return !speculare;
-    })
     .sort((a,b) => b.data_trasferimento.localeCompare(a.data_trasferimento));
 
   const nomiMese = ['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
@@ -1366,20 +1374,8 @@ function renderTrasferimenti() {
 
   // Lista cronologica filtrata per mese
   // Nascondi ACQUISTO che hanno già un TRASFERIMENTO speculare (trasferimenti interni)
-  let lista = [...allTrasferimenti]
+  let lista = [...allTrasferimentiView]
     .filter(t => t.data_trasferimento)
-    .filter(t => {
-      if(t.tipo !== 'ACQUISTO') return true;
-      // Cerca se esiste già una riga TRASFERIMENTO con stessa data/soccide/capi
-      const speculare = allTrasferimenti.find(x =>
-        x.tipo === 'TRASFERIMENTO' &&
-        x.data_trasferimento === t.data_trasferimento &&
-        x.soccida_partenza === t.soccida_partenza &&
-        x.soccida_destinazione === t.soccida_destinazione &&
-        parseInt(x.capi) === parseInt(t.capi)
-      );
-      return !speculare; // Mostra ACQUISTO solo se non ha speculare
-    })
     .sort((a,b) => b.data_trasferimento.localeCompare(a.data_trasferimento));
   if(trasfFilter !== 'tutti') lista = lista.filter(t => t.data_trasferimento.startsWith(trasfFilter));
 
@@ -2363,6 +2359,7 @@ async function inserisciTrasf() {
       const nuova = await r.json();
       if(Array.isArray(nuova)) allTrasferimenti.push(...nuova); else allTrasferimenti.push(nuova);
 
+      buildTrasferimentiNoDup();
       renderHome();
       const msg = isIngrassoDest
         ? `✓ Trasferimento inserito — ${capi} capi da ${socPart?.nome||''} a ${dest} · Lotto ${document.getElementById('trasf-codice-dest').value} creato`
@@ -2877,13 +2874,10 @@ function renderArchivioSoccida(socId) {
     // Trasferimenti in uscita — cerca per lotto_id (tipo TRASFERIMENTO)
     // OPPURE per soccida_partenza (quando inseriti come ACQUISTO della soccida destinazione)
     const socLotto = allSoccide.find(s => s.id === lotto.soccida_id);
-    const trasfUscita = (allTrasferimenti||[]).filter(t => {
-      // Caso 1: collegato direttamente al lotto come trasferimento
-      if(t.lotto_id === lotto.id && t.tipo !== 'ACQUISTO') return true;
-      // Caso 2: inserito come ACQUISTO della destinazione ma partenza è questa soccida
-      if(t.soccida_partenza === socLotto?.nome && t.tipo === 'ACQUISTO') return true;
-      return false;
-    }).sort((a,b) => a.data_trasferimento.localeCompare(b.data_trasferimento));
+    const trasfUscita = (allTrasferimentiView||[]).filter(t =>
+      (t.lotto_id === lotto.id && t.tipo === 'TRASFERIMENTO') ||
+      (t.soccida_partenza === socLotto?.nome && t.tipo === 'ACQUISTO')
+    ).sort((a,b) => a.data_trasferimento.localeCompare(b.data_trasferimento));
     const morti = allMortalita.filter(m => m.lotto_id === lotto.id).reduce((s,m) => s+(m.capi_morti||0), 0);
     const capiUsciti = uscite.reduce((s,u) => s+(u.capi||0), 0);
     const capiTrasferiti = trasfUscita.reduce((s,t) => s+(t.capi||0), 0);
