@@ -1991,13 +1991,14 @@ function setTipoTrasf(tipo) {
   // Mostra/nascondi blocchi
   document.getElementById('trasf-partenza-block').style.display = isTrasf ? 'block' : 'none';
   document.getElementById('acq-fornitore-block').style.display = isAcq ? 'block' : 'none';
-  // In acquisto nascondi t-dest (ha il suo select dedicato acq-dest)
-  if(isAcq) document.getElementById('t-dest').parentElement.style.display = 'none';
   document.getElementById('vend-acquirente-block').style.display = isVend ? 'block' : 'none';
-  // In vendita nascondi il campo destinazione (usa acquirente come destinazione)
-  document.getElementById('t-dest').parentElement.style.display = isVend ? 'none' : 'block';
+  // t-dest: visibile solo in TRASFERIMENTO
+  document.getElementById('t-dest').parentElement.style.display = isTrasf ? 'block' : 'none';
+  // codice lotto destinazione: visibile solo in TRASFERIMENTO
   document.getElementById('trasf-codice-lotto-block').style.display = 'none';
+  // incremento: visibile solo in TRASFERIMENTO
   document.getElementById('incr-block').style.display = isTrasf ? 'block' : 'none';
+  // valore: visibile solo in VENDITA
   document.getElementById('vend-valore-block').style.display = isVend ? 'block' : 'none';
   document.getElementById('trasf-dati-label').textContent = isTrasf ? 'Dati trasferimento' : isAcq ? 'Dati acquisto' : 'Dati vendita';
   document.getElementById('trasf-submit-btn').textContent = isTrasf ? '✓ Inserisci trasferimento' : isAcq ? '✓ Inserisci acquisto' : '✓ Inserisci vendita';
