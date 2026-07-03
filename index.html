@@ -1220,8 +1220,9 @@ function renderStoricoList() {
   const totCapi = rows.reduce((s,u) => s+(u.capi||0), 0);
   const totKg = rows.reduce((s,u) => s+(u.kg_totali||0), 0);
   const totLiq = rows.reduce((s,u) => s+(u.liquidazione||0), 0);
+  const carichiUnici = new Set(rows.map(u => (u.numero_ddt ? u.numero_ddt.trim().toUpperCase() : 'NODDT-'+u.id) + '|' + u.data_uscita)).size;
   document.getElementById('storico-summary').innerHTML = `
-    <div class="sum-box"><div class="sum-label">carichi</div><div class="sum-val">${rows.length}</div></div>
+    <div class="sum-box"><div class="sum-label">carichi</div><div class="sum-val">${carichiUnici}</div></div>
     <div class="sum-box"><div class="sum-label">capi</div><div class="sum-val">${fmt(totCapi)}</div></div>
     <div class="sum-box"><div class="sum-label">kg</div><div class="sum-val">${fmt(totKg)}</div></div>
     <div class="sum-box"><div class="sum-label">liquidato</div><div class="sum-val green">${totLiq > 0 ? fmt(totLiq/1000,0)+'k €' : '—'}</div></div>`;
@@ -1244,29 +1245,72 @@ function renderStoricoList() {
     const [y,mo] = m.split('-');
     const mn = ['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'][parseInt(mo)];
     html += `<div class="month-sep"><span class="month-sep-text">${mn} ${y}</span></div>`;
-    html += byMonth[m].map(u => {
-      const soc = allLotti.find(l => l.id === u.lotto_id);
-      const socNome = soc ? (allSoccide.find(s => s.id === soc.soccida_id)?.nome || '—') : u.soccida_nome || '—';
-      const media = u.kg_totali && u.capi ? fmt(u.kg_totali/u.capi,1) : '—';
-      const valoreCapo = (u.liquidazione && u.capi) ? u.liquidazione / u.capi : null;
-      const lotto = allLotti.find(l => l.id === u.lotto_id);
-      return `<div class="storico-row">
+
+    // Raggruppa per stesso DDT+data (carichi fisici unici, anche se divisi su più lotti in DB)
+    const gruppi = {};
+    const ordine = [];
+    byMonth[m].forEach(u => {
+      const key = (u.numero_ddt ? u.numero_ddt.trim().toUpperCase() : 'NODDT-'+u.id) + '|' + u.data_uscita;
+      if(!gruppi[key]) { gruppi[key] = []; ordine.push(key); }
+      gruppi[key].push(u);
+    });
+
+    html += ordine.map(key => {
+      const righe = gruppi[key];
+      const first = righe[0];
+      const multi = righe.length > 1;
+
+      const totCapiG = righe.reduce((s,u) => s+(u.capi||0), 0);
+      const totKgG = righe.reduce((s,u) => s+(parseFloat(u.kg_totali)||0), 0);
+      const totLiqG = righe.reduce((s,u) => s+(u.liquidazione||0), 0);
+      const mediaG = totCapiG && totKgG ? fmt(totKgG/totCapiG,1) : '—';
+      const valoreCapoG = (totLiqG && totCapiG) ? totLiqG/totCapiG : null;
+      const tuttiLiquidati = righe.every(u => u.liquidazione);
+      const prezzoMedio = totKgG ? righe.reduce((s,u) => s+((u.prezzo_kg||0)*(parseFloat(u.kg_totali)||0)),0)/totKgG : null;
+
+      const lottiTxt = righe.map(u => {
+        const lo = allLotti.find(l => l.id === u.lotto_id);
+        return lo ? lo.codice : '—';
+      }).join(' + ');
+      const soc = allLotti.find(l => l.id === first.lotto_id);
+      const socNome = soc ? (allSoccide.find(s => s.id === soc.soccida_id)?.nome || '—') : first.soccida_nome || '—';
+
+      let out = `<div class="storico-row">
         <div class="storico-top">
-          <span class="storico-soccida"><strong>${fmtDateFull(u.data_uscita)}</strong> · ${socNome}${lotto ? ' · ' + lotto.codice : ''}</span>
-          <span class="storico-macello">${u.macello || '—'}</span>
+          <span class="storico-soccida"><strong>${fmtDateFull(first.data_uscita)}</strong> · ${socNome} · ${lottiTxt}</span>
+          <span class="storico-macello">${first.macello || '—'}</span>
         </div>
-        <div style="font-size:11px;color:${u.cessionario ? 'var(--accent)' : 'var(--text3)'};font-weight:500;margin-bottom:4px;">📄 Fatturare a: ${u.cessionario || '—'}</div>
+        <div style="font-size:11px;color:${first.cessionario ? 'var(--accent)' : 'var(--text3)'};font-weight:500;margin-bottom:4px;">📄 Fatturare a: ${first.cessionario || '—'}</div>
         <div class="storico-line">
-          <div class="sc"><div class="sc-label">capi</div><div class="sc-val">${fmt(u.capi)}</div></div>
-          <div class="sc"><div class="sc-label">kg</div><div class="sc-val">${fmt(u.kg_totali)}</div></div>
-          <div class="sc"><div class="sc-label">media</div><div class="sc-val">${media}</div></div>
-          <div class="sc"><div class="sc-label">€/kg</div><div class="sc-val">${u.prezzo_kg ? fmt(u.prezzo_kg,3) : '—'}</div></div>
-          <div class="sc"><div class="sc-label">liquid.</div><div class="sc-val green">${u.liquidazione ? fmt(u.liquidazione) + ' €' : '—'}</div></div>
-          <div class="sc"><div class="sc-label">val/capo</div><div class="sc-val green">${valoreCapo ? fmt(valoreCapo,0) + ' €' : '—'}</div></div>
-        </div>
-        ${!u.liquidazione ? `<button onclick="apriLiquidazione(${u.id})" style="margin-top:6px;width:100%;padding:7px;background:var(--amber-bg);color:var(--amber);border:0.5px solid #F0DC8A;border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">+ Inserisci liquidazione</button>` : ''}
-        <button onclick="apriModificaUscita(${u.id})" style="margin-top:4px;width:100%;padding:7px;background:var(--bg2);color:var(--text2);border:0.5px solid var(--border);border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">✎ Modifica uscita</button>
-      </div>`;
+          <div class="sc"><div class="sc-label">capi</div><div class="sc-val">${fmt(totCapiG)}</div></div>
+          <div class="sc"><div class="sc-label">kg</div><div class="sc-val">${fmt(totKgG)}</div></div>
+          <div class="sc"><div class="sc-label">media</div><div class="sc-val">${mediaG}</div></div>
+          <div class="sc"><div class="sc-label">€/kg</div><div class="sc-val">${prezzoMedio ? fmt(prezzoMedio,3) : '—'}</div></div>
+          <div class="sc"><div class="sc-label">liquid.</div><div class="sc-val green">${totLiqG ? fmt(totLiqG) + ' €' : '—'}</div></div>
+          <div class="sc"><div class="sc-label">val/capo</div><div class="sc-val green">${valoreCapoG ? fmt(valoreCapoG,0) + ' €' : '—'}</div></div>
+        </div>`;
+
+      if(multi) {
+        out += `<div style="margin-top:8px;padding-top:8px;border-top:0.5px dashed var(--border);">
+          <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);margin-bottom:6px;">Carico diviso su ${righe.length} lotti — dettaglio righe</div>
+          ${righe.map(u => {
+            const lo = allLotti.find(l => l.id === u.lotto_id);
+            return `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:11px;">
+              <span>${lo ? lo.codice : '—'} · ${fmt(u.capi)} capi · ${fmt(u.kg_totali)} kg</span>
+              <span style="display:flex;gap:6px;">
+                ${!u.liquidazione ? `<button onclick="apriLiquidazione(${u.id})" style="padding:3px 7px;background:var(--amber-bg);color:var(--amber);border:0.5px solid #F0DC8A;border-radius:6px;font-size:10px;font-family:var(--font);cursor:pointer;">+ liquid.</button>` : `<span style="color:var(--green);font-weight:500;">${fmt(u.liquidazione)} €</span>`}
+                <button onclick="apriModificaUscita(${u.id})" style="padding:3px 7px;background:var(--bg2);color:var(--text2);border:0.5px solid var(--border);border-radius:6px;font-size:10px;font-family:var(--font);cursor:pointer;">✎</button>
+              </span>
+            </div>`;
+          }).join('')}
+        </div>`;
+      } else {
+        out += `${!first.liquidazione ? `<button onclick="apriLiquidazione(${first.id})" style="margin-top:6px;width:100%;padding:7px;background:var(--amber-bg);color:var(--amber);border:0.5px solid #F0DC8A;border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">+ Inserisci liquidazione</button>` : ''}
+        <button onclick="apriModificaUscita(${first.id})" style="margin-top:4px;width:100%;padding:7px;background:var(--bg2);color:var(--text2);border:0.5px solid var(--border);border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">✎ Modifica uscita</button>`;
+      }
+
+      out += `</div>`;
+      return out;
     }).join('');
   });
   document.getElementById('storico-list').innerHTML = html;
