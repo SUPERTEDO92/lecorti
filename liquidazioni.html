@@ -263,10 +263,12 @@ function render() {
   const totCapi = rows.reduce((s,u) => s+(u.capi||0), 0);
   const totKg = rows.reduce((s,u) => s+(u.kg_totali||0), 0);
   const totLiq = rows.filter(u => u.liquidazione).reduce((s,u) => s+(u.liquidazione||0), 0);
-  const daLiquidare = rows.filter(u => !u.liquidazione).length;
+  const groupKey = u => (u.numero_ddt ? u.numero_ddt.trim().toUpperCase() : 'NODDT-'+u.id) + '|' + u.data_uscita;
+  const carichiUnici = new Set(rows.map(groupKey)).size;
+  const gruppiDaLiquidare = new Set(rows.filter(u => !u.liquidazione).map(groupKey)).size;
 
   document.getElementById('summary').innerHTML = `
-    <div class="sum-box"><div class="sum-label">carichi</div><div class="sum-val">${rows.length}</div></div>
+    <div class="sum-box"><div class="sum-label">carichi</div><div class="sum-val">${carichiUnici}</div></div>
     <div class="sum-box"><div class="sum-label">capi</div><div class="sum-val">${fmt(totCapi)}</div></div>
     <div class="sum-box"><div class="sum-label">kg</div><div class="sum-val">${fmt(totKg)}</div></div>
     <div class="sum-box"><div class="sum-label">liquidato</div><div class="sum-val green">${totLiq > 0 ? fmt(totLiq/1000,1)+'k' : '—'}</div></div>`;
@@ -290,49 +292,89 @@ function render() {
     const totMeseLiq = byMonth[m].filter(u => u.liquidazione).reduce((s,u) => s+(u.liquidazione||0), 0);
     html += `<div class="month-sep"><span class="month-sep-text">${nomiMese[parseInt(mo)]} ${y}${totMeseLiq > 0 ? ' · ' + fmt(totMeseLiq) + ' €' : ''}</span></div>`;
 
-    html += byMonth[m].map(u => {
+    const _grouped = {};
+    const _order = [];
+    byMonth[m].forEach(u => {
+      const key = groupKey(u);
+      if(!_grouped[key]) { _grouped[key] = []; _order.push(key); }
+      _grouped[key].push(u);
+    });
+
+    html += _order.map(key => {
+      const righe = _grouped[key];
+      const multi = righe.length > 1;
+      const u = righe[0];
+
       const lotto = allLotti.find(l => l.id === u.lotto_id);
       const soc = allSoccide.find(s => s.id === lotto?.soccida_id);
       const socNome = soc?.nome || '—';
-      const media = u.kg_totali && u.capi ? (u.kg_totali / u.capi).toFixed(1) : '—';
+      const lottiTxt = righe.map(r => (allLotti.find(l => l.id === r.lotto_id)?.codice) || '—').join(' + ');
+
+      const totCapiG = righe.reduce((s,r) => s+(r.capi||0), 0);
+      const totKgG = righe.reduce((s,r) => s+(parseFloat(r.kg_totali)||0), 0);
+      const totLiqG = righe.reduce((s,r) => s+(r.liquidazione||0), 0);
+      const totLordoG = righe.reduce((s,r) => s+(r.liquidazione_lorda||0), 0);
+      const totScontiG = righe.reduce((s,r) => s+(r.sconto_peso||0)+(r.sconto_merce||0), 0);
+      const media = totCapiG && totKgG ? (totKgG / totCapiG).toFixed(1) : '—';
+      const prezzoMedio = totKgG ? righe.reduce((s,r) => s+((r.prezzo_kg||0)*(parseFloat(r.kg_totali)||0)),0)/totKgG : null;
+      const tuttiLiquidati = righe.every(r => r.liquidazione);
+      const qualcunoLiquidato = righe.some(r => r.liquidazione);
 
       let dettaglioLiq = '';
-      if(u.liquidazione) {
-        // Mostra dettaglio sconti se presenti
-        const sconti = (u.sconto_peso||0) + (u.sconto_merce||0);
+      if(tuttiLiquidati) {
         dettaglioLiq = `<div class="liq-netto">
           <div>
             <div class="liq-netto-label">Liquidazione netta</div>
-            ${sconti > 0 ? `<div style="font-size:10px;color:var(--green);margin-top:1px;">Lordo ${fmt(u.liquidazione_lorda||0)} € · Sconti ${fmt(sconti)} €</div>` : ''}
+            ${totScontiG > 0 ? `<div style="font-size:10px;color:var(--green);margin-top:1px;">Lordo ${fmt(totLordoG)} € · Sconti ${fmt(totScontiG)} €</div>` : ''}
           </div>
-          <div class="liq-netto-val">${fmt(u.liquidazione)} €</div>
+          <div class="liq-netto-val">${fmt(totLiqG)} €</div>
+        </div>`;
+      } else if(qualcunoLiquidato) {
+        dettaglioLiq = `<div class="liq-netto">
+          <div class="liq-netto-label" style="color:var(--amber);">⏳ Parzialmente liquidato</div>
+          <div class="liq-netto-val">${fmt(totLiqG)} €</div>
         </div>`;
       } else {
         dettaglioLiq = `<div class="liq-pending">⏳ Liquidazione non ancora ricevuta</div>`;
       }
 
-      const valoreCapo = (u.liquidazione && u.capi) ? u.liquidazione / u.capi : null;
+      const valoreCapo = (totLiqG && totCapiG) ? totLiqG / totCapiG : null;
 
-      return `<div class="liq-row">
+      let out = `<div class="liq-row">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><strong style="color:var(--text);font-size:16px;font-family:var(--mono);">${fmtDate(u.data_uscita)}</strong>${u.numero_ddt ? `<span style="font-size:20px;font-family:var(--mono);font-weight:600;color:var(--text);">Bolla n. ${u.numero_ddt}</span>` : ''}</div>
         <div class="liq-top">
           <div>
-            <div class="liq-soccida">${socNome}</div>
+            <div class="liq-soccida">${socNome} · ${lottiTxt}</div>
 
           </div>
           <div class="liq-macello">${u.macello || '—'}</div>
         </div>
         <div style="background:${u.cessionario ? '#FDF3E0' : '#F5F3EE'};border:0.5px solid ${u.cessionario ? '#F0C870' : 'var(--border)'};border-radius:var(--radius);padding:6px 10px;margin-bottom:8px;font-size:14px;font-weight:600;color:${u.cessionario ? '#9A6010' : 'var(--text3)'};display:flex;align-items:center;gap:6px;">📄 Fatturare a: ${u.cessionario || '—'}</div>
         <div class="liq-grid">
-          <div class="lg"><div class="lg-label">Capi</div><div class="lg-val">${fmt(u.capi)}</div></div>
-          <div class="lg"><div class="lg-label">Kg tot.</div><div class="lg-val">${fmt(u.kg_totali)}</div></div>
+          <div class="lg"><div class="lg-label">Capi</div><div class="lg-val">${fmt(totCapiG)}</div></div>
+          <div class="lg"><div class="lg-label">Kg tot.</div><div class="lg-val">${fmt(totKgG)}</div></div>
           <div class="lg"><div class="lg-label">Media kg</div><div class="lg-val">${media}</div></div>
-          <div class="lg"><div class="lg-label">€/kg</div><div class="lg-val">${u.prezzo_kg ? fmt(u.prezzo_kg,3) : '—'}</div></div>
+          <div class="lg"><div class="lg-label">€/kg</div><div class="lg-val">${prezzoMedio ? prezzoMedio.toFixed(3) : '—'}</div></div>
         </div>
         ${valoreCapo ? `<div style="text-align:right;margin-top:4px;font-size:13px;font-family:var(--mono);color:var(--green);font-weight:500;">valore/capo: ${fmt(valoreCapo,0)} €</div>` : ''}
 
-        ${dettaglioLiq}
-      </div>`;
+        ${dettaglioLiq}`;
+
+      if(multi) {
+        out += `<div style="margin-top:8px;padding-top:8px;border-top:0.5px dashed var(--border);">
+          <div style="font-size:10px;font-family:'Courier New',monospace;text-transform:uppercase;color:var(--text3);margin-bottom:4px;">Carico diviso su ${righe.length} lotti</div>
+          ${righe.map(r => {
+            const lo = allLotti.find(l => l.id === r.lotto_id);
+            return `<div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0;">
+              <span>${lo ? lo.codice : '—'} · ${fmt(r.capi)} capi · ${fmt(r.kg_totali)} kg</span>
+              <span style="${r.liquidazione ? 'color:var(--green);font-weight:500;' : 'color:var(--amber);'}">${r.liquidazione ? fmt(r.liquidazione)+' €' : 'in attesa'}</span>
+            </div>`;
+          }).join('')}
+        </div>`;
+      }
+
+      out += `</div>`;
+      return out;
     }).join('');
   });
 
