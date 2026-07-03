@@ -1491,7 +1491,12 @@ function renderTrasferimenti() {
           <div class="tc"><div class="tc-label">prezzo uscita</div><div class="tc-val green">${t.valore ? fmt(t.valore)+' €' : '—'}</div></div>
           <div class="tc"><div class="tc-label">margine</div><div class="tc-val" style="color:${margine == null ? 'var(--text2)' : margine >= 0 ? 'var(--green)' : '#B0453A'};font-weight:600;">${margine != null ? fmt(margine)+' €' : '—'}</div></div>
         </div>` : ''}
-        ${!t.costo_acquisto ? `<button onclick="apriCostoAcquisto(${t.id})" style="margin-top:6px;width:100%;padding:7px;background:var(--amber-bg);color:var(--amber);border:0.5px solid #F0DC8A;border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">+ Inserisci ${isVend ? 'prezzo di acquisto (ingresso)' : 'valore'}</button>` : ''}
+        ${isVend
+          ? `<div style="display:flex;gap:6px;margin-top:6px;">
+              ${!t.costo_acquisto ? `<button onclick="apriCostoAcquisto(${t.id},'costo_acquisto')" style="flex:1;padding:7px;background:var(--amber-bg);color:var(--amber);border:0.5px solid #F0DC8A;border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">+ Prezzo ingresso</button>` : ''}
+              ${!t.valore ? `<button onclick="apriCostoAcquisto(${t.id},'valore')" style="flex:1;padding:7px;background:var(--amber-bg);color:var(--amber);border:0.5px solid #F0DC8A;border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">+ Prezzo uscita</button>` : ''}
+            </div>`
+          : (!t.costo_acquisto ? `<button onclick="apriCostoAcquisto(${t.id},'costo_acquisto')" style="margin-top:6px;width:100%;padding:7px;background:var(--amber-bg);color:var(--amber);border:0.5px solid #F0DC8A;border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">+ Inserisci valore</button>` : '')}
       </div>`;
     }).join('');
   });
@@ -1500,15 +1505,19 @@ function renderTrasferimenti() {
   document.getElementById('trasf-list').innerHTML = html;
 }
 
-// ── COSTO ACQUISTO ──
+// ── COSTO ACQUISTO / PREZZO VENDITA (ingresso/uscita) ──
 let _costoTrId = null;
-function apriCostoAcquisto(trId) {
+let _costoCampo = 'costo_acquisto';
+function apriCostoAcquisto(trId, campo) {
   _costoTrId = trId;
+  _costoCampo = campo || 'costo_acquisto';
   const t = allTrasferimenti.find(x => x.id === trId);
   const lotto = allLotti.find(l => l.id === t?.lotto_id);
   const mediaKgTrasf = t?.kg && t?.capi ? (t.kg / t.capi).toFixed(2) : null;
+  const etichetta = _costoCampo === 'valore' ? 'Prezzo di vendita (uscita)' : 'Prezzo di acquisto (ingresso)';
+  document.getElementById('modal-costo-title').textContent = etichetta;
   document.getElementById('modal-costo-info').textContent =
-    `${t?.soccida_destinazione || '—'} · Lotto ${lotto?.codice || '—'} · ${t?.capi} capi · ${t?.kg ? fmt(t.kg)+' kg' : ''} · ${mediaKgTrasf ? 'media '+mediaKgTrasf+' kg/capo' : ''} · ${fmtDate(t?.data_trasferimento)}`;
+    `${t?.soccida_partenza || '—'} → ${t?.soccida_destinazione || '—'} · Lotto ${lotto?.codice || '—'} · ${t?.capi} capi · ${t?.kg ? fmt(t.kg)+' kg' : ''} · ${mediaKgTrasf ? 'media '+mediaKgTrasf+' kg/capo' : ''} · ${fmtDate(t?.data_trasferimento)}`;
   document.getElementById('costo-val').value = '';
 
   // Pre-compila kg e capi nel calcolatore integrato
@@ -1521,18 +1530,19 @@ function apriCostoAcquisto(trId) {
 function chiudiCostoAcquisto() {
   document.getElementById('modal-costo').style.display = 'none';
   _costoTrId = null;
+  _costoCampo = 'costo_acquisto';
 }
 async function salvaCostoAcquisto() {
   const costo = parseFloat(document.getElementById('costo-val').value);
-  if(!costo) { alert('Inserisci il costo totale'); return; }
+  if(!costo) { alert('Inserisci l\'importo'); return; }
   try {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/trasferimenti?id=eq.${_costoTrId}`, {
       method: 'PATCH', headers: SB_H,
-      body: JSON.stringify({ costo_acquisto: costo })
+      body: JSON.stringify({ [_costoCampo]: costo })
     });
     if(!r.ok) throw new Error(await r.text());
     const t = allTrasferimenti.find(x => x.id === _costoTrId);
-    if(t) t.costo_acquisto = costo;
+    if(t) t[_costoCampo] = costo;
     chiudiCostoAcquisto();
     renderTrasferimenti();
   } catch(e) {
@@ -2744,7 +2754,7 @@ loadAll();
 <div id="modal-costo" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center;">
   <div style="background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-      <div style="font-size:14px;font-weight:500;font-family:var(--mono);">Inserisci valore</div>
+      <div id="modal-costo-title" style="font-size:14px;font-weight:500;font-family:var(--mono);">Inserisci valore</div>
       <button onclick="chiudiCostoAcquisto()" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
     </div>
     <div id="modal-costo-info" style="font-size:11px;color:var(--text2);background:var(--bg2);padding:8px 10px;border-radius:var(--radius);margin-bottom:14px;font-family:var(--mono);"></div>
