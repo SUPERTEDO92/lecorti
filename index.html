@@ -49,14 +49,13 @@
   .topbar-logo { font-family: var(--mono); font-size: 15px; font-weight: 500; letter-spacing: .1em; }
   .topbar-date { font-size: 11px; color: #888; font-family: var(--mono); }
   .topbar-nav {
-    display: flex; gap: 2px;
-    padding: 0 12px 10px;
+    display: flex; flex-wrap: wrap; gap: 4px;
+    padding: 8px 12px 10px;
     border-top: 0.5px solid rgba(255,255,255,.08);
-    padding-top: 8px;
   }
   .nav-btn {
-    flex: 1; padding: 7px 4px; border-radius: var(--radius); border: none;
-    font-size: 12px; font-family: var(--font); cursor: pointer; text-align: center;
+    flex: 1 1 30%; padding: 8px 4px; border-radius: var(--radius); border: none;
+    font-size: 13px; font-family: var(--font); cursor: pointer; text-align: center;
     background: transparent; color: #888; transition: all .15s;
   }
   .nav-btn:hover { color: #FFF; background: rgba(255,255,255,.1); }
@@ -380,8 +379,9 @@
     <button class="nav-btn" onclick="showPage('storico')">Storico</button>
     <button class="nav-btn" onclick="showPage('trasferimenti')">Trasferimenti</button>
     <button class="nav-btn" onclick="showPage('archivio')">Archivio</button>
-    <button class="nav-btn" onclick="window.open('lecorti-prezzo-suinetti.html','_blank')" style="margin-left:8px;border-left:0.5px solid rgba(255,255,255,.2);padding-left:12px;">🧮 Calcolo prezzo</button>
-    <button class="nav-btn" onclick="window.open('lecorti-rubrica.html','_blank')" style="margin-left:4px;">📋 Rubrica</button>
+    <button class="nav-btn" onclick="showPage('macelli')">Macelli</button>
+    <button class="nav-btn" onclick="window.open('lecorti-prezzo-suinetti.html','_blank')">🧮 Calcolo prezzo</button>
+    <button class="nav-btn" onclick="window.open('lecorti-rubrica.html','_blank')">📋 Rubrica</button>
   </div>
 </div>
 
@@ -401,6 +401,15 @@
 <!-- ARCHIVIO -->
 <div class="page" id="page-archivio">
   <div id="archivio-content"><div class="loading">Caricamento…</div></div>
+</div>
+
+<!-- MACELLI -->
+<div class="page" id="page-macelli">
+  <div style="padding:14px 14px 4px;">
+    <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:10px;" id="macelli-sub">Caricamento...</div>
+  </div>
+  <div class="filter-bar" id="macelli-chips"></div>
+  <div id="macelli-list" style="padding:0 14px 20px;"><div class="loading">Caricamento dati...</div></div>
 </div>
 
 <!-- INSERIMENTO -->
@@ -757,6 +766,9 @@
     </div>
   </div>
   <div class="filter-bar" id="storico-filters"></div>
+  <div style="padding:0 14px 10px;">
+    <input type="text" id="storico-search" placeholder="🔍 Cerca DDT, macello, cessionario, soccida, lotto, note..." oninput="renderStoricoList()" style="width:100%;padding:9px 12px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;">
+  </div>
   <div class="summary-bar" id="storico-summary"></div>
   <div class="storico-container" id="storico-list">
     <div class="loading">Caricamento...</div>
@@ -877,10 +889,94 @@ function showPage(name, lottoId) {
   if(name === 'detail' && lottoId) { currentLottoId = lottoId; renderDetail(lottoId); }
   if(name === 'inserimento') initInserimento();
   if(name === 'archivio') renderArchivio();
+  if(name === 'macelli') renderMacelli();
   if(name === 'analisi' && lottoId) { currentLottoId = lottoId; renderAnalisi(lottoId); }
   if(name === 'analisi' && !lottoId && currentLottoId) renderAnalisi(currentLottoId);
   if(name === 'stampa' && lottoId) { currentLottoId = lottoId; renderStampa(lottoId); }
   window.scrollTo(0,0);
+}
+
+let macelliAnnoFiltro = 'tutti';
+
+function buildMacelliChips() {
+  const anni = [...new Set(allUscite.map(u => u.data_uscita?.substring(0,4)).filter(Boolean))].sort().reverse();
+  document.getElementById('macelli-chips').innerHTML = `<div class="chip active" onclick="setAnnoMacelli('tutti', this)">Tutti</div>` +
+    anni.map(a => `<div class="chip" onclick="setAnnoMacelli('${a}', this)">${a}</div>`).join('');
+}
+
+function setAnnoMacelli(val, el) {
+  macelliAnnoFiltro = val;
+  document.querySelectorAll('#macelli-chips .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderMacelli(false);
+}
+
+function renderMacelli(rebuildChips) {
+  if(rebuildChips !== false) buildMacelliChips();
+
+  let rows = allUscite.filter(u => u.macello && u.data_uscita && u.kg_totali);
+  if(macelliAnnoFiltro !== 'tutti') rows = rows.filter(u => u.data_uscita.startsWith(macelliAnnoFiltro));
+
+  if(!rows.length) {
+    document.getElementById('macelli-list').innerHTML = `<div class="empty">Nessun dato disponibile per questo periodo.</div>`;
+    document.getElementById('macelli-sub').textContent = '0 macelli';
+    return;
+  }
+
+  const byMacello = {};
+  rows.forEach(u => {
+    const key = u.macello.trim().toUpperCase();
+    (byMacello[key] = byMacello[key] || []).push(u);
+  });
+  const macelli = Object.keys(byMacello).sort((a,b) => byMacello[b].length - byMacello[a].length);
+  document.getElementById('macelli-sub').textContent = `${macelli.length} macelli · ${rows.length} carichi`;
+
+  document.getElementById('macelli-list').innerHTML = macelli.map(nome => {
+    const righe = byMacello[nome];
+    const totCapi = righe.reduce((s,u) => s+(u.capi||0), 0);
+    const totKg = righe.reduce((s,u) => s+(parseFloat(u.kg_totali)||0), 0);
+    const conPrezzo = righe.filter(u => u.prezzo_kg);
+    const prezzoMedio = conPrezzo.length
+      ? conPrezzo.reduce((s,u) => s+(u.prezzo_kg*parseFloat(u.kg_totali)),0) / conPrezzo.reduce((s,u) => s+parseFloat(u.kg_totali),0)
+      : null;
+    const totLordo = righe.reduce((s,u) => s+(u.liquidazione_lorda||0), 0);
+    const totSconti = righe.reduce((s,u) => s+(u.sconto_peso||0)+(u.sconto_merce||0), 0);
+    const scontoPct = totLordo ? (totSconti/totLordo*100) : null;
+    const scontoPerCapo = totCapi ? (totSconti/totCapi) : null;
+
+    const byMese = {};
+    righe.forEach(u => { const m = u.data_uscita.substring(0,7); (byMese[m] = byMese[m] || []).push(u); });
+    const mesi = Object.keys(byMese).sort().reverse();
+    const trendId = 'trend-' + nome.replace(/[^A-Z0-9]/g,'');
+
+    return `<div style="background:#FFF;border:0.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;">
+        <div style="font-size:16px;font-weight:600;">${nome}</div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);">${righe.length} carichi</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;">
+        <div style="background:var(--bg2);border-radius:8px;padding:8px;text-align:center;"><div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);margin-bottom:2px;">Capi</div><div style="font-size:14px;font-weight:600;">${fmt(totCapi)}</div></div>
+        <div style="background:var(--bg2);border-radius:8px;padding:8px;text-align:center;"><div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);margin-bottom:2px;">Kg tot.</div><div style="font-size:14px;font-weight:600;">${fmt(totKg)}</div></div>
+        <div style="background:var(--bg2);border-radius:8px;padding:8px;text-align:center;"><div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);margin-bottom:2px;">€/kg medio</div><div style="font-size:14px;font-weight:600;">${prezzoMedio ? fmt(prezzoMedio,3) : '—'}</div></div>
+      </div>
+      ${totSconti > 0 ? `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--red-bg);border-radius:8px;font-size:12px;margin-bottom:6px;">
+        <span style="color:#8A3830;">Sconti/trattenute applicati</span>
+        <span style="font-weight:600;color:#8A3830;font-family:var(--mono);">${fmt(totSconti)} € ${scontoPct ? '('+fmt(scontoPct,1)+'%)' : ''} ${scontoPerCapo ? '· '+fmt(scontoPerCapo,2)+' €/capo' : ''}</span>
+      </div>` : ''}
+      ${mesi.length > 1 ? `
+        <button onclick="document.getElementById('${trendId}').style.display = document.getElementById('${trendId}').style.display === 'none' ? 'block' : 'none';" style="font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer;padding:4px 0;font-family:var(--font);">📈 Trend mensile prezzo (${mesi.length} mesi)</button>
+        <div id="${trendId}" style="display:none;margin-top:6px;">
+          ${mesi.map(m => {
+            const r = byMese[m];
+            const conP = r.filter(u => u.prezzo_kg);
+            const pm = conP.length ? conP.reduce((s,u)=>s+(u.prezzo_kg*parseFloat(u.kg_totali)),0)/conP.reduce((s,u)=>s+parseFloat(u.kg_totali),0) : null;
+            const [y,mo] = m.split('-');
+            const mn = ['','Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'][parseInt(mo)];
+            return `<div style="display:flex;justify-content:space-between;font-size:11px;padding:5px 0;border-bottom:0.5px solid var(--bg2);font-family:var(--mono);"><span style="color:var(--text2);">${mn} ${y} (${r.length} carichi)</span><span style="font-weight:500;">${pm ? fmt(pm,3)+' €/kg' : '—'}</span></div>`;
+          }).join('')}
+        </div>` : ''}
+    </div>`;
+  }).join('');
 }
 
 function fmt(n, dec=0) {
@@ -1214,6 +1310,18 @@ function filterStorico(val, el) {
 function renderStoricoList() {
   let rows = allUscite.filter(u => u.data_uscita);
   if(storicoFilter !== 'tutti') rows = rows.filter(u => u.data_uscita?.startsWith(storicoFilter));
+
+  const q = (document.getElementById('storico-search')?.value || '').trim().toLowerCase();
+  if(q) {
+    rows = rows.filter(u => {
+      const lotto = allLotti.find(l => l.id === u.lotto_id);
+      const soc = allSoccide.find(s => s.id === lotto?.soccida_id);
+      const campi = [u.numero_ddt, u.macello, u.cessionario, soc?.nome, lotto?.codice, u.note]
+        .filter(Boolean).join(' ').toLowerCase();
+      return campi.includes(q);
+    });
+  }
+
   rows = [...rows].sort((a,b) => b.data_uscita.localeCompare(a.data_uscita));
 
   // Summary
