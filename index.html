@@ -463,6 +463,13 @@
           <input type="text" id="u-macello-manuale" placeholder="Nome macello..." style="display:none;width:100%;padding:9px 10px;border:0.5px solid var(--accent);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text);margin-top:6px;box-sizing:border-box;">
         </div>
         <div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">CESSIONARIO (a chi fatturare)</div>
+          <select id="u-cessionario" onchange="toggleCessionarioManuale(this)" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text);">
+            <option value="">— seleziona cessionario —</option>
+          </select>
+          <input type="text" id="u-cessionario-manuale" placeholder="Nome cessionario..." style="display:none;width:100%;padding:9px 10px;border:0.5px solid var(--accent);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text);margin-top:6px;box-sizing:border-box;">
+        </div>
+        <div>
           <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">N° CAPI</div>
           <input type="number" id="u-capi" placeholder="es. 125" oninput="calcolaMediaUscita()" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
         </div>
@@ -800,6 +807,7 @@ const SUPABASE_URL = 'https://wfvqgxkxmgcxchcsljzh.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmdnFneGt4bWdjeGNoY3NsanpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMTE1NTAsImV4cCI6MjA5NTg4NzU1MH0.hIhbdVFeCTDJ9bBBqetef87VTCtocMflYUQ_7kvxJF8';
 const SB_H = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
 const MACELLI = ['ANNONI','CAPPOLA','GHINZELLI','OPAS','MEC','PINI','PINI ITALIA','COSTA','ZANDALAZINI','SASSI','LINGIARDI','BERTESAGO','FESTA','ROVESCALA','__MANUALE__'];
+const CESSIONARI = ['FM FONTANELLE','OPAS ALIMENTARE','__MANUALE__'];
 
 async function sb(table, query='') {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}${query}`, {
@@ -1240,18 +1248,21 @@ function renderStoricoList() {
       const soc = allLotti.find(l => l.id === u.lotto_id);
       const socNome = soc ? (allSoccide.find(s => s.id === soc.soccida_id)?.nome || '—') : u.soccida_nome || '—';
       const media = u.kg_totali && u.capi ? fmt(u.kg_totali/u.capi,1) : '—';
+      const valoreCapo = (u.liquidazione && u.capi) ? u.liquidazione / u.capi : null;
       const lotto = allLotti.find(l => l.id === u.lotto_id);
       return `<div class="storico-row">
         <div class="storico-top">
           <span class="storico-soccida"><strong>${fmtDateFull(u.data_uscita)}</strong> · ${socNome}${lotto ? ' · ' + lotto.codice : ''}</span>
           <span class="storico-macello">${u.macello || '—'}</span>
         </div>
+        ${u.cessionario ? `<div style="font-size:11px;color:var(--accent);font-weight:500;margin-bottom:4px;">📄 Fatturare a: ${u.cessionario}</div>` : ''}
         <div class="storico-line">
           <div class="sc"><div class="sc-label">capi</div><div class="sc-val">${fmt(u.capi)}</div></div>
           <div class="sc"><div class="sc-label">kg</div><div class="sc-val">${fmt(u.kg_totali)}</div></div>
           <div class="sc"><div class="sc-label">media</div><div class="sc-val">${media}</div></div>
           <div class="sc"><div class="sc-label">€/kg</div><div class="sc-val">${u.prezzo_kg ? fmt(u.prezzo_kg,3) : '—'}</div></div>
           <div class="sc"><div class="sc-label">liquid.</div><div class="sc-val green">${u.liquidazione ? fmt(u.liquidazione) + ' €' : '—'}</div></div>
+          <div class="sc"><div class="sc-label">val/capo</div><div class="sc-val green">${valoreCapo ? fmt(valoreCapo,2) + ' €' : '—'}</div></div>
         </div>
         ${!u.liquidazione ? `<button onclick="apriLiquidazione(${u.id})" style="margin-top:6px;width:100%;padding:7px;background:var(--amber-bg);color:var(--amber);border:0.5px solid #F0DC8A;border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">+ Inserisci liquidazione</button>` : ''}
         <button onclick="apriModificaUscita(${u.id})" style="margin-top:4px;width:100%;padding:7px;background:var(--bg2);color:var(--text2);border:0.5px solid var(--border);border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">✎ Modifica uscita</button>
@@ -1935,6 +1946,16 @@ function initInserimento() {
       ).join('');
   }
 
+  // Popola tendina cessionari
+  const selCessionario = document.getElementById('u-cessionario');
+  if(selCessionario) {
+    selCessionario.innerHTML = '<option value="">— seleziona cessionario —</option>' +
+      CESSIONARI.map(c => c === '__MANUALE__'
+        ? `<option value="__MANUALE__">✏️ Inserisci manualmente...</option>`
+        : `<option value="${c}">${c}</option>`
+      ).join('');
+  }
+
   // Data default = oggi
   const oggi = new Date().toISOString().split('T')[0];
   const dU = document.getElementById('u-data');
@@ -2066,6 +2087,17 @@ function toastIns(msg, ok) {
   if(ok) setTimeout(() => { t.style.display = 'none'; }, 4000);
 }
 
+function toggleCessionarioManuale(sel) {
+  const input = document.getElementById('u-cessionario-manuale');
+  if(sel.value === '__MANUALE__') {
+    input.style.display = 'block';
+    input.focus();
+  } else {
+    input.style.display = 'none';
+    input.value = '';
+  }
+}
+
 function toggleMacelloManuale(sel) {
   const input = document.getElementById('u-macello-manuale');
   if(sel.value === '__MANUALE__') {
@@ -2087,6 +2119,10 @@ async function inserisciUscita() {
   const macello = selMac === '__MANUALE__'
     ? (document.getElementById('u-macello-manuale').value.trim().toUpperCase() || null)
     : (selMac || null);
+  const selCess = document.getElementById('u-cessionario').value;
+  const cessionario = selCess === '__MANUALE__'
+    ? (document.getElementById('u-cessionario-manuale').value.trim().toUpperCase() || null)
+    : (selCess || null);
 
   if(!lottoId || !data || !capi || !kg || !macello) {
     toastIns('Compila: soccida, lotto, data, macello, capi e kg', false); return;
@@ -2104,7 +2140,7 @@ async function inserisciUscita() {
       method: 'POST', headers: SB_H,
       body: JSON.stringify({
         lotto_id: lottoId, data_uscita: data,
-        numero_ddt: ddt, macello, capi, kg_totali: kg,
+        numero_ddt: ddt, macello, cessionario, capi, kg_totali: kg,
         giorni_permanenza: gg > 0 ? gg : null,
         incremento
       })
@@ -2124,6 +2160,9 @@ async function inserisciUscita() {
     document.getElementById('u-macello').value = '';
     document.getElementById('u-macello-manuale').style.display = 'none';
     document.getElementById('u-macello-manuale').value = '';
+    document.getElementById('u-cessionario').value = '';
+    document.getElementById('u-cessionario-manuale').style.display = 'none';
+    document.getElementById('u-cessionario-manuale').value = '';
     document.getElementById('u-media-row').style.display = 'none';
   } catch(e) {
     toastIns('Errore: ' + e.message, false);
@@ -2541,6 +2580,7 @@ function apriModificaUscita(uscitaId) {
   document.getElementById('mod-data').value = u?.data_uscita || '';
   document.getElementById('mod-ddt').value = u?.numero_ddt || '';
   document.getElementById('mod-macello').value = u?.macello || '';
+  document.getElementById('mod-cessionario').value = u?.cessionario || '';
   document.getElementById('mod-capi').value = u?.capi || '';
   document.getElementById('mod-kg').value = u?.kg_totali || '';
   document.getElementById('mod-prezzo').value = u?.prezzo_kg || '';
@@ -2555,6 +2595,7 @@ async function salvaModificaUscita() {
   const data = document.getElementById('mod-data').value;
   const ddt = document.getElementById('mod-ddt').value.trim() || null;
   const macello = document.getElementById('mod-macello').value.trim().toUpperCase() || null;
+  const cessionario = document.getElementById('mod-cessionario').value.trim().toUpperCase() || null;
   const capi = parseInt(document.getElementById('mod-capi').value) || null;
   const kg = parseFloat(document.getElementById('mod-kg').value) || null;
   const prezzo = parseFloat(document.getElementById('mod-prezzo').value) || null;
@@ -2563,12 +2604,12 @@ async function salvaModificaUscita() {
   try {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/uscite?id=eq.${_modUscitaId}`, {
       method: 'PATCH', headers: SB_H,
-      body: JSON.stringify({ data_uscita: data, numero_ddt: ddt, macello, capi, kg_totali: kg, prezzo_kg: prezzo, liquidazione: liq })
+      body: JSON.stringify({ data_uscita: data, numero_ddt: ddt, macello, cessionario, capi, kg_totali: kg, prezzo_kg: prezzo, liquidazione: liq })
     });
     if(!r.ok) throw new Error(await r.text());
     const u = allUscite.find(x => x.id === _modUscitaId);
     if(u) {
-      u.data_uscita = data; u.numero_ddt = ddt; u.macello = macello;
+      u.data_uscita = data; u.numero_ddt = ddt; u.macello = macello; u.cessionario = cessionario;
       u.capi = capi; u.kg_totali = kg; u.prezzo_kg = prezzo; u.liquidazione = liq;
     }
     chiudiModificaUscita();
@@ -3273,6 +3314,10 @@ document.getElementById('modal-mod-lotto')?.addEventListener('click', function(e
       <div>
         <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">MACELLO</div>
         <input type="text" id="mod-macello" placeholder="es. ANNONI" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+      </div>
+      <div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;">CESSIONARIO (a chi fatturare)</div>
+        <input type="text" id="mod-cessionario" placeholder="es. FM FONTANELLE" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div>
