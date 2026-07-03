@@ -1255,14 +1255,14 @@ function renderStoricoList() {
           <span class="storico-soccida"><strong>${fmtDateFull(u.data_uscita)}</strong> · ${socNome}${lotto ? ' · ' + lotto.codice : ''}</span>
           <span class="storico-macello">${u.macello || '—'}</span>
         </div>
-        ${u.cessionario ? `<div style="font-size:11px;color:var(--accent);font-weight:500;margin-bottom:4px;">📄 Fatturare a: ${u.cessionario}</div>` : ''}
+        <div style="font-size:11px;color:${u.cessionario ? 'var(--accent)' : 'var(--text3)'};font-weight:500;margin-bottom:4px;">📄 Fatturare a: ${u.cessionario || '—'}</div>
         <div class="storico-line">
           <div class="sc"><div class="sc-label">capi</div><div class="sc-val">${fmt(u.capi)}</div></div>
           <div class="sc"><div class="sc-label">kg</div><div class="sc-val">${fmt(u.kg_totali)}</div></div>
           <div class="sc"><div class="sc-label">media</div><div class="sc-val">${media}</div></div>
           <div class="sc"><div class="sc-label">€/kg</div><div class="sc-val">${u.prezzo_kg ? fmt(u.prezzo_kg,3) : '—'}</div></div>
           <div class="sc"><div class="sc-label">liquid.</div><div class="sc-val green">${u.liquidazione ? fmt(u.liquidazione) + ' €' : '—'}</div></div>
-          <div class="sc"><div class="sc-label">val/capo</div><div class="sc-val green">${valoreCapo ? fmt(valoreCapo,2) + ' €' : '—'}</div></div>
+          <div class="sc"><div class="sc-label">val/capo</div><div class="sc-val green">${valoreCapo ? fmt(valoreCapo,0) + ' €' : '—'}</div></div>
         </div>
         ${!u.liquidazione ? `<button onclick="apriLiquidazione(${u.id})" style="margin-top:6px;width:100%;padding:7px;background:var(--amber-bg);color:var(--amber);border:0.5px solid #F0DC8A;border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">+ Inserisci liquidazione</button>` : ''}
         <button onclick="apriModificaUscita(${u.id})" style="margin-top:4px;width:100%;padding:7px;background:var(--bg2);color:var(--text2);border:0.5px solid var(--border);border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">✎ Modifica uscita</button>
