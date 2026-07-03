@@ -311,6 +311,8 @@ function render() {
         dettaglioLiq = `<div class="liq-pending">⏳ Liquidazione non ancora ricevuta</div>`;
       }
 
+      const valoreCapo = (u.liquidazione && u.capi) ? u.liquidazione / u.capi : null;
+
       return `<div class="liq-row">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><strong style="color:var(--text);font-size:16px;font-family:var(--mono);">${fmtDate(u.data_uscita)}</strong>${u.numero_ddt ? `<span style="font-size:20px;font-family:var(--mono);font-weight:600;color:var(--text);">Bolla n. ${u.numero_ddt}</span>` : ''}</div>
         <div class="liq-top">
@@ -320,12 +322,14 @@ function render() {
           </div>
           <div class="liq-macello">${u.macello || '—'}</div>
         </div>
+        <div style="background:${u.cessionario ? '#FDF3E0' : '#F5F3EE'};border:0.5px solid ${u.cessionario ? '#F0C870' : 'var(--border)'};border-radius:var(--radius);padding:6px 10px;margin-bottom:8px;font-size:14px;font-weight:600;color:${u.cessionario ? '#9A6010' : 'var(--text3)'};display:flex;align-items:center;gap:6px;">📄 Fatturare a: ${u.cessionario || '—'}</div>
         <div class="liq-grid">
           <div class="lg"><div class="lg-label">Capi</div><div class="lg-val">${fmt(u.capi)}</div></div>
           <div class="lg"><div class="lg-label">Kg tot.</div><div class="lg-val">${fmt(u.kg_totali)}</div></div>
           <div class="lg"><div class="lg-label">Media kg</div><div class="lg-val">${media}</div></div>
           <div class="lg"><div class="lg-label">€/kg</div><div class="lg-val">${u.prezzo_kg ? fmt(u.prezzo_kg,3) : '—'}</div></div>
         </div>
+        ${valoreCapo ? `<div style="text-align:right;margin-top:4px;font-size:13px;font-family:var(--mono);color:var(--green);font-weight:500;">valore/capo: ${fmt(valoreCapo,0)} €</div>` : ''}
 
         ${dettaglioLiq}
       </div>`;
@@ -413,16 +417,17 @@ function stampaTutto() {
     html += `<div class="month-title">${nomiMeseFull[parseInt(mo)]} ${y}</div>
     <table>
       <thead><tr>
-        <th>Data</th><th>Bolla</th><th>Soccida</th><th>Macello</th>
+        <th>Data</th><th>Bolla</th><th>Soccida</th><th>Macello</th><th>Cessionario</th>
         <th style="text-align:right">Capi</th><th style="text-align:right">Kg tot.</th>
         <th style="text-align:right">Media kg</th><th style="text-align:right">€/kg</th>
-        <th style="text-align:right">Liquidazione €</th>
+        <th style="text-align:right">Liquidazione €</th><th style="text-align:right">Valore/capo €</th>
       </tr></thead><tbody>`;
 
     mRighe.forEach(u => {
       const lotto = allLotti.find(l => l.id === u.lotto_id);
       const soc = allSoccide.find(s => s.id === lotto?.soccida_id);
       const media = u.kg_totali && u.capi ? (u.kg_totali/u.capi).toFixed(1) : '—';
+      const valoreCapo = (u.liquidazione && u.capi) ? (u.liquidazione / u.capi) : null;
       const [yy,mm,gg] = u.data_uscita.split('-');
 
       html += `<tr>
@@ -430,11 +435,13 @@ function stampaTutto() {
         <td style="font-family:'Courier New',monospace">${u.numero_ddt || '—'}</td>
         <td>${soc?.nome || '—'}</td>
         <td>${u.macello || '—'}</td>
+        <td>${u.cessionario || '—'}</td>
         <td class="num">${(u.capi||0).toLocaleString('it-IT')}</td>
         <td class="num">${(u.kg_totali||0).toLocaleString('it-IT')}</td>
         <td class="num">${media}</td>
         <td class="num">${u.prezzo_kg ? u.prezzo_kg.toFixed(3) : '—'}</td>
         <td class="num ${u.liquidazione ? 'green' : 'pending'}">${u.liquidazione ? u.liquidazione.toLocaleString('it-IT',{minimumFractionDigits:2})+' €' : '⏳ in attesa'}</td>
+        <td class="num green">${valoreCapo ? valoreCapo.toLocaleString('it-IT',{minimumFractionDigits:0,maximumFractionDigits:0}) + ' €' : '—'}</td>
       </tr>`;
     });
 
