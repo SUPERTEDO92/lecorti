@@ -2919,7 +2919,17 @@ function renderArchivioSoccida(socId) {
       // Caso 1: collegato direttamente al lotto come trasferimento
       if(t.lotto_id === lotto.id && t.tipo !== 'ACQUISTO') return true;
       // Caso 2: inserito come ACQUISTO della destinazione ma partenza è questa soccida
-      if(t.soccida_partenza === socLotto?.nome && t.tipo === 'ACQUISTO') return true;
+      // (solo se non esiste già la riga TRASFERIMENTO gemella sul lotto di origine, altrimenti duplica)
+      if(t.soccida_partenza === socLotto?.nome && t.tipo === 'ACQUISTO') {
+        const giaPresenteComeTrasferimento = (allTrasferimenti||[]).some(t2 =>
+          t2.tipo === 'TRASFERIMENTO' &&
+          t2.soccida_partenza === t.soccida_partenza &&
+          t2.soccida_destinazione === t.soccida_destinazione &&
+          t2.data_trasferimento === t.data_trasferimento &&
+          t2.capi === t.capi
+        );
+        return !giaPresenteComeTrasferimento;
+      }
       return false;
     }).sort((a,b) => a.data_trasferimento.localeCompare(b.data_trasferimento));
     const morti = allMortalita.filter(m => m.lotto_id === lotto.id).reduce((s,m) => s+(m.capi_morti||0), 0);
@@ -2987,17 +2997,44 @@ function renderArchivioSoccida(socId) {
       <!-- Uscite dettaglio -->
       ${uscite.length ? `<div style="padding:10px 14px;border-bottom:0.5px solid var(--border);">
         <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);margin-bottom:6px;">Uscite macello</div>
-        ${uscite.map(u => `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid var(--bg2);">
-          <div style="font-size:12px;"><strong>${fmtDateFull(u.data_uscita)}</strong>${u.numero_ddt ? ' · DDT '+u.numero_ddt : ''} · ${u.macello||'—'}</div>
-          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);">${fmt(u.capi)} capi · ${fmt(u.kg_totali)} kg${u.liquidazione ? ' · <span style="color:var(--green);font-weight:500;">'+fmt(u.liquidazione)+' €</span>' : ''}</div>
-        </div>`).join('')}
+        ${uscite.map(u => {
+          const ggRiga = lotto.data_ingresso && u.data_uscita
+            ? Math.round((new Date(u.data_uscita) - new Date(lotto.data_ingresso)) / 86400000) : null;
+          const mediaRiga = (u.capi && u.kg_totali) ? u.kg_totali / u.capi : null;
+          const incrRiga = (ggRiga && mediaRiga && lotto.media_ingresso)
+            ? ((mediaRiga - lotto.media_ingresso) / ggRiga).toFixed(3) : null;
+          return `<div style="padding:5px 0;border-bottom:0.5px solid var(--bg2);">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:12px;"><strong>${fmtDateFull(u.data_uscita)}</strong>${u.numero_ddt ? ' · DDT '+u.numero_ddt : ''} · ${u.macello||'—'}</div>
+            <div style="font-size:11px;font-family:var(--mono);color:var(--text2);">${fmt(u.capi)} capi · ${fmt(u.kg_totali)} kg${u.liquidazione ? ' · <span style="color:var(--green);font-weight:500;">'+fmt(u.liquidazione)+' €</span>' : ''}</div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:10px;font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:2px;">
+            <span>gg stalla: ${ggRiga ?? '—'}</span>
+            <span>incr.: ${incrRiga ?? '—'}</span>
+          </div>
+        </div>`;
+        }).join('')}
       </div>` : ''}
       ${trasfUscita.length ? `<div style="padding:10px 14px;border-bottom:0.5px solid var(--border);">
         <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);margin-bottom:6px;">Trasferimenti in uscita</div>
-        ${trasfUscita.map(t => `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid var(--bg2);">
-          <div style="font-size:12px;"><strong>${fmtDateFull(t.data_trasferimento)}</strong> · → ${t.soccida_destinazione||'—'}${t.lettera_dop ? ' · '+t.lettera_dop : ''}</div>
-          <div style="font-size:11px;font-family:var(--mono);color:var(--text2);">${fmt(t.capi)} capi · ${t.kg ? fmt(t.kg)+' kg' : '—'}${t.costo_acquisto ? ' · <span style="color:var(--green);font-weight:500;">'+fmt(t.costo_acquisto)+' €</span>' : ''}</div>
-        </div>`).join('')}
+        ${trasfUscita.map(t => {
+          const kgNum = t.kg ? parseFloat(t.kg) : null;
+          const ggRiga = lotto.data_ingresso && t.data_trasferimento
+            ? Math.round((new Date(t.data_trasferimento) - new Date(lotto.data_ingresso)) / 86400000) : null;
+          const mediaRiga = (t.capi && kgNum) ? kgNum / t.capi : null;
+          const incrRiga = (ggRiga && mediaRiga && lotto.media_ingresso)
+            ? ((mediaRiga - lotto.media_ingresso) / ggRiga).toFixed(3) : null;
+          return `<div style="padding:5px 0;border-bottom:0.5px solid var(--bg2);">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:12px;"><strong>${fmtDateFull(t.data_trasferimento)}</strong> · → ${t.soccida_destinazione||'—'}${t.lettera_dop ? ' · '+t.lettera_dop : ''}</div>
+            <div style="font-size:11px;font-family:var(--mono);color:var(--text2);">${fmt(t.capi)} capi · ${kgNum ? fmt(kgNum)+' kg' : '—'}${t.costo_acquisto ? ' · <span style="color:var(--green);font-weight:500;">'+fmt(t.costo_acquisto)+' €</span>' : ''}</div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:10px;font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:2px;">
+            <span>gg stalla: ${ggRiga ?? '—'}</span>
+            <span>incr.: ${incrRiga ?? '—'}</span>
+          </div>
+        </div>`;
+        }).join('')}
       </div>` : ''}
       <!-- Totale lotto -->
       <div style="padding:10px 14px;border-top:0.5px solid var(--border);">
