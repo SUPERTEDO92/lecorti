@@ -1460,10 +1460,15 @@ function renderTrasferimenti() {
     html += `<div class="month-sep"><span class="month-sep-text">${mn} ${y}</span></div>`;
     html += byMonth[m].map(t => {
       const isAcq = t.tipo === 'ACQUISTO';
+      const isVend = t.tipo === 'VENDITA';
       const lotto = allLotti.find(l => l.id === t.lotto_id);
       const badgeStyle = isAcq
         ? 'background:#EBF5EF;color:#2A7A4B;border:0.5px solid #B8DECA;'
+        : isVend
+        ? 'background:#FBEFEE;color:#A0453A;border:0.5px solid #F0C0C0;'
         : 'background:#EEF2FB;color:#3A5AA0;border:0.5px solid #C0CFF0;';
+
+      const margine = (isVend && t.valore != null && t.costo_acquisto != null) ? (t.valore - t.costo_acquisto) : null;
 
       return `<div class="trasfrow">
         <div class="trasf-top">
@@ -1479,9 +1484,14 @@ function renderTrasferimenti() {
           <div class="tc"><div class="tc-label">kg</div><div class="tc-val">${t.kg ? fmt(t.kg) : '—'}</div></div>
           <div class="tc"><div class="tc-label">media</div><div class="tc-val">${t.kg && t.capi ? fmt(t.kg/t.capi,1) : '—'}</div></div>
           <div class="tc"><div class="tc-label">lettera</div><div class="tc-val">${t.lettera_dop || '—'}</div></div>
-          <div class="tc"><div class="tc-label">valore</div><div class="tc-val ${t.costo_acquisto ? 'green' : ''}">${t.costo_acquisto ? fmt(t.costo_acquisto)+' €' : '—'}</div></div>
+          ${isVend ? '' : `<div class="tc"><div class="tc-label">valore</div><div class="tc-val ${t.costo_acquisto ? 'green' : ''}">${t.costo_acquisto ? fmt(t.costo_acquisto)+' €' : '—'}</div></div>`}
         </div>
-        ${!t.costo_acquisto ? `<button onclick="apriCostoAcquisto(${t.id})" style="margin-top:6px;width:100%;padding:7px;background:var(--amber-bg);color:var(--amber);border:0.5px solid #F0DC8A;border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">+ Inserisci valore</button>` : ''}
+        ${isVend ? `<div class="trasf-line" style="margin-top:4px;">
+          <div class="tc"><div class="tc-label">prezzo ingresso</div><div class="tc-val ${t.costo_acquisto ? '' : ''}">${t.costo_acquisto ? fmt(t.costo_acquisto)+' €' : '—'}</div></div>
+          <div class="tc"><div class="tc-label">prezzo uscita</div><div class="tc-val green">${t.valore ? fmt(t.valore)+' €' : '—'}</div></div>
+          <div class="tc"><div class="tc-label">margine</div><div class="tc-val" style="color:${margine == null ? 'var(--text2)' : margine >= 0 ? 'var(--green)' : '#B0453A'};font-weight:600;">${margine != null ? fmt(margine)+' €' : '—'}</div></div>
+        </div>` : ''}
+        ${!t.costo_acquisto ? `<button onclick="apriCostoAcquisto(${t.id})" style="margin-top:6px;width:100%;padding:7px;background:var(--amber-bg);color:var(--amber);border:0.5px solid #F0DC8A;border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">+ Inserisci ${isVend ? 'prezzo di acquisto (ingresso)' : 'valore'}</button>` : ''}
       </div>`;
     }).join('');
   });
