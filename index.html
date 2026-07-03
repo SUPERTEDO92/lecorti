@@ -381,7 +381,7 @@
     <button class="nav-btn" onclick="showPage('archivio')">Archivio</button>
     <button class="nav-btn" onclick="showPage('macelli')">Macelli</button>
     <button class="nav-btn" onclick="window.open('lecorti-prezzo-suinetti.html','_blank')">🧮 Calcolo prezzo</button>
-    <button class="nav-btn" onclick="window.open('lecorti-rubrica.html','_blank')">📋 Rubrica</button>
+    <button class="nav-btn" onclick="showPage('rubrica')">📋 Rubrica</button>
   </div>
 </div>
 
@@ -410,6 +410,42 @@
   </div>
   <div class="filter-bar" id="macelli-chips"></div>
   <div id="macelli-list" style="padding:0 14px 20px;"><div class="loading">Caricamento dati...</div></div>
+</div>
+
+<!-- RUBRICA -->
+<div class="page" id="page-rubrica">
+  <div style="padding:14px;">
+    <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:10px;">Codici allevamento · ASL · Parma DOP · Cessionari</div>
+    <input type="text" id="rub-cerca" placeholder="🔍 Cerca per nome, indirizzo, codice, P.IVA..." oninput="rubFiltra()" style="width:100%;padding:9px 12px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;margin-bottom:14px;">
+    <div id="rub-lista"></div>
+
+    <div style="background:#FFF;border:0.5px solid var(--border);border-radius:12px;padding:16px;margin-top:14px;">
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:14px;">+ Inserisci nuovo sito</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div>
+          <div style="font-size:10px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;">Nome / Intestazione</div>
+          <input type="text" id="rub-new-nome" placeholder="es. AZ. AGR. ROSSI MARIO" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text);">
+        </div>
+        <div>
+          <div style="font-size:10px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;">Indirizzo</div>
+          <input type="text" id="rub-new-indirizzo" placeholder="es. Via Roma 1 — 25030 Brescia (BS)" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text);">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <div style="font-size:10px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;">Cod. Allevamento (ASL)</div>
+            <input type="text" id="rub-new-asl" placeholder="es. 196BS053/6" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);color:var(--text);">
+          </div>
+          <div>
+            <div style="font-size:10px;font-family:var(--mono);color:var(--text2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;">Cod. Parma DOP</div>
+            <input type="text" id="rub-new-parma" placeholder="es. BS691" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);color:var(--text);">
+          </div>
+        </div>
+        <button onclick="rubAggiungiSito()" style="width:100%;padding:11px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:4px;">
+          ✓ Aggiungi sito
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- INSERIMENTO -->
@@ -890,6 +926,7 @@ function showPage(name, lottoId) {
   if(name === 'inserimento') initInserimento();
   if(name === 'archivio') renderArchivio();
   if(name === 'macelli') renderMacelli();
+  if(name === 'rubrica' && !window._rubricaInit) { window._rubricaInit = true; rubRender(allevamenti); }
   if(name === 'analisi' && lottoId) { currentLottoId = lottoId; renderAnalisi(lottoId); }
   if(name === 'analisi' && !lottoId && currentLottoId) renderAnalisi(currentLottoId);
   if(name === 'stampa' && lottoId) { currentLottoId = lottoId; renderStampa(lottoId); }
@@ -977,6 +1014,119 @@ function renderMacelli(rebuildChips) {
         </div>` : ''}
     </div>`;
   }).join('');
+}
+
+// ── RUBRICA ──
+const allevamenti = [
+  { nome: 'SOC. AGR. SABBIONERA delle Sorelle Vitari s.s.', indirizzo: 'Via Fienile Pozzo, 3 — 25030 Roccafranca (BS)', cod_asl: '162BS008/5', cod_parma: 'BS156', tag: null },
+  { nome: 'AZ. AGR. FILIPPINI di Salini Ivonne', indirizzo: "Via Padana Superiore, 54 — 25030 Urago d'Oglio (BS)", cod_asl: '192BS002/4', cod_parma: 'BS304', tag: null },
+  { nome: 'SOC. AGRICOLA LE CORTI — Allevamento LA FEROLDA', indirizzo: 'Via Orzinuovi — 25030 Barbariga (BS)', cod_asl: '011BS003', cod_parma: 'BS208', tag: 'lecorti' },
+  { nome: 'SOC. AGRICOLA LE CORTI — Allevamento MINERBIO', indirizzo: 'Via Nuova Inferiore 2b — Minerbio (BO)', cod_asl: '038BO009', cod_parma: 'BO040', tag: 'lecorti' },
+  { nome: 'SOC. AGRICOLA LE CORTI — Allevamento BATTAGLIOLA', indirizzo: 'Loc. Feroldina — 25030 Barbariga (BS)', cod_asl: '011BS002/9', cod_parma: 'BS371', tag: 'lecorti' },
+  { nome: 'GALUPPINI GIUSEPPE Az. Agr.', indirizzo: 'Via Cucca, 13 — 25012 Calvisano (BS)', cod_asl: '034BS003/13', cod_parma: 'BS133', tag: null },
+  { nome: 'AZIENDE AGRICOLE GALUPPINI GIUSEPPE (2)', indirizzo: 'Via Cucca — 25012 Calvisano (BS)', cod_asl: '034BS327', cod_parma: 'BS', tag: null },
+  { nome: 'AZ. AGRICOLA SCARATTI GIACOMO LUIGI', indirizzo: 'Cascina Ugona — Verolavecchia (BS)', cod_asl: '196BS053/6', cod_parma: 'BS691', tag: null },
+  { nome: 'MOSTARDA BRUNO — Cascina Santa Caterina', indirizzo: 'Via Campagna 16 — 25011 Calcinato (BS)', cod_asl: '032BS105/9', cod_parma: 'BS764', tag: null },
+  { nome: 'AZ. AGRICOLA FESTA GIANFRANCO', indirizzo: 'Via Lunghe 11 — 25032 Chiari (BS) · UVAC: 8401', cod_asl: '052BS005/9', cod_parma: 'BS076', tag: null },
+  { nome: 'Allevamenti F.lli MORINI s.r.l.s. — Fraz. CAMPOBELLO', indirizzo: 'Torre de Negri (PV) · Loc. Bellaria 2 — 27049 Zenevredo', cod_asl: '158PV001/5', cod_parma: 'PV074', tag: null },
+  { nome: 'SOC. AGRICOLA PIOPPETTE di Ferronato Maurizio e Lucy s.s.', indirizzo: "Via Ca' Morino 2 — 46040 Solferino (MN)", cod_asl: '063MN002', cod_parma: 'MN216', tag: null },
+  { nome: 'SOC. AGRICOLA BARONCHELLI PIETRO E FIGLI', indirizzo: 'C.na Marcellino — Corte Palasio 26834 (LO)', cod_asl: '024LO015', cod_parma: 'MI121', tag: null },
+  { nome: 'MIGLIORATI ALESSANDRO', indirizzo: 'Via Colombo, Fr. Corticelle — 25020 Dello (BS)', cod_asl: '066BS002', cod_parma: 'BS136', tag: null },
+  { nome: 'ALLEVAMENTO LA PRADA di Tomasoni Alfredo', indirizzo: 'Via Bembo 2, Coniolo di Orzinuovi — 25034 (BS)', cod_asl: '125BS036', cod_parma: '—', tag: null },
+  { nome: 'SOC. AGRICOLA LE CORTI — Allevamento BORDOALA', indirizzo: 'Loc. Molino Ala — 26020 Bordolano (CR)', cod_asl: '007CR001', cod_parma: 'CR323', tag: 'lecorti' },
+  { nome: 'SOC. AGRICOLA LE CORTI — Cascina Fiorita (VEROLAVECCHIA)', indirizzo: 'Numero 6 Verolavecchia (BS)', cod_asl: '196BS005', cod_parma: 'BS947', tag: 'lecorti' },
+  { nome: 'AMEDEO PELIZZOLA', indirizzo: "Via Rivella 13, Fr. Villa — Castel d'Aiano (BO)", cod_asl: '013BO543', cod_parma: 'BO111', tag: null },
+  { nome: 'BERTESAGO PIETRO', indirizzo: 'Via Roma, 34 — 26010 Moscazzano (CR)', cod_fisc: 'BRT PTR 57B02 E380S', piva: '00899220198', cod_asl: '060CR001', cod_parma: 'CR234', tag: null },
+  { nome: 'SOC. AGRICOLA TORRE MIRABELLA', indirizzo: 'Via Bargnano, 5 — 25030 Longhena (BS)', piva: '04471010985', tag: 'cessionario', ruolo: 'Destinatario' },
+  { nome: 'SCOTUZZI AGRISERVIZI S.p.A.', indirizzo: 'Via Bargnano, 5 — 25030 Longhena (BS) · Tel. 030 975239', piva: '00277120176', cod_sdi: 'T04ZHR3', tag: 'cessionario', ruolo: 'Cessionario' },
+];
+
+try {
+  const savedRub = JSON.parse(localStorage.getItem('rubrica_extra') || '[]');
+  allevamenti.push(...savedRub);
+} catch(e) {}
+
+function rubTestoCompleto(a) {
+  if(a.cod_asl) {
+    let t = a.nome + '\n' + a.indirizzo + '\nCod. Allevamento: ' + a.cod_asl + '\nCod. Parma DOP: ' + a.cod_parma;
+    if(a.piva) t += '\nP.IVA: ' + a.piva;
+    if(a.cod_fisc) t += '\nCod. Fisc.: ' + a.cod_fisc;
+    return t;
+  }
+  let t = (a.ruolo ? a.ruolo.toUpperCase() + ': ' : '') + a.nome + '\n' + a.indirizzo;
+  if(a.piva) t += '\nP.IVA: ' + a.piva;
+  if(a.cod_sdi) t += '\nCodice SDI: ' + a.cod_sdi;
+  return t;
+}
+
+function rubCopia(testo, btnEl) {
+  navigator.clipboard.writeText(testo).then(() => {
+    btnEl.classList.add('copied');
+    const orig = btnEl.textContent;
+    btnEl.textContent = '✓ Copiato';
+    setTimeout(() => { btnEl.classList.remove('copied'); btnEl.textContent = orig; }, 2000);
+  });
+}
+
+function rubRender(lista) {
+  const el = document.getElementById('rub-lista');
+  if(!el) return;
+  if(lista.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);font-family:var(--mono);font-size:12px;">Nessun risultato</div>';
+    return;
+  }
+  el.innerHTML = lista.map((a, i) => {
+    return `<div style="background:#FFF;border:0.5px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;">
+      ${a.tag === 'lecorti' ? '<span style="display:inline-block;font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:10px;background:var(--green-bg);color:var(--green);margin-bottom:6px;">LE CORTI</span>' : ''}
+      ${a.tag === 'cessionario' ? `<span style="display:inline-block;font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:10px;background:var(--amber-bg);color:var(--amber);margin-bottom:6px;">${a.ruolo ? a.ruolo.toUpperCase() : 'CESSIONARIO'}</span>` : ''}
+      <div style="font-size:15px;font-weight:600;line-height:1.3;">${a.nome}</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:2px;margin-bottom:10px;line-height:1.4;">${a.indirizzo}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+        ${a.cod_asl ? `<div style="display:flex;align-items:center;gap:6px;background:var(--bg2);border-radius:20px;padding:4px 10px;font-size:11px;"><span style="color:var(--text3);">ASL</span><span style="font-family:var(--mono);font-weight:500;">${a.cod_asl}</span></div>` : ''}
+        ${a.cod_parma && a.cod_parma !== '—' ? `<div style="display:flex;align-items:center;gap:6px;background:var(--bg2);border-radius:20px;padding:4px 10px;font-size:11px;"><span style="color:var(--text3);">Parma DOP</span><span style="font-family:var(--mono);font-weight:500;">${a.cod_parma}</span></div>` : ''}
+        ${a.piva ? `<div style="display:flex;align-items:center;gap:6px;background:var(--bg2);border-radius:20px;padding:4px 10px;font-size:11px;"><span style="color:var(--text3);">P.IVA</span><span style="font-family:var(--mono);font-weight:500;">${a.piva}</span></div>` : ''}
+        ${a.cod_sdi ? `<div style="display:flex;align-items:center;gap:6px;background:var(--bg2);border-radius:20px;padding:4px 10px;font-size:11px;"><span style="color:var(--text3);">SDI</span><span style="font-family:var(--mono);font-weight:500;">${a.cod_sdi}</span></div>` : ''}
+      </div>
+      <button data-label="📋 Copia anagrafica completa" onclick="rubCopia(rubTestoCompleto(allevamenti[${i}]), this)" style="width:100%;padding:8px;background:var(--bg2);color:var(--text2);border:0.5px solid var(--border);border-radius:8px;font-size:12px;font-family:var(--font);cursor:pointer;">📋 Copia anagrafica completa</button>
+    </div>`;
+  }).join('');
+}
+
+function rubFiltra() {
+  const q = document.getElementById('rub-cerca').value.toLowerCase();
+  if(!q) { rubRender(allevamenti); return; }
+  rubRender(allevamenti.filter(a =>
+    a.nome.toLowerCase().includes(q) ||
+    a.indirizzo.toLowerCase().includes(q) ||
+    (a.cod_asl || '').toLowerCase().includes(q) ||
+    (a.cod_parma || '').toLowerCase().includes(q) ||
+    (a.piva || '').toLowerCase().includes(q)
+  ));
+}
+
+function rubAggiungiSito() {
+  const nome = document.getElementById('rub-new-nome').value.trim();
+  const indirizzo = document.getElementById('rub-new-indirizzo').value.trim();
+  const cod_asl = document.getElementById('rub-new-asl').value.trim().toUpperCase();
+  const cod_parma = document.getElementById('rub-new-parma').value.trim().toUpperCase();
+
+  if(!nome || !indirizzo || !cod_asl) {
+    alert('Compila almeno nome, indirizzo e cod. ASL');
+    return;
+  }
+
+  const nuovo = { nome, indirizzo, cod_asl, cod_parma: cod_parma || '—', tag: null };
+  allevamenti.push(nuovo);
+
+  try {
+    const saved = JSON.parse(localStorage.getItem('rubrica_extra') || '[]');
+    saved.push(nuovo);
+    localStorage.setItem('rubrica_extra', JSON.stringify(saved));
+  } catch(e) {}
+
+  ['rub-new-nome','rub-new-indirizzo','rub-new-asl','rub-new-parma'].forEach(id => document.getElementById(id).value = '');
+  rubFiltra();
+  window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
 function fmt(n, dec=0) {
