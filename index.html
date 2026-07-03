@@ -1291,14 +1291,15 @@ function renderStoricoList() {
         </div>`;
 
       if(multi) {
-        out += `<div style="margin-top:8px;padding-top:8px;border-top:0.5px dashed var(--border);">
+        out += `${!tuttiLiquidati ? `<button onclick="apriLiquidazioneMulti('${righe.map(u=>u.id).join(',')}')" style="margin-top:6px;width:100%;padding:7px;background:var(--amber-bg);color:var(--amber);border:0.5px solid #F0DC8A;border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">+ Inserisci liquidazione (carico unico)</button>` : ''}
+        <div style="margin-top:8px;padding-top:8px;border-top:0.5px dashed var(--border);">
           <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);margin-bottom:6px;">Carico diviso su ${righe.length} lotti — dettaglio righe</div>
           ${righe.map(u => {
             const lo = allLotti.find(l => l.id === u.lotto_id);
             return `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:11px;">
               <span>${lo ? lo.codice : '—'} · ${fmt(u.capi)} capi · ${fmt(u.kg_totali)} kg</span>
-              <span style="display:flex;gap:6px;">
-                ${!u.liquidazione ? `<button onclick="apriLiquidazione(${u.id})" style="padding:3px 7px;background:var(--amber-bg);color:var(--amber);border:0.5px solid #F0DC8A;border-radius:6px;font-size:10px;font-family:var(--font);cursor:pointer;">+ liquid.</button>` : `<span style="color:var(--green);font-weight:500;">${fmt(u.liquidazione)} €</span>`}
+              <span style="display:flex;gap:6px;align-items:center;">
+                ${u.liquidazione ? `<span style="color:var(--green);font-weight:500;">${fmt(u.liquidazione)} €</span>` : `<span style="color:var(--amber);">in attesa</span>`}
                 <button onclick="apriModificaUscita(${u.id})" style="padding:3px 7px;background:var(--bg2);color:var(--text2);border:0.5px solid var(--border);border-radius:6px;font-size:10px;font-family:var(--font);cursor:pointer;">✎</button>
               </span>
             </div>`;
@@ -3257,16 +3258,23 @@ async function archiviaLotto(lottoId, codice) {
 }
 
 // ── LIQUIDAZIONE ──
-let _liqUscitaId = null;
+let _liqUscitaIds = [];
 
 function apriLiquidazione(uscitaId) {
-  _liqUscitaId = uscitaId;
-  const u = allUscite.find(x => x.id === uscitaId);
-  if(!u) return;
-  const lotto = allLotti.find(l => l.id === u.lotto_id);
-  const soc = allSoccide.find(s => s.id === lotto?.soccida_id);
+  apriLiquidazioneMulti(String(uscitaId));
+}
+
+function apriLiquidazioneMulti(idsStr) {
+  _liqUscitaIds = String(idsStr).split(',').map(x => parseInt(x.trim())).filter(Boolean);
+  const righe = _liqUscitaIds.map(id => allUscite.find(x => x.id === id)).filter(Boolean);
+  if(!righe.length) return;
+  const totCapi = righe.reduce((s,u) => s+(u.capi||0), 0);
+  const totKg = righe.reduce((s,u) => s+(parseFloat(u.kg_totali)||0), 0);
+  const lottiTxt = righe.map(u => allLotti.find(l => l.id === u.lotto_id)?.codice || '—').join(' + ');
+  const lotto0 = allLotti.find(l => l.id === righe[0].lotto_id);
+  const soc = allSoccide.find(s => s.id === lotto0?.soccida_id);
   document.getElementById('modal-liq-info').textContent =
-    `${soc?.nome || '—'} · ${lotto?.codice || '—'} · ${u.data_uscita} · ${u.macello || '—'} · ${u.capi} capi · ${(u.kg_totali||0).toLocaleString('it-IT')} kg`;
+    `${soc?.nome || '—'} · ${lottiTxt} · ${righe[0].data_uscita} · ${righe[0].macello || '—'} · ${totCapi} capi · ${totKg.toLocaleString('it-IT')} kg`;
   ['liq-prezzo','liq-lordo','liq-sc-peso','liq-sc-merce','liq-totale'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('liq-netto-row').style.display = 'none';
   document.getElementById('modal-liq').style.display = 'flex';
@@ -3285,7 +3293,7 @@ function calcolaNettoLiq() {
 
 function chiudiLiquidazione() {
   document.getElementById('modal-liq').style.display = 'none';
-  _liqUscitaId = null;
+  _liqUscitaIds = [];
 }
 
 async function salvaLiquidazione() {
@@ -3296,27 +3304,27 @@ async function salvaLiquidazione() {
   const totale = parseFloat(document.getElementById('liq-totale').value) || null;
   if(!totale) { alert('Inserisci almeno la liquidazione netta'); return; }
 
-  try {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/uscite?id=eq.${_liqUscitaId}`, {
-      method: 'PATCH', headers: SB_H,
-      body: JSON.stringify({
-        prezzo_kg: prezzo,
-        liquidazione_lorda: lordo,
-        sconto_peso: scPeso,
-        sconto_merce: scMerce,
-        liquidazione: totale
-      })
-    });
-    if(!r.ok) throw new Error(await r.text());
+  const righe = _liqUscitaIds.map(id => allUscite.find(x => x.id === id)).filter(Boolean);
+  if(!righe.length) return;
+  // Un solo lotto: nessuna divisione. Più lotti sullo stesso carico: divido per quota di kg,
+  // così il pagamento inserito resta unico ma i dati restano corretti per lotto internamente.
+  const totKg = righe.reduce((s,u) => s+(parseFloat(u.kg_totali)||0), 0) || 1;
 
-    // Aggiorna dati locali
-    const u = allUscite.find(x => x.id === _liqUscitaId);
-    if(u) {
-      u.prezzo_kg = prezzo;
-      u.liquidazione_lorda = lordo;
-      u.sconto_peso = scPeso;
-      u.sconto_merce = scMerce;
-      u.liquidazione = totale;
+  try {
+    for(const u of righe) {
+      const quota = (parseFloat(u.kg_totali)||0) / totKg;
+      const patch = {
+        prezzo_kg: prezzo,
+        liquidazione_lorda: lordo != null ? +(lordo*quota).toFixed(2) : null,
+        sconto_peso: scPeso != null ? +(scPeso*quota).toFixed(2) : null,
+        sconto_merce: scMerce != null ? +(scMerce*quota).toFixed(2) : null,
+        liquidazione: +(totale*quota).toFixed(2)
+      };
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/uscite?id=eq.${u.id}`, {
+        method: 'PATCH', headers: SB_H, body: JSON.stringify(patch)
+      });
+      if(!r.ok) throw new Error(await r.text());
+      Object.assign(u, patch);
     }
 
     chiudiLiquidazione();
