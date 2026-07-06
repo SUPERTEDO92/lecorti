@@ -399,7 +399,7 @@ function render() {
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><strong style="color:var(--text);font-size:16px;font-family:var(--mono);">${fmtDate(u.data_uscita)}</strong>${u.numero_ddt ? `<span style="font-size:20px;font-family:var(--mono);font-weight:600;color:var(--text);">Bolla n. ${u.numero_ddt}</span>` : ''}</div>
         <div class="liq-top">
           <div>
-            <div class="liq-soccida">${socNome} · ${lottiTxt}</div>
+            <div class="liq-soccida">${socNome}</div>
 
           </div>
           <div class="liq-macello">${u.macello || '—'}</div>
