@@ -865,7 +865,7 @@ async function sb(table, query='') {
 }
 
 // State
-let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [], allMortalita = [], allSanitario = [];
+let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [], allMortalita = [], allSanitario = [], allVenditeDirette = [];
 let storicoFilter = 'tutti';
 let currentPage = 'home';
 let currentLottoId = null;
@@ -899,13 +899,14 @@ const mockMortalita = {
 document.getElementById('today-date').textContent = new Date().toLocaleDateString('it-IT', {day:'2-digit',month:'2-digit',year:'numeric'});
 
 async function loadAll() {
-  [allSoccide, allLotti, allUscite, allTrasferimenti, allMortalita, allSanitario] = await Promise.all([
+  [allSoccide, allLotti, allUscite, allTrasferimenti, allMortalita, allSanitario, allVenditeDirette] = await Promise.all([
     sb('soccide', '?order=nome'),
     sb('lotti', '?order=data_ingresso.desc'),
     sb('uscite', '?order=data_uscita.desc'),
     sb('trasferimenti', '?order=data_trasferimento.desc'),
     sb('mortalita', '?order=data_evento.desc'),
     sb('sanitario', '?order=data_referto.desc'),
+    sb('vendite_dirette', '?order=data_vendita.desc'),
   ]);
   renderHome();
   renderStorico();
@@ -1218,6 +1219,13 @@ function renderDetail(socId) {
     <div class="detail-title">${soc.nome}</div>
     <div class="detail-sub">${lotti.length} lotto${lotti.length > 1 ? 'i attivi' : ' attivo'}</div>
   </div>`;
+
+  if(soc.nome === 'VEZZOLI') {
+    html += `<button onclick="apriVenditeDirette(${soc.id})" type="button" style="width:100%;margin-bottom:10px;padding:10px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);font-size:12px;font-family:var(--font);font-weight:500;cursor:pointer;text-align:left;display:flex;align-items:center;justify-content:space-between;color:var(--text);">
+      <span>📋 Vendite dirette</span>
+      <span style="color:var(--text2);">${allVenditeDirette.filter(v=>v.soccida_id===soc.id).length} voci ›</span>
+    </button>`;
+  }
 
   lotti.forEach(lotto => {
     const uscite = allUscite.filter(u => u.lotto_id === lotto.id).sort((a,b) => a.data_uscita.localeCompare(b.data_uscita));
@@ -2898,6 +2906,90 @@ async function salvaIncr() {
   }
 }
 
+// ── VENDITE DIRETTE (VEZZOLI) ──
+let _vdSoccidaId = null;
+function apriVenditeDirette(socId) {
+  _vdSoccidaId = socId;
+  document.getElementById('vd-data').value = new Date().toISOString().slice(0,10);
+  document.getElementById('vd-capi').value = '';
+  document.getElementById('vd-peso').value = '';
+  renderVenditeDirette();
+  document.getElementById('modal-vendite').style.display = 'flex';
+}
+function renderVenditeDirette() {
+  const voci = allVenditeDirette.filter(v => v.soccida_id === _vdSoccidaId)
+    .sort((a,b) => b.data_vendita.localeCompare(a.data_vendita));
+  const cont = document.getElementById('vendite-lista');
+  if(!voci.length) { cont.innerHTML = `<div style="font-size:12px;color:var(--text2);text-align:center;padding:16px 0;">Nessuna vendita registrata.</div>`; return; }
+  cont.innerHTML = voci.map(v => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--border);">
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:500;font-family:var(--mono);">${fmtDateFull(v.data_vendita)}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px;">${fmt(v.capi)} capi · ${v.peso_kg ? fmt(v.peso_kg,1)+' kg' : '—'}</div>
+      </div>
+      <div style="text-align:right;">
+        <input type="number" value="${v.prezzo != null ? v.prezzo : ''}" placeholder="prezzo €" step="0.01"
+          onchange="salvaPrezzoVendita(${v.id}, this.value)"
+          style="width:90px;padding:6px 8px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:12px;font-family:var(--mono);text-align:right;background:var(--bg);">
+      </div>
+      <label style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;cursor:pointer;background:${v.pagato ? 'var(--green)' : 'var(--bg2)'};border:0.5px solid ${v.pagato ? 'var(--green)' : 'var(--border)'};">
+        <input type="checkbox" ${v.pagato ? 'checked' : ''} onchange="togglePagatoVendita(${v.id}, this.checked)" style="display:none;">
+        <span style="color:${v.pagato ? '#FFF' : 'var(--text2)'};font-size:16px;">✓</span>
+      </label>
+    </div>
+  `).join('');
+}
+async function inserisciVenditaDiretta() {
+  const data = document.getElementById('vd-data').value;
+  const capi = parseInt(document.getElementById('vd-capi').value) || null;
+  const peso = parseFloat(document.getElementById('vd-peso').value) || null;
+  if(!data || !capi) { alert('Inserisci almeno data e numero capi'); return; }
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/vendite_dirette`, {
+      method: 'POST', headers: SB_H,
+      body: JSON.stringify({ soccida_id: _vdSoccidaId, data_vendita: data, capi, peso_kg: peso, pagato: false })
+    });
+    if(!r.ok) throw new Error(await r.text());
+    const [nuovo] = await r.json();
+    allVenditeDirette.unshift(nuovo);
+    document.getElementById('vd-capi').value = '';
+    document.getElementById('vd-peso').value = '';
+    renderVenditeDirette();
+    if(currentLottoId) renderDetail(currentLottoId);
+  } catch(e) {
+    alert('Errore: ' + e.message);
+  }
+}
+async function salvaPrezzoVendita(id, valore) {
+  const prezzo = valore === '' ? null : parseFloat(valore);
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/vendite_dirette?id=eq.${id}`, {
+      method: 'PATCH', headers: SB_H,
+      body: JSON.stringify({ prezzo })
+    });
+    if(!r.ok) throw new Error(await r.text());
+    const v = allVenditeDirette.find(x => x.id === id);
+    if(v) v.prezzo = prezzo;
+  } catch(e) {
+    alert('Errore: ' + e.message);
+  }
+}
+async function togglePagatoVendita(id, pagato) {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/vendite_dirette?id=eq.${id}`, {
+      method: 'PATCH', headers: SB_H,
+      body: JSON.stringify({ pagato })
+    });
+    if(!r.ok) throw new Error(await r.text());
+    const v = allVenditeDirette.find(x => x.id === id);
+    if(v) v.pagato = pagato;
+    renderVenditeDirette();
+    if(currentLottoId) renderDetail(currentLottoId);
+  } catch(e) {
+    alert('Errore: ' + e.message);
+  }
+}
+
 // ── MODIFICA USCITA ──
 let _modUscitaId = null;
 function apriModificaUscita(uscitaId) {
@@ -3108,6 +3200,32 @@ loadAll();
     <button id="incr-modal-save" onclick="salvaIncr()" style="width:100%;padding:13px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:16px;">
       ✓ Salva incremento
     </button>
+  </div>
+</div>
+
+<!-- VENDITE DIRETTE (VEZZOLI) -->
+<div id="modal-vendite" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center;">
+  <div style="background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-size:14px;font-weight:500;font-family:var(--mono);">Vendite dirette — VEZZOLI</div>
+      <button onclick="document.getElementById('modal-vendite').style.display='none'" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
+    </div>
+
+    <div id="vendite-lista" style="margin-bottom:16px;"></div>
+
+    <div style="border-top:0.5px solid var(--border);padding-top:14px;">
+      <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:8px;">NUOVA VENDITA</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <input type="date" id="vd-data" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <input type="number" id="vd-capi" placeholder="N° capi" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
+        <input type="number" id="vd-peso" placeholder="Peso kg" step="0.1" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
+      </div>
+      <button onclick="inserisciVenditaDiretta()" style="width:100%;padding:13px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;">
+        + Aggiungi vendita
+      </button>
+    </div>
   </div>
 </div>
 
