@@ -626,10 +626,27 @@ function stampaTutto() {
         <th style="text-align:right">Liquidazione €</th>
       </tr></thead><tbody>`;
 
+    const groupKeyStampa = u => (u.numero_ddt ? u.numero_ddt.trim().toUpperCase() : 'NODDT-'+u.id) + '|' + u.data_uscita;
+    const _groupedStampa = {};
+    const _orderStampa = [];
     mRighe.forEach(u => {
+      const key = groupKeyStampa(u);
+      if(!_groupedStampa[key]) { _groupedStampa[key] = []; _orderStampa.push(key); }
+      _groupedStampa[key].push(u);
+    });
+
+    _orderStampa.forEach(key => {
+      const righeGruppo = _groupedStampa[key];
+      const u = righeGruppo[0];
       const lotto = allLotti.find(l => l.id === u.lotto_id);
       const soc = allSoccide.find(s => s.id === lotto?.soccida_id);
       const [yy,mm,gg] = u.data_uscita.split('-');
+
+      const capiTot = righeGruppo.reduce((s,r) => s+(r.capi||0), 0);
+      const kgTot = righeGruppo.reduce((s,r) => s+(r.kg_totali||0), 0);
+      const liqTot = righeGruppo.reduce((s,r) => s+(r.liquidazione||0), 0);
+      const tuttiLiquidati = righeGruppo.every(r => r.liquidazione);
+      const prezzoMedio = kgTot ? righeGruppo.reduce((s,r) => s+((r.prezzo_kg||0)*(r.kg_totali||0)),0)/kgTot : null;
 
       html += `<tr>
         <td><strong>${gg}/${mm}/${yy}</strong></td>
@@ -637,16 +654,16 @@ function stampaTutto() {
         <td>${soc?.nome || '—'}</td>
         <td>${u.macello || '—'}</td>
         <td>${u.cessionario || '—'}</td>
-        <td class="num">${(u.capi||0).toLocaleString('it-IT')}</td>
-        <td class="num">${(u.kg_totali||0).toLocaleString('it-IT')}</td>
-        <td class="num">${u.prezzo_kg ? u.prezzo_kg.toFixed(3) : '—'}</td>
-        <td class="num ${u.liquidazione ? 'green' : 'pending'}">${u.liquidazione ? u.liquidazione.toLocaleString('it-IT',{minimumFractionDigits:2})+' €' : '⏳ in attesa'}</td>
+        <td class="num">${capiTot.toLocaleString('it-IT')}</td>
+        <td class="num">${kgTot.toLocaleString('it-IT')}</td>
+        <td class="num">${prezzoMedio ? prezzoMedio.toFixed(3) : '—'}</td>
+        <td class="num ${tuttiLiquidati ? 'green' : 'pending'}">${tuttiLiquidati ? liqTot.toLocaleString('it-IT',{minimumFractionDigits:2})+' €' : '⏳ in attesa'}</td>
       </tr>`;
     });
 
     html += `</tbody></table>
     <div class="month-tot">
-      <span class="month-tot-label">${nomiMeseFull[parseInt(mo)]} ${y} — ${mRighe.length} carichi · ${mCapi.toLocaleString('it-IT')} capi · ${mKg.toLocaleString('it-IT')} kg</span>
+      <span class="month-tot-label">${nomiMeseFull[parseInt(mo)]} ${y} — ${_orderStampa.length} carichi · ${mCapi.toLocaleString('it-IT')} capi · ${mKg.toLocaleString('it-IT')} kg</span>
       <span class="month-tot-val">${mLiq > 0 ? mLiq.toLocaleString('it-IT',{minimumFractionDigits:2})+' €' : '—'}</span>
     </div>`;
   });
