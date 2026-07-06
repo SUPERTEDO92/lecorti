@@ -1037,10 +1037,35 @@ function renderMacelli(rebuildChips) {
         <span style="font-weight:600;color:#8A3830;font-family:var(--mono);">${fmt(totSconti)} € ${scontoPct ? '('+fmt(scontoPct,1)+'%)' : ''} ${scontoPerCapo ? '· '+fmt(scontoPerCapo,2)+' €/capo' : ''}</span>
       </button>
       <div id="${scontoId}" style="display:none;margin-bottom:8px;padding:0 4px;">
-        ${scPeso ? `<div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;font-family:var(--mono);"><span style="color:var(--text2);">Sconto peso</span><span>${fmt(scPeso)} €</span></div>` : ''}
-        ${scMerce ? `<div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;font-family:var(--mono);"><span style="color:var(--text2);">Sconto merce</span><span>${fmt(scMerce)} €</span></div>` : ''}
-        ${scCapSoc ? `<div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;font-family:var(--mono);"><span style="color:var(--text2);">Capitale sociale</span><span>${fmt(scCapSoc)} €</span></div>` : ''}
-        ${scAltre ? `<div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;font-family:var(--mono);"><span style="color:var(--text2);">Altre trattenute</span><span>${fmt(scAltre)} €</span></div>` : ''}
+        ${scPeso ? `<div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;font-family:var(--mono);"><span style="color:var(--text2);">Sconto peso (tot.)</span><span>${fmt(scPeso)} €</span></div>` : ''}
+        ${scMerce ? `<div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;font-family:var(--mono);"><span style="color:var(--text2);">Sconto merce (tot.)</span><span>${fmt(scMerce)} €</span></div>` : ''}
+        ${scCapSoc ? `<div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;font-family:var(--mono);"><span style="color:var(--text2);">Capitale sociale (tot.)</span><span>${fmt(scCapSoc)} €</span></div>` : ''}
+        ${scAltre ? `<div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;font-family:var(--mono);"><span style="color:var(--text2);">Altre trattenute (tot.)</span><span>${fmt(scAltre)} €</span></div>` : ''}
+        <div style="margin-top:8px;padding-top:8px;border-top:0.5px dashed var(--border);">
+          <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);margin-bottom:6px;">Dettaglio per DDT/carico</div>
+          ${[...righe].sort((a,b) => b.data_uscita.localeCompare(a.data_uscita)).map(u => {
+            const uScPeso = u.sconto_peso || 0;
+            const uScMerce = u.sconto_merce || 0;
+            const uScCapSoc = u.trattenuta_capitale_sociale || 0;
+            const uScAltre = u.altre_trattenute || 0;
+            const uTot = uScPeso + uScMerce + uScCapSoc + uScAltre;
+            const lo = allLotti.find(l => l.id === u.lotto_id);
+            const so = lo ? allSoccide.find(s => s.id === lo.soccida_id) : null;
+            if(uTot === 0) return `<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:11px;border-bottom:0.5px solid var(--bg2);">
+              <span style="color:var(--text2);">${fmtDate(u.data_uscita)} · DDT ${u.numero_ddt || '—'} · ${so?.nome || '—'}</span>
+              <span style="color:var(--text3);">nessuna trattenuta</span>
+            </div>`;
+            return `<div style="padding:6px 0;border-bottom:0.5px solid var(--bg2);">
+              <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:500;margin-bottom:3px;">
+                <span>${fmtDate(u.data_uscita)} · DDT ${u.numero_ddt || '—'} · ${so?.nome || '—'}</span>
+                <span style="color:#8A3830;font-family:var(--mono);">${fmt(uTot)} €</span>
+              </div>
+              <div style="font-size:10px;color:var(--text3);font-family:var(--mono);">
+                ${uScPeso ? 'peso '+fmt(uScPeso)+'€ ' : ''}${uScMerce ? '· merce '+fmt(uScMerce)+'€ ' : ''}${uScCapSoc ? '· cap.soc. '+fmt(uScCapSoc)+'€ ' : ''}${uScAltre ? '· altre '+fmt(uScAltre)+'€' : ''}
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
       </div>` : ''}
       ${mesi.length > 1 ? `
         <button onclick="document.getElementById('${trendId}').style.display = document.getElementById('${trendId}').style.display === 'none' ? 'block' : 'none';" style="font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer;padding:4px 0;font-family:var(--font);">📈 Trend mensile prezzo (${mesi.length} mesi)</button>
@@ -1588,14 +1613,12 @@ function renderStoricoList() {
           <span class="storico-soccida"><strong>${fmtDateFull(first.data_uscita)}</strong> · ${socNome} · ${lottiTxt}</span>
           <span class="storico-macello">${first.macello || '—'}</span>
         </div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:2px;">DDT ${first.numero_ddt || '—'}</div>
         <div style="font-size:11px;color:${first.cessionario ? 'var(--accent)' : 'var(--text3)'};font-weight:500;margin-bottom:4px;">📄 Fatturare a: ${first.cessionario || '—'}</div>
         <div class="storico-line">
           <div class="sc"><div class="sc-label">capi</div><div class="sc-val">${fmt(totCapiG)}</div></div>
           <div class="sc"><div class="sc-label">kg</div><div class="sc-val">${fmt(totKgG)}</div></div>
-          <div class="sc"><div class="sc-label">media</div><div class="sc-val">${mediaG}</div></div>
-          <div class="sc"><div class="sc-label">€/kg</div><div class="sc-val">${prezzoMedio ? fmt(prezzoMedio,3) : '—'}</div></div>
-          <div class="sc"><div class="sc-label">liquid.</div><div class="sc-val green">${totLiqG ? fmt(totLiqG) + ' €' : '—'}</div></div>
-          <div class="sc"><div class="sc-label">val/capo</div><div class="sc-val green">${valoreCapoG ? fmt(valoreCapoG,0) + ' €' : '—'}</div></div>
+          <div class="sc"><div class="sc-label">tot. fattura</div><div class="sc-val green">${totLiqG ? fmt(totLiqG) + ' €' : '—'}</div></div>
         </div>`;
 
       if(multi) {
