@@ -2920,22 +2920,21 @@ function renderVenditeDirette() {
   const voci = allVenditeDirette.filter(v => v.soccida_id === _vdSoccidaId)
     .sort((a,b) => b.data_vendita.localeCompare(a.data_vendita));
   const cont = document.getElementById('vendite-lista');
-  if(!voci.length) { cont.innerHTML = `<div style="font-size:12px;color:var(--text2);text-align:center;padding:16px 0;">Nessuna vendita registrata.</div>`; return; }
+  if(!voci.length) { cont.innerHTML = `<div style="font-size:13px;color:var(--text2);text-align:center;padding:20px 0;">Nessuna vendita registrata.</div>`; return; }
   cont.innerHTML = voci.map(v => `
-    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--border);">
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 4px;border-bottom:0.5px solid var(--border);">
       <div style="flex:1;">
-        <div style="font-size:13px;font-weight:500;font-family:var(--mono);">${fmtDateFull(v.data_vendita)}</div>
-        <div style="font-size:12px;color:var(--text2);margin-top:2px;">${fmt(v.capi)} capi · ${v.peso_kg ? fmt(v.peso_kg,1)+' kg' : '—'}</div>
+        <div style="font-size:15px;font-weight:600;font-family:var(--mono);">${fmtDateFull(v.data_vendita)}</div>
+        <div style="font-size:13px;color:var(--text2);margin-top:3px;">${fmt(v.capi)} capi · ${v.peso_kg ? fmt(v.peso_kg,1)+' kg' : '—'}</div>
       </div>
       <div style="text-align:right;">
         <input type="number" value="${v.prezzo != null ? v.prezzo : ''}" placeholder="prezzo €" step="0.01"
           onchange="salvaPrezzoVendita(${v.id}, this.value)"
-          style="width:90px;padding:6px 8px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:12px;font-family:var(--mono);text-align:right;background:var(--bg);">
+          style="width:120px;padding:10px 12px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:15px;font-family:var(--mono);text-align:right;background:var(--bg);">
       </div>
-      <label style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;cursor:pointer;background:${v.pagato ? 'var(--green)' : 'var(--bg2)'};border:0.5px solid ${v.pagato ? 'var(--green)' : 'var(--border)'};">
-        <input type="checkbox" ${v.pagato ? 'checked' : ''} onchange="togglePagatoVendita(${v.id}, this.checked)" style="display:none;">
-        <span style="color:${v.pagato ? '#FFF' : 'var(--text2)'};font-size:16px;">✓</span>
-      </label>
+      <button onclick="clickStatoPagamento(${v.id}, ${v.pagato ? 'true' : 'false'})" type="button" style="display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:50%;cursor:pointer;background:${v.pagato ? 'var(--green)' : '#FBEAEA'};border:0.5px solid ${v.pagato ? 'var(--green)' : 'var(--red)'};flex-shrink:0;">
+        <span style="color:${v.pagato ? '#FFF' : 'var(--red)'};font-size:20px;font-weight:600;">${v.pagato ? '✓' : '✕'}</span>
+      </button>
     </div>
   `).join('');
 }
@@ -2972,6 +2971,13 @@ async function salvaPrezzoVendita(id, valore) {
     if(v) v.prezzo = prezzo;
   } catch(e) {
     alert('Errore: ' + e.message);
+  }
+}
+function clickStatoPagamento(id, pagatoAttuale) {
+  if(pagatoAttuale) {
+    if(confirm('Segnare questa vendita come NON ancora sistemata?')) togglePagatoVendita(id, false);
+  } else {
+    if(confirm('Confermi che questa vendita è stata sistemata (pagata)?')) togglePagatoVendita(id, true);
   }
 }
 async function togglePagatoVendita(id, pagato) {
@@ -3205,13 +3211,13 @@ loadAll();
 
 <!-- VENDITE DIRETTE (VEZZOLI) -->
 <div id="modal-vendite" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center;">
-  <div style="background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-      <div style="font-size:14px;font-weight:500;font-family:var(--mono);">Vendite dirette — VEZZOLI</div>
-      <button onclick="document.getElementById('modal-vendite').style.display='none'" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
+  <div style="background:#FFF;border-radius:16px 16px 0 0;padding:22px 18px 32px;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div style="font-size:16px;font-weight:600;font-family:var(--mono);">Vendite dirette — VEZZOLI</div>
+      <button onclick="document.getElementById('modal-vendite').style.display='none'" style="background:none;border:none;font-size:24px;color:var(--text2);cursor:pointer;">×</button>
     </div>
 
-    <div id="vendite-lista" style="margin-bottom:16px;"></div>
+    <div id="vendite-lista" style="margin-bottom:18px;max-height:50vh;overflow-y:auto;"></div>
 
     <div style="border-top:0.5px solid var(--border);padding-top:14px;">
       <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:8px;">NUOVA VENDITA</div>
