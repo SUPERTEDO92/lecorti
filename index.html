@@ -380,7 +380,7 @@
     <button class="nav-btn" onclick="showPage('trasferimenti')">Trasferimenti</button>
     <button class="nav-btn" onclick="showPage('archivio')">Archivio</button>
     <button class="nav-btn" onclick="showPage('macelli')">Macelli</button>
-    <button class="nav-btn" onclick="window.open('lecorti-prezzo-suinetti.html','_blank')">🧮 Calcolo prezzo</button>
+    <button class="nav-btn" onclick="showPage('calcolo')">🧮 Calcolo prezzo</button>
     <button class="nav-btn" onclick="showPage('rubrica')">📋 Rubrica</button>
   </div>
 </div>
@@ -444,6 +444,114 @@
           ✓ Aggiungi sito
         </button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- CALCOLO PREZZO SUINETTI -->
+<div class="page" id="page-calcolo">
+  <div style="padding:14px;max-width:640px;margin:0 auto;">
+    <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:14px;text-transform:uppercase;letter-spacing:.08em;">Scala mobile — Calcolo prezzo suinetti</div>
+
+    <!-- LISTINI -->
+    <div style="background:#FFF;border:0.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px;">
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:14px;">Listini CUN di riferimento</div>
+
+      <div style="display:grid;grid-template-columns:28px 1fr 130px 90px;gap:10px;align-items:center;padding:10px 0;border-bottom:0.5px solid var(--border);">
+        <div id="cp-n1" style="width:28px;height:28px;background:var(--accent);color:#FFF;border-radius:50%;font-family:var(--mono);font-size:12px;font-weight:500;display:flex;align-items:center;justify-content:center;">1</div>
+        <div>
+          <div style="font-size:13px;font-weight:500;">Listino 1 — base</div>
+          <div style="font-size:11px;color:var(--text2);" id="cp-sub1">peso di riferimento: — kg</div>
+        </div>
+        <select id="cp-sel1" onchange="cpSelezionaListino(1)" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text);">
+          <option value="">— peso —</option>
+          <optgroup label="Lattonzoli"><option value="15">15 kg</option><option value="25">25 kg</option><option value="30">30 kg</option><option value="40">40 kg</option></optgroup>
+          <optgroup label="Magroni"><option value="50">50 kg</option><option value="65">65 kg</option><option value="80">80 kg</option><option value="100">100 kg</option></optgroup>
+        </select>
+        <input type="number" id="cp-p1" placeholder="€/kg" step="0.001" min="0" oninput="cpCalcola()" style="width:100%;padding:9px 10px;border:0.5px solid var(--accent);border-radius:var(--radius);font-size:14px;font-family:var(--font);background:#FFF;">
+        <input type="hidden" id="cp-w1" value="30">
+      </div>
+
+      <div style="display:grid;grid-template-columns:28px 1fr 130px 90px;gap:10px;align-items:center;padding:10px 0;">
+        <div id="cp-n2" style="width:28px;height:28px;background:var(--bg2);color:var(--text2);border-radius:50%;font-family:var(--mono);font-size:12px;font-weight:500;display:flex;align-items:center;justify-content:center;">2</div>
+        <div>
+          <div style="font-size:13px;font-weight:500;">Listino 2 — secondo</div>
+          <div style="font-size:11px;color:var(--text2);" id="cp-sub2">peso di riferimento: — kg</div>
+        </div>
+        <select id="cp-sel2" onchange="cpSelezionaListino(2)" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text);">
+          <option value="">— peso —</option>
+          <optgroup label="Lattonzoli"><option value="15">15 kg</option><option value="25">25 kg</option><option value="30">30 kg</option><option value="40">40 kg</option></optgroup>
+          <optgroup label="Magroni"><option value="50">50 kg</option><option value="65">65 kg</option><option value="80">80 kg</option><option value="100">100 kg</option></optgroup>
+        </select>
+        <input type="number" id="cp-p2" placeholder="€/kg" step="0.001" min="0" oninput="cpCalcola()" style="width:100%;padding:9px 10px;border:0.5px solid var(--accent);border-radius:var(--radius);font-size:14px;font-family:var(--font);background:#FFF;">
+        <input type="hidden" id="cp-w2" value="40">
+      </div>
+
+      <div id="cp-scalare-box" style="display:none;background:var(--bg2);border-radius:var(--radius);padding:12px 14px;margin-top:14px;">
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;">Scalare calcolato automaticamente</div>
+        <div style="font-family:var(--mono);font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span>Differenza prezzi:</span><span style="color:var(--text);font-weight:500;" id="cp-f-diff">—</span>
+          <span>÷</span><span style="color:var(--text);font-weight:500;" id="cp-f-step">10</span>
+          <span>=</span><span style="color:var(--text);font-weight:500;" id="cp-f-per10">—</span>
+          <span>×</span><span style="color:var(--text);font-weight:500;" id="cp-f-media-label">media kg</span>
+          <span>=</span><span style="color:var(--accent);font-weight:600;" id="cp-f-scalare">—</span>
+          <span>€/kg ogni 10 kg</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- DATI LOTTO -->
+    <div style="background:#FFF;border:0.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px;">
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:14px;">Dati del lotto</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;">
+        <div><div style="font-size:10px;font-family:var(--mono);color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">N° Capi</div>
+          <input type="number" id="cp-capi" placeholder="es. 400" min="1" oninput="cpCalcola()" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:14px;background:var(--bg);"></div>
+        <div><div style="font-size:10px;font-family:var(--mono);color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Kg Totali</div>
+          <input type="number" id="cp-kg-tot" placeholder="es. 12600" min="0" step="0.1" oninput="cpAggiornaMedia(); cpCalcola()" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:14px;background:var(--bg);"></div>
+        <div><div style="font-size:10px;font-family:var(--mono);color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Media Kg/capo</div>
+          <input type="number" id="cp-media" placeholder="es. 31.5" min="0" step="0.01" oninput="cpCalcola()" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:14px;background:var(--bg);"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;">
+        <div><div style="font-size:10px;font-family:var(--mono);color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Premio €/kg</div>
+          <input type="number" id="cp-premio" placeholder="es. 0.10" step="0.001" min="0" value="0" oninput="cpCalcola()" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:14px;background:var(--bg);"></div>
+        <div><div style="font-size:10px;font-family:var(--mono);color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Sconto sull'imponibile (€)</div>
+          <input type="number" id="cp-sconto" placeholder="es. 500.00" step="0.01" min="0" value="0" oninput="cpCalcola()" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:14px;background:var(--bg);"></div>
+      </div>
+    </div>
+
+    <!-- RISULTATI -->
+    <div id="cp-risultati" style="display:none;background:var(--text);border-radius:12px;padding:20px;color:#F5F3EE;margin-bottom:14px;">
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#888;margin-bottom:10px;">Risultato calcolo</div>
+      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid #333;font-size:13px;"><span style="color:#AAA;">Listino 1 di riferimento</span><span style="font-family:var(--mono);font-weight:500;" id="cp-r-p1">—</span></div>
+      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid #333;font-size:13px;"><span style="color:#AAA;">Scalare applicato</span><span style="font-family:var(--mono);font-weight:500;" id="cp-r-scalare">—</span></div>
+      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid #333;font-size:13px;"><span style="color:#AAA;">Premio</span><span style="font-family:var(--mono);font-weight:500;" id="cp-r-premio">—</span></div>
+      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid #333;font-size:14px;"><span style="color:#CCC;">Prezzo finale €/kg</span><span style="font-family:var(--mono);font-size:20px;font-weight:600;color:var(--accent2, #E8A84A);" id="cp-r-prezzo-kg">—</span></div>
+
+      <hr style="border-color:#333;margin:10px 0;">
+
+      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid #333;font-size:13px;"><span style="color:#AAA;">Kg totali</span><span style="font-family:var(--mono);font-weight:500;" id="cp-r-kg">—</span></div>
+      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid #333;font-size:13px;"><span style="color:#AAA;">Imponibile</span><span style="font-family:var(--mono);font-weight:500;" id="cp-r-imponibile">—</span></div>
+      <div id="cp-row-sconto" style="display:none;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid #333;font-size:13px;"><span style="color:#E88A8A;">Sconto</span><span style="font-family:var(--mono);font-weight:500;color:#E88A8A;" id="cp-r-sconto">—</span></div>
+      <div id="cp-row-imponibile-netto" style="display:none;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid #333;font-size:13px;"><span style="font-weight:600;color:#EEE;">Imponibile netto</span><span style="font-family:var(--mono);font-weight:600;" id="cp-r-imponibile-netto">—</span></div>
+      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid #333;font-size:13px;"><span style="color:#AAA;">IVA 10%</span><span style="font-family:var(--mono);font-weight:500;" id="cp-r-iva">—</span></div>
+      <div style="display:flex;justify-content:space-between;padding:7px 0;font-size:15px;"><span style="color:#EEE;font-weight:600;">TOTALE FATTURA</span><span style="font-family:var(--mono);font-size:24px;font-weight:600;color:#FFF;" id="cp-r-totale">—</span></div>
+
+      <hr style="border-color:#333;margin:10px 0;">
+
+      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid #333;font-size:13px;"><span style="color:#AAA;">N° capi</span><span style="font-family:var(--mono);font-weight:500;" id="cp-r-capi">—</span></div>
+      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid #333;font-size:13px;"><span style="color:#AAA;">Valore €/capo</span><span style="font-family:var(--mono);font-weight:500;" id="cp-r-per-capo">—</span></div>
+      <div style="display:flex;justify-content:space-between;padding:7px 0;font-size:13px;"><span style="color:#AAA;">Media kg/capo</span><span style="font-family:var(--mono);font-weight:500;" id="cp-r-media">—</span></div>
+    </div>
+
+    <div id="cp-placeholder-msg" style="background:#FFF;border:0.5px solid var(--border);border-radius:12px;padding:20px 0;text-align:center;color:var(--text3);margin-bottom:14px;">
+      <div style="font-size:28px;margin-bottom:10px;">🧮</div>
+      <div style="font-family:var(--mono);font-size:12px;">Inserisci i due listini CUN e i dati del lotto per calcolare il prezzo</div>
+    </div>
+
+    <div style="display:flex;gap:10px;">
+      <button onclick="cpCalcola()" style="flex:1;padding:11px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;">Calcola</button>
+      <button onclick="window.print()" style="flex:1;padding:11px;background:var(--text);color:#FFF;border:none;border-radius:var(--radius);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;">🖨 Stampa / PDF</button>
+      <button onclick="cpReset()" style="flex:1;padding:11px;background:var(--bg2);color:var(--text);border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;">Azzera</button>
     </div>
   </div>
 </div>
@@ -918,7 +1026,7 @@ function showPage(name, lottoId) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   currentPage = name;
   document.getElementById(`page-${name}`).classList.add('visible');
-  const navMap = {home:'home',storico:'storico',trasferimenti:'trasferimenti',archivio:'archivio',inserimento:'inserimento'};
+  const navMap = {home:'home',storico:'storico',trasferimenti:'trasferimenti',archivio:'archivio',inserimento:'inserimento',calcolo:'calcolo'};
   const navName = navMap[name] || name;
   document.querySelectorAll('.nav-btn').forEach(b => {
     if(b.getAttribute('onclick')?.includes(`'${navName}'`)) b.classList.add('active');
@@ -1195,6 +1303,136 @@ function rubAggiungiSito() {
   ['rub-new-nome','rub-new-indirizzo','rub-new-asl','rub-new-parma'].forEach(id => document.getElementById(id).value = '');
   rubFiltra();
   window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+// ── CALCOLO PREZZO SUINETTI (scala mobile CUN) ──
+function cpFmt(n, dec=2) {
+  if(n === null || n === undefined || isNaN(n)) return '—';
+  return n.toLocaleString('it-IT', {minimumFractionDigits: dec, maximumFractionDigits: dec});
+}
+
+function cpSelezionaListino(n) {
+  const sel = document.getElementById('cp-sel' + n);
+  const kg = sel.value;
+  if(!kg) return;
+  document.getElementById('cp-w' + n).value = kg;
+  document.getElementById('cp-sub' + n).textContent = 'peso di riferimento: ' + kg + ' kg';
+  document.getElementById('cp-p' + n).value = '';
+  document.getElementById('cp-p' + n).focus();
+  cpCalcola();
+}
+
+function cpAggiornaMedia() {
+  const capi = parseFloat(document.getElementById('cp-capi').value);
+  const kgTot = parseFloat(document.getElementById('cp-kg-tot').value);
+  const mediaInput = document.getElementById('cp-media');
+  if(capi > 0 && kgTot > 0) {
+    mediaInput.value = (kgTot / capi).toFixed(3);
+  }
+}
+
+function cpCalcola() {
+  const p1 = parseFloat(document.getElementById('cp-p1').value);
+  const p2 = parseFloat(document.getElementById('cp-p2').value);
+  const w1 = parseFloat(document.getElementById('cp-w1').value) || 30;
+  const w2 = parseFloat(document.getElementById('cp-w2').value) || 40;
+  const capi = parseFloat(document.getElementById('cp-capi').value);
+  const kgTot = parseFloat(document.getElementById('cp-kg-tot').value);
+  const media = parseFloat(document.getElementById('cp-media').value);
+  const premio = parseFloat(document.getElementById('cp-premio').value) || 0;
+
+  document.getElementById('cp-sub1').textContent = `peso di riferimento: ${w1} kg`;
+  document.getElementById('cp-sub2').textContent = `peso di riferimento: ${w2} kg`;
+
+  const scalareBox = document.getElementById('cp-scalare-box');
+  let scalare = null;
+
+  if(!isNaN(p1) && !isNaN(p2) && p1 > 0 && p2 > 0) {
+    const diff = Math.abs(p1 - p2);
+    const deltaW = Math.abs(w2 - w1);
+    const per10 = diff / deltaW;
+    const mediaVal = parseFloat(document.getElementById('cp-media').value) || 0;
+    const wMin = Math.min(w1, w2);
+    const moltiplicatore = mediaVal > 0 ? (mediaVal - wMin) : 0;
+    scalare = per10 * moltiplicatore;
+
+    document.getElementById('cp-f-diff').textContent = cpFmt(diff, 4);
+    document.getElementById('cp-f-step').textContent = deltaW;
+    document.getElementById('cp-f-per10').textContent = cpFmt(per10, 4);
+    document.getElementById('cp-f-scalare').textContent = cpFmt(scalare, 4);
+    if(!isNaN(mediaVal) && mediaVal > 0) document.getElementById('cp-f-media-label').textContent = cpFmt(mediaVal,2) + ' kg';
+    scalareBox.style.display = 'block';
+    document.getElementById('cp-n2').style.background = 'var(--accent)';
+    document.getElementById('cp-n2').style.color = '#FFF';
+  } else {
+    scalareBox.style.display = 'none';
+    document.getElementById('cp-n2').style.background = 'var(--bg2)';
+    document.getElementById('cp-n2').style.color = 'var(--text2)';
+  }
+
+  const placeholder = document.getElementById('cp-placeholder-msg');
+  const risultati = document.getElementById('cp-risultati');
+
+  if(!isNaN(p1) && p1 > 0 && scalare !== null && !isNaN(media) && media > 0 && !isNaN(kgTot) && kgTot > 0) {
+    const sconto = parseFloat(document.getElementById('cp-sconto').value) || 0;
+    const prezzoKg = p1 - scalare + premio;
+    const imponibileLordo = prezzoKg * kgTot;
+    const imponibileNetto = imponibileLordo - sconto;
+    const iva = imponibileNetto * 0.10;
+    const totale = imponibileNetto + iva;
+    const perCapo = !isNaN(capi) && capi > 0 ? totale / capi : null;
+
+    document.getElementById('cp-r-p1').textContent = cpFmt(p1, 4) + ' €/kg';
+    document.getElementById('cp-r-scalare').textContent = '– ' + cpFmt(scalare, 4) + ' €/kg';
+    document.getElementById('cp-r-premio').textContent = '+' + cpFmt(premio, 4) + ' €/kg';
+    document.getElementById('cp-r-prezzo-kg').textContent = cpFmt(prezzoKg, 4) + ' €/kg';
+    document.getElementById('cp-r-kg').textContent = cpFmt(kgTot, 0) + ' kg';
+    document.getElementById('cp-r-imponibile').textContent = cpFmt(imponibileLordo, 2) + ' €';
+
+    const rowSconto = document.getElementById('cp-row-sconto');
+    const rowNetto = document.getElementById('cp-row-imponibile-netto');
+    if(sconto > 0) {
+      document.getElementById('cp-r-sconto').textContent = '– ' + cpFmt(sconto, 2) + ' €';
+      document.getElementById('cp-r-imponibile-netto').textContent = cpFmt(imponibileNetto, 2) + ' €';
+      rowSconto.style.display = 'flex';
+      rowNetto.style.display = 'flex';
+    } else {
+      rowSconto.style.display = 'none';
+      rowNetto.style.display = 'none';
+    }
+
+    document.getElementById('cp-r-iva').textContent = cpFmt(iva, 2) + ' €';
+    document.getElementById('cp-r-totale').textContent = cpFmt(totale, 2) + ' €';
+    document.getElementById('cp-r-capi').textContent = !isNaN(capi) ? cpFmt(capi, 0) + ' capi' : '—';
+    document.getElementById('cp-r-per-capo').textContent = perCapo !== null ? cpFmt(perCapo, 2) + ' €' : '—';
+    document.getElementById('cp-r-media').textContent = cpFmt(media, 3) + ' kg';
+
+    placeholder.style.display = 'none';
+    risultati.style.display = 'block';
+  } else {
+    if(isNaN(p1) || p1 === 0) {
+      placeholder.style.display = 'block';
+      risultati.style.display = 'none';
+    }
+  }
+}
+
+function cpReset() {
+  ['cp-p1','cp-p2','cp-capi','cp-kg-tot','cp-media','cp-premio','cp-sconto'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('cp-sel1').value = '';
+  document.getElementById('cp-sel2').value = '';
+  document.getElementById('cp-w1').value = '30';
+  document.getElementById('cp-w2').value = '40';
+  document.getElementById('cp-sub1').textContent = 'peso di riferimento: — kg';
+  document.getElementById('cp-sub2').textContent = 'peso di riferimento: — kg';
+  document.getElementById('cp-premio').value = '0';
+  document.getElementById('cp-scalare-box').style.display = 'none';
+  document.getElementById('cp-risultati').style.display = 'none';
+  document.getElementById('cp-placeholder-msg').style.display = 'block';
+  document.getElementById('cp-n2').style.background = 'var(--bg2)';
+  document.getElementById('cp-n2').style.color = 'var(--text2)';
 }
 
 function fmt(n, dec=0) {
