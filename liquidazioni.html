@@ -157,6 +157,34 @@
   }
   .ta-label { font-size: 14px; color: #AAA; font-family: var(--mono); }
   .ta-val { font-size: 32px; font-weight: 500; font-family: var(--mono); color: #FFF; }
+
+  /* Tabbar */
+  .tabbar { display: flex; gap: 6px; margin-bottom: 14px; }
+  .tab-btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: var(--radius-lg);
+    border: 0.5px solid var(--border);
+    background: #FFF;
+    color: var(--text2);
+    font-size: 13px;
+    font-family: var(--font);
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .tab-btn.active { background: var(--text); color: #FFF; border-color: var(--text); }
+
+  /* Trasferimenti */
+  .trasf-row { break-inside: avoid; background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 14px 16px; margin-bottom: 6px; }
+  .trasf-top2 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .trasf-route { font-size: 15px; font-weight: 500; }
+  .trasf-route .arrow { color: var(--text2); font-weight: 400; font-size: 13px; }
+  .trasf-badge { font-size: 10px; font-family: var(--mono); font-weight: 500; padding: 3px 9px; border-radius: 10px; }
+  .trasf-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+  .tg { text-align: center; }
+  .tg-label { font-size: 10px; font-family: var(--mono); text-transform: uppercase; color: var(--text3); letter-spacing: .06em; }
+  .tg-val { font-size: 15px; font-family: var(--mono); font-weight: 500; margin-top: 2px; }
+  .tg-val.green { color: var(--green); }
 </style>
 </head>
 <body>
@@ -174,25 +202,40 @@
 </div>
 
 <div class="container">
-  <div id="totale-annuale" style="display:none" class="totale-annuale">
-    <div>
-      <div class="ta-label">Totale liquidato anno in corso</div>
-      <div class="ta-val" id="ta-val">—</div>
-    </div>
-    <div style="font-size:28px">💰</div>
+  <div class="tabbar">
+    <button class="tab-btn active" id="tab-btn-liq" onclick="switchPagina('liq')">📄 Liquidazioni</button>
+    <button class="tab-btn" id="tab-btn-trasf" onclick="switchPagina('trasf')">🔄 Trasferimenti</button>
   </div>
 
-  <div class="chips" id="chips"></div>
-  <div class="summary" id="summary"></div>
-  <div id="list"><div class="loading">Caricamento…</div></div>
+  <div id="pagina-liq">
+    <div id="totale-annuale" style="display:none" class="totale-annuale">
+      <div>
+        <div class="ta-label">Totale liquidato anno in corso</div>
+        <div class="ta-val" id="ta-val">—</div>
+      </div>
+      <div style="font-size:28px">💰</div>
+    </div>
+
+    <div class="chips" id="chips"></div>
+    <div class="summary" id="summary"></div>
+    <div id="list"><div class="loading">Caricamento…</div></div>
+  </div>
+
+  <div id="pagina-trasf" style="display:none;">
+    <div class="chips" id="chips-trasf"></div>
+    <div class="summary" id="summary-trasf"></div>
+    <div id="list-trasf"><div class="loading">Caricamento…</div></div>
+  </div>
 </div>
 
 <script>
 const SUPABASE_URL = 'https://wfvqgxkxmgcxchcsljzh.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmdnFneGt4bWdjeGNoY3NsanpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMTE1NTAsImV4cCI6MjA5NTg4NzU1MH0.hIhbdVFeCTDJ9bBBqetef87VTCtocMflYUQ_7kvxJF8';
 
-let allUscite = [], allLotti = [], allSoccide = [];
+let allUscite = [], allLotti = [], allSoccide = [], allTrasferimenti = [];
 let filtroMese = 'tutti';
+let filtroMeseTrasf = 'tutti';
+let paginaAttiva = 'liq';
 
 const nomiMese = ['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 const nomiMeseBrevi = ['','Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
@@ -215,10 +258,11 @@ async function sb(table, query='') {
 }
 
 async function loadAll() {
-  [allSoccide, allLotti, allUscite] = await Promise.all([
+  [allSoccide, allLotti, allUscite, allTrasferimenti] = await Promise.all([
     sb('soccide', '?order=nome'),
     sb('lotti', '?order=data_ingresso.desc'),
     sb('uscite', '?order=data_uscita.desc'),
+    sb('trasferimenti', '?order=data_trasferimento.desc'),
   ]);
 
   const oggi = new Date().toLocaleDateString('it-IT', {day:'2-digit', month:'2-digit', year:'numeric'});
@@ -235,6 +279,17 @@ async function loadAll() {
 
   buildChips();
   render();
+  buildChipsTrasf();
+  renderTrasf();
+}
+
+function switchPagina(p) {
+  paginaAttiva = p;
+  document.getElementById('pagina-liq').style.display = p === 'liq' ? 'block' : 'none';
+  document.getElementById('pagina-trasf').style.display = p === 'trasf' ? 'block' : 'none';
+  document.getElementById('tab-btn-liq').classList.toggle('active', p === 'liq');
+  document.getElementById('tab-btn-trasf').classList.toggle('active', p === 'trasf');
+  document.getElementById('totale-annuale').style.display = (p === 'liq' && document.getElementById('ta-val').textContent !== '—') ? 'flex' : 'none';
 }
 
 function buildChips() {
@@ -379,6 +434,112 @@ function render() {
   });
 
   document.getElementById('list').innerHTML = `<div>${html}</div>`;
+}
+
+// ── TRASFERIMENTI (sola lettura, per Ilaria) ──
+function buildChipsTrasf() {
+  const mesi = [...new Set(allTrasferimenti.map(t => t.data_trasferimento?.substring(0,7)).filter(Boolean))].sort().reverse();
+  let html = `<div class="chip active" onclick="setFiltroTrasf('tutti',this)">Tutti</div>`;
+  html += mesi.map(m => {
+    const [y,mo] = m.split('-');
+    return `<div class="chip" onclick="setFiltroTrasf('${m}',this)">${nomiMeseBrevi[parseInt(mo)]} ${y}</div>`;
+  }).join('');
+  document.getElementById('chips-trasf').innerHTML = html;
+}
+
+function setFiltroTrasf(val, el) {
+  filtroMeseTrasf = val;
+  document.querySelectorAll('#chips-trasf .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderTrasf();
+}
+
+function renderTrasf() {
+  if(!allTrasferimenti.length) {
+    document.getElementById('list-trasf').innerHTML = `<div class="empty">Nessun movimento registrato.</div>`;
+    document.getElementById('summary-trasf').innerHTML = '';
+    return;
+  }
+
+  // Nasconde ACQUISTO che hanno già un TRASFERIMENTO speculare (movimenti interni)
+  let lista = [...allTrasferimenti]
+    .filter(t => t.data_trasferimento)
+    .filter(t => {
+      if(t.tipo !== 'ACQUISTO') return true;
+      const speculare = allTrasferimenti.find(x =>
+        x.tipo === 'TRASFERIMENTO' &&
+        x.data_trasferimento === t.data_trasferimento &&
+        x.soccida_partenza === t.soccida_partenza &&
+        x.soccida_destinazione === t.soccida_destinazione &&
+        x.capi === t.capi
+      );
+      return !speculare;
+    })
+    .sort((a,b) => b.data_trasferimento.localeCompare(a.data_trasferimento));
+  if(filtroMeseTrasf !== 'tutti') lista = lista.filter(t => t.data_trasferimento.startsWith(filtroMeseTrasf));
+
+  const totCapi = lista.reduce((s,t) => s+(t.capi||0), 0);
+  const totKg = lista.reduce((s,t) => s+(t.kg||0), 0);
+  const totVendite = lista.filter(t => t.tipo === 'VENDITA').length;
+  document.getElementById('summary-trasf').innerHTML = `
+    <div class="sum-box"><div class="sum-label">movimenti</div><div class="sum-val">${lista.length}</div></div>
+    <div class="sum-box"><div class="sum-label">capi</div><div class="sum-val">${fmt(totCapi)}</div></div>
+    <div class="sum-box"><div class="sum-label">kg</div><div class="sum-val">${fmt(totKg)}</div></div>
+    <div class="sum-box"><div class="sum-label">vendite</div><div class="sum-val">${totVendite}</div></div>`;
+
+  if(!lista.length) {
+    document.getElementById('list-trasf').innerHTML = `<div class="empty">Nessun movimento nel periodo selezionato.</div>`;
+    return;
+  }
+
+  const byMonth = {};
+  lista.forEach(t => {
+    const m = t.data_trasferimento.substring(0,7);
+    if(!byMonth[m]) byMonth[m] = [];
+    byMonth[m].push(t);
+  });
+
+  let html = '';
+  Object.keys(byMonth).sort().reverse().forEach(m => {
+    const [y,mo] = m.split('-');
+    html += `<div class="month-sep"><span class="month-sep-text">${nomiMese[parseInt(mo)]} ${y}</span></div>`;
+
+    html += byMonth[m].map(t => {
+      const isAcq = t.tipo === 'ACQUISTO';
+      const isVend = t.tipo === 'VENDITA';
+      const lotto = allLotti.find(l => l.id === t.lotto_id);
+      const badgeStyle = isAcq
+        ? 'background:#EBF5EF;color:#2A7A4B;border:0.5px solid #B8DECA;'
+        : isVend
+        ? 'background:#FBEFEE;color:#A0453A;border:0.5px solid #F0C0C0;'
+        : 'background:#EEF2FB;color:#3A5AA0;border:0.5px solid #C0CFF0;';
+      const margine = (isVend && t.valore != null && t.costo_acquisto != null) ? (t.valore - t.costo_acquisto) : null;
+
+      return `<div class="trasf-row">
+        <div class="trasf-top2">
+          <div class="trasf-route">${t.soccida_partenza || '—'} <span class="arrow">→</span> ${t.soccida_destinazione || '—'}</div>
+          <span class="trasf-badge" style="${badgeStyle}">${t.tipo || 'TRASF.'}</span>
+        </div>
+        <div style="font-size:12px;color:var(--text2);font-family:var(--mono);margin-bottom:8px;">${fmtDate(t.data_trasferimento)} · Lotto ${lotto?.codice || '—'}${t.lettera_dop ? ' · ' + t.lettera_dop : ''}</div>
+        <div class="trasf-grid">
+          <div class="tg"><div class="tg-label">Capi</div><div class="tg-val">${fmt(t.capi)}</div></div>
+          <div class="tg"><div class="tg-label">Kg</div><div class="tg-val">${t.kg ? fmt(t.kg) : '—'}</div></div>
+          <div class="tg"><div class="tg-label">Media</div><div class="tg-val">${t.kg && t.capi ? fmt(t.kg/t.capi,1) : '—'}</div></div>
+          <div class="tg"><div class="tg-label">${isVend ? 'Margine' : 'Valore'}</div><div class="tg-val ${(isVend ? margine : t.costo_acquisto) ? 'green' : ''}">${
+            isVend
+              ? (margine != null ? fmt(margine) + ' €' : '—')
+              : (t.costo_acquisto ? fmt(t.costo_acquisto) + ' €' : '—')
+          }</div></div>
+        </div>
+        ${isVend ? `<div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:0.5px dashed var(--border);font-size:12px;font-family:var(--mono);">
+          <span style="color:var(--text2);">ingresso: ${t.costo_acquisto ? fmt(t.costo_acquisto) + ' €' : '—'}</span>
+          <span style="color:var(--green);">uscita: ${t.valore ? fmt(t.valore) + ' €' : '—'}</span>
+        </div>` : ''}
+      </div>`;
+    }).join('');
+  });
+
+  document.getElementById('list-trasf').innerHTML = html;
 }
 
 loadAll();
