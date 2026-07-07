@@ -1757,7 +1757,7 @@ function renderStorico() {
     }).join('');
 
   let fhtml = `<div class="chip active" onclick="filterStorico('tutti',this)">Tutti</div>`;
-  fhtml += mesi.slice(0,6).map(m => {
+  fhtml += mesi.map(m => {
     const [y,mo] = m.split('-');
     const mn = ['','Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'][parseInt(mo)];
     return `<div class="chip" onclick="filterStorico('${m}',this)">${mn} ${y}</div>`;
