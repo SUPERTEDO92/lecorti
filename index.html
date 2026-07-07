@@ -973,7 +973,7 @@ async function sb(table, query='') {
 }
 
 // State
-let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [], allMortalita = [], allSanitario = [], allVenditeDirette = [];
+let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [], allMortalita = [], allSanitario = [], allVenditeDirette = [], allUsciteCategorie = [];
 let storicoFilter = 'tutti';
 let currentPage = 'home';
 let currentLottoId = null;
@@ -1007,7 +1007,7 @@ const mockMortalita = {
 document.getElementById('today-date').textContent = new Date().toLocaleDateString('it-IT', {day:'2-digit',month:'2-digit',year:'numeric'});
 
 async function loadAll() {
-  [allSoccide, allLotti, allUscite, allTrasferimenti, allMortalita, allSanitario, allVenditeDirette] = await Promise.all([
+  [allSoccide, allLotti, allUscite, allTrasferimenti, allMortalita, allSanitario, allVenditeDirette, allUsciteCategorie] = await Promise.all([
     sb('soccide', '?order=nome'),
     sb('lotti', '?order=data_ingresso.desc'),
     sb('uscite', '?order=data_uscita.desc'),
@@ -1015,6 +1015,7 @@ async function loadAll() {
     sb('mortalita', '?order=data_evento.desc'),
     sb('sanitario', '?order=data_referto.desc'),
     sb('vendite_dirette', '?order=data_vendita.desc'),
+    sb('uscite_categorie', '?order=id'),
   ]);
   renderHome();
   renderStorico();
@@ -1859,7 +1860,20 @@ function renderStoricoList() {
           <div class="sc"><div class="sc-label">capi</div><div class="sc-val">${fmt(totCapiG)}</div></div>
           <div class="sc"><div class="sc-label">kg</div><div class="sc-val">${fmt(totKgG)}</div></div>
           <div class="sc"><div class="sc-label">tot. fattura</div><div class="sc-val green">${totLiqG ? fmt(totLiqG) + ' €' : '—'}</div></div>
-        </div>`;
+        </div>
+        ${(() => {
+          const catLabel = { scrofa: 'Scrofa', seconda_scelta: '2ª scelta', misto: 'Misto', distrutto: 'Distrutto' };
+          const catRows = allUsciteCategorie.filter(c => righe.some(u => u.id === c.uscita_id));
+          if(catRows.length) {
+            return `<div style="margin-top:6px;padding:6px 8px;background:var(--bg2);border-radius:6px;font-size:11px;color:var(--text2);">
+              <span style="font-family:var(--mono);text-transform:uppercase;font-size:9px;color:var(--text3);">di cui</span><br>
+              ${catRows.map(c => `${catLabel[c.categoria] || c.categoria}: ${fmt(c.capi)} capi${c.kg ? ' · ' + fmt(c.kg) + ' kg' : ''}${c.valore ? ' · ' + fmt(c.valore) + ' €' : ''}${c.note ? ' (' + c.note + ')' : ''}`).join(' · ')}
+            </div>`;
+          } else if(first.categoria_capo && first.categoria_capo !== 'standard') {
+            return `<div style="margin-top:6px;display:inline-block;padding:3px 8px;background:var(--amber-bg);color:var(--amber);border-radius:20px;font-size:10px;font-weight:500;">${catLabel[first.categoria_capo] || first.categoria_capo}</div>`;
+          }
+          return '';
+        })()}`;
 
       if(multi) {
         out += `${!tuttiLiquidati ? `<button onclick="apriLiquidazioneMulti('${righe.map(u=>u.id).join(',')}')" style="margin-top:6px;width:100%;padding:7px;background:var(--amber-bg);color:var(--amber);border:0.5px solid #F0DC8A;border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">+ Inserisci liquidazione (carico unico)</button>` : ''}
