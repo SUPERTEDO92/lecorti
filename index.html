@@ -3268,7 +3268,7 @@ function renderVenditeDirette() {
 let _vdSecondaCategoria = false;
 function toggleSecondaCategoria() {
   _vdSecondaCategoria = !_vdSecondaCategoria;
-  document.getElementById('vd-cat2').style.display = _vdSecondaCategoria ? 'flex' : 'none';
+  document.getElementById('vd-cat2').style.display = _vdSecondaCategoria ? 'block' : 'none';
   document.getElementById('vd-toggle-cat2').textContent = _vdSecondaCategoria ? '− Rimuovi seconda categoria' : '+ Aggiungi seconda categoria (es. belli/brutti)';
   if(!_vdSecondaCategoria) {
     ['vd-cat2-nome','vd-cat2-capi','vd-cat2-peso'].forEach(id => document.getElementById(id).value = '');
@@ -3585,16 +3585,20 @@ loadAll();
         <input type="date" id="vd-data" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
       </div>
 
-      <div id="vd-cat1" style="display:flex;gap:8px;margin-bottom:8px;">
-        <input type="text" id="vd-cat1-nome" placeholder="Categoria (opz. es. belli)" style="flex:1.2;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
-        <input type="number" id="vd-capi" placeholder="N° capi" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
-        <input type="number" id="vd-peso" placeholder="Peso kg" step="0.1" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
+      <div id="vd-cat1" style="margin-bottom:8px;">
+        <input type="text" id="vd-cat1-nome" placeholder="Categoria (opz. es. belli)" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);margin-bottom:8px;">
+        <div style="display:flex;gap:8px;">
+          <input type="number" id="vd-capi" placeholder="N° capi" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
+          <input type="number" id="vd-peso" placeholder="Peso kg" step="0.1" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
+        </div>
       </div>
 
-      <div id="vd-cat2" style="display:none;gap:8px;margin-bottom:8px;">
-        <input type="text" id="vd-cat2-nome" placeholder="Categoria (es. brutti)" style="flex:1.2;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
-        <input type="number" id="vd-cat2-capi" placeholder="N° capi" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
-        <input type="number" id="vd-cat2-peso" placeholder="Peso kg" step="0.1" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
+      <div id="vd-cat2" style="display:none;margin-bottom:8px;">
+        <input type="text" id="vd-cat2-nome" placeholder="Categoria (es. brutti)" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);margin-bottom:8px;">
+        <div style="display:flex;gap:8px;">
+          <input type="number" id="vd-cat2-capi" placeholder="N° capi" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
+          <input type="number" id="vd-cat2-peso" placeholder="Peso kg" step="0.1" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
+        </div>
       </div>
 
       <button type="button" id="vd-toggle-cat2" onclick="toggleSecondaCategoria()" style="width:100%;padding:9px;background:none;border:1px dashed var(--border);border-radius:var(--radius);font-size:12px;font-family:var(--font);color:var(--text2);cursor:pointer;margin-bottom:12px;">
