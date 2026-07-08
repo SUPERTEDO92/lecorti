@@ -3851,6 +3851,7 @@ function renderArchivioSoccida(socId) {
           <div style="text-align:center;background:var(--bg);border-radius:var(--radius);padding:6px;">
             <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">Morti</div>
             <div style="font-size:16px;font-weight:600;font-family:var(--mono);color:${morti>0?'var(--red)':'inherit'};">${morti}</div>
+            ${lotto.capi_entrati ? `<div style="font-size:9px;color:var(--text3);font-family:var(--mono);">${fmt(morti/lotto.capi_entrati*100,2)}%</div>` : ''}
           </div>
           <div style="text-align:center;background:var(--bg);border-radius:var(--radius);padding:6px;">
             <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">Gg stalla</div>
@@ -3908,6 +3909,20 @@ function renderArchivioSoccida(socId) {
         </div>`;
         }).join('')}
       </div>` : ''}
+      <!-- Problemi sanitari -->
+      ${(() => {
+        const referti = (allSanitario||[]).filter(r => r.lotto_id === lotto.id)
+          .sort((a,b) => a.data_referto.localeCompare(b.data_referto));
+        if(!referti.length) return '';
+        return `<div style="padding:10px 14px;border-bottom:0.5px solid var(--border);background:var(--red-bg,#FCEAEA);">
+          <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;color:var(--red);margin-bottom:6px;">⚠ Problemi sanitari (${referti.length})</div>
+          ${referti.map(r => `<div style="padding:5px 0;border-bottom:0.5px solid rgba(0,0,0,0.06);">
+            <div style="font-size:12px;"><strong>${fmtDateFull(r.data_referto)}</strong></div>
+            <div style="font-size:12px;color:var(--text);margin-top:2px;">${r.patologia || '—'}</div>
+            ${r.note_trattamento ? `<div style="font-size:11px;color:var(--text2);margin-top:2px;">${r.note_trattamento}</div>` : ''}
+          </div>`).join('')}
+        </div>`;
+      })()}
       <!-- Totale lotto -->
       <div style="padding:10px 14px;border-top:0.5px solid var(--border);">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
