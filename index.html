@@ -973,7 +973,7 @@ async function sb(table, query='') {
 }
 
 // State
-let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [], allMortalita = [], allSanitario = [], allVenditeDirette = [], allUsciteCategorie = [];
+let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [], allMortalita = [], allSanitario = [], allVenditeDirette = [], allUsciteCategorie = [], allVenditeDiretteCategorie = [];
 let storicoFilter = 'tutti';
 let currentPage = 'home';
 let currentLottoId = null;
@@ -1007,7 +1007,7 @@ const mockMortalita = {
 document.getElementById('today-date').textContent = new Date().toLocaleDateString('it-IT', {day:'2-digit',month:'2-digit',year:'numeric'});
 
 async function loadAll() {
-  [allSoccide, allLotti, allUscite, allTrasferimenti, allMortalita, allSanitario, allVenditeDirette, allUsciteCategorie] = await Promise.all([
+  [allSoccide, allLotti, allUscite, allTrasferimenti, allMortalita, allSanitario, allVenditeDirette, allUsciteCategorie, allVenditeDiretteCategorie] = await Promise.all([
     sb('soccide', '?order=nome'),
     sb('lotti', '?order=data_ingresso.desc'),
     sb('uscite', '?order=data_uscita.desc'),
@@ -1016,6 +1016,7 @@ async function loadAll() {
     sb('sanitario', '?order=data_referto.desc'),
     sb('vendite_dirette', '?order=data_vendita.desc'),
     sb('uscite_categorie', '?order=id'),
+    sb('vendite_dirette_categorie', '?order=id'),
   ]);
   renderHome();
   renderStorico();
@@ -3232,6 +3233,8 @@ function apriVenditeDirette(socId) {
   document.getElementById('vd-data').value = new Date().toISOString().slice(0,10);
   document.getElementById('vd-capi').value = '';
   document.getElementById('vd-peso').value = '';
+  document.getElementById('vd-cat1-nome').value = '';
+  if(_vdSecondaCategoria) toggleSecondaCategoria();
   renderVenditeDirette();
   document.getElementById('modal-vendite').style.display = 'flex';
 }
@@ -3240,11 +3243,15 @@ function renderVenditeDirette() {
     .sort((a,b) => b.data_vendita.localeCompare(a.data_vendita));
   const cont = document.getElementById('vendite-lista');
   if(!voci.length) { cont.innerHTML = `<div style="font-size:13px;color:var(--text2);text-align:center;padding:20px 0;">Nessuna vendita registrata.</div>`; return; }
-  cont.innerHTML = voci.map(v => `
+  cont.innerHTML = voci.map(v => {
+    const cats = allVenditeDiretteCategorie.filter(c => c.vendita_id === v.id);
+    const catHtml = cats.length ? `<div style="font-size:11px;color:var(--text2);margin-top:4px;">${cats.map(c => `${c.categoria}: ${fmt(c.capi)} capi${c.peso_kg ? ' · ' + fmt(c.peso_kg,1) + ' kg' : ''}`).join(' · ')}</div>` : '';
+    return `
     <div style="display:flex;align-items:center;gap:12px;padding:16px 4px;border-bottom:0.5px solid var(--border);">
       <div style="flex:1;">
         <div style="font-size:15px;font-weight:600;font-family:var(--mono);">${fmtDateFull(v.data_vendita)}</div>
         <div style="font-size:13px;color:var(--text2);margin-top:3px;">${fmt(v.capi)} capi · ${v.peso_kg ? fmt(v.peso_kg,1)+' kg' : '—'}</div>
+        ${catHtml}
       </div>
       <div style="text-align:right;">
         <input type="number" value="${v.prezzo != null ? v.prezzo : ''}" placeholder="prezzo €" step="0.01"
@@ -3255,23 +3262,57 @@ function renderVenditeDirette() {
         <span style="color:${v.pagato ? '#FFF' : 'var(--red)'};font-size:20px;font-weight:600;">${v.pagato ? '✓' : '✕'}</span>
       </button>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
+let _vdSecondaCategoria = false;
+function toggleSecondaCategoria() {
+  _vdSecondaCategoria = !_vdSecondaCategoria;
+  document.getElementById('vd-cat2').style.display = _vdSecondaCategoria ? 'flex' : 'none';
+  document.getElementById('vd-toggle-cat2').textContent = _vdSecondaCategoria ? '− Rimuovi seconda categoria' : '+ Aggiungi seconda categoria (es. belli/brutti)';
+  if(!_vdSecondaCategoria) {
+    ['vd-cat2-nome','vd-cat2-capi','vd-cat2-peso'].forEach(id => document.getElementById(id).value = '');
+  }
+}
+
 async function inserisciVenditaDiretta() {
   const data = document.getElementById('vd-data').value;
-  const capi = parseInt(document.getElementById('vd-capi').value) || null;
-  const peso = parseFloat(document.getElementById('vd-peso').value) || null;
-  if(!data || !capi) { alert('Inserisci almeno data e numero capi'); return; }
+  const cat1Nome = document.getElementById('vd-cat1-nome').value.trim() || null;
+  const capi1 = parseInt(document.getElementById('vd-capi').value) || null;
+  const peso1 = parseFloat(document.getElementById('vd-peso').value) || null;
+
+  const cat2Nome = document.getElementById('vd-cat2-nome').value.trim();
+  const capi2 = parseInt(document.getElementById('vd-cat2-capi').value) || null;
+  const peso2 = parseFloat(document.getElementById('vd-cat2-peso').value) || null;
+  const usaCat2 = _vdSecondaCategoria && (capi2 || peso2);
+
+  if(!data || !capi1) { alert('Inserisci almeno data e numero capi'); return; }
+
+  const capiTot = capi1 + (usaCat2 ? (capi2 || 0) : 0);
+  const pesoTot = (peso1 || 0) + (usaCat2 ? (peso2 || 0) : 0);
+
   try {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/vendite_dirette`, {
       method: 'POST', headers: SB_H,
-      body: JSON.stringify({ soccida_id: _vdSoccidaId, data_vendita: data, capi, peso_kg: peso, pagato: false })
+      body: JSON.stringify({ soccida_id: _vdSoccidaId, data_vendita: data, capi: capiTot, peso_kg: pesoTot || null, pagato: false })
     });
     if(!r.ok) throw new Error(await r.text());
     const [nuovo] = await r.json();
     allVenditeDirette.unshift(nuovo);
-    document.getElementById('vd-capi').value = '';
-    document.getElementById('vd-peso').value = '';
+
+    if(usaCat2) {
+      const rCat = await fetch(`${SUPABASE_URL}/rest/v1/vendite_dirette_categorie`, {
+        method: 'POST', headers: SB_H,
+        body: JSON.stringify([
+          { vendita_id: nuovo.id, categoria: cat1Nome || 'categoria 1', capi: capi1, peso_kg: peso1 },
+          { vendita_id: nuovo.id, categoria: cat2Nome || 'categoria 2', capi: capi2, peso_kg: peso2 },
+        ])
+      });
+      if(!rCat.ok) throw new Error(await rCat.text());
+    }
+
+    ['vd-cat1-nome','vd-capi','vd-peso','vd-cat2-nome','vd-cat2-capi','vd-cat2-peso'].forEach(id => document.getElementById(id).value = '');
+    if(_vdSecondaCategoria) toggleSecondaCategoria();
     renderVenditeDirette();
     if(currentLottoId) renderDetail(currentLottoId);
   } catch(e) {
@@ -3543,10 +3584,23 @@ loadAll();
       <div style="display:flex;gap:8px;margin-bottom:8px;">
         <input type="date" id="vd-data" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
       </div>
-      <div style="display:flex;gap:8px;margin-bottom:12px;">
+
+      <div id="vd-cat1" style="display:flex;gap:8px;margin-bottom:8px;">
+        <input type="text" id="vd-cat1-nome" placeholder="Categoria (opz. es. belli)" style="flex:1.2;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
         <input type="number" id="vd-capi" placeholder="N° capi" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
         <input type="number" id="vd-peso" placeholder="Peso kg" step="0.1" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
       </div>
+
+      <div id="vd-cat2" style="display:none;gap:8px;margin-bottom:8px;">
+        <input type="text" id="vd-cat2-nome" placeholder="Categoria (es. brutti)" style="flex:1.2;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);">
+        <input type="number" id="vd-cat2-capi" placeholder="N° capi" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
+        <input type="number" id="vd-cat2-peso" placeholder="Peso kg" step="0.1" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
+      </div>
+
+      <button type="button" id="vd-toggle-cat2" onclick="toggleSecondaCategoria()" style="width:100%;padding:9px;background:none;border:1px dashed var(--border);border-radius:var(--radius);font-size:12px;font-family:var(--font);color:var(--text2);cursor:pointer;margin-bottom:12px;">
+        + Aggiungi seconda categoria (es. belli/brutti)
+      </button>
+
       <button onclick="inserisciVenditaDiretta()" style="width:100%;padding:13px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;">
         + Aggiungi vendita
       </button>
