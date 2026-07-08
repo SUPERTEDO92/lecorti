@@ -285,7 +285,8 @@ function renderVendite() {
     <div class="vd-row">
       <div style="flex:1;">
         <div class="vd-date">${fmtDateFull(v.data_vendita)}</div>
-        <div class="vd-detail">${fmt(v.capi)} capi${v.peso_kg ? ' · ' + fmt(v.peso_kg,1) + ' kg' : ''}${v.prezzo != null ? ' · € ' + fmt(v.prezzo,2) : ''}</div>
+        <div class="vd-detail">${fmt(v.capi)} capi${v.peso_kg ? ' · ' + fmt(v.peso_kg,1) + ' kg' : ''}</div>
+        <div class="vd-detail">Importo: ${v.prezzo != null ? '€ ' + fmt(v.prezzo,2) : '—'}</div>
         ${catHtml}
       </div>
       <div class="vd-status" style="background:${v.pagato ? 'var(--green)' : 'var(--red-bg)'};border:0.5px solid ${v.pagato ? 'var(--green)' : 'var(--red)'};">
