@@ -24,43 +24,43 @@
   body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 40px; }
 
   .header { background: var(--text); color: #FFF; padding: 14px 16px 12px; position: sticky; top: 0; z-index: 10; }
-  .header-title { font-size: 16px; font-weight: 500; }
+  .header-title { font-size: 18px; font-weight: 600; }
   .header-sub { font-size: 11px; color: #AAA; margin-top: 2px; font-family: var(--mono); }
 
-  .container { max-width: 480px; margin: 0 auto; padding: 12px 14px; }
+  .container { max-width: 480px; margin: 0 auto; padding: 10px 12px; }
 
-  .section-title { font-size: 11px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .07em; color: var(--text2); margin: 20px 2px 8px; }
+  .section-title { font-size: 12px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .07em; color: var(--text2); margin: 14px 2px 6px; }
   .section-title:first-child { margin-top: 2px; }
 
   .lotto-header {
     background: var(--bg2); border: 0.5px solid var(--border);
-    border-radius: var(--radius-lg); padding: 10px 14px;
-    margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;
+    border-radius: var(--radius-lg); padding: 12px 14px;
+    margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;
   }
-  .lotto-codice { font-size: 13px; font-weight: 500; font-family: var(--mono); }
-  .lotto-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .lotto-codice { font-size: 16px; font-weight: 600; font-family: var(--mono); }
+  .lotto-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
   .lotto-badge { background: var(--accent); color: #FFF; border-radius: 6px; padding: 3px 8px; font-size: 11px; font-family: var(--mono); font-weight: 500; }
 
-  .stat-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin-bottom: 10px; }
+  .stat-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin-bottom: 8px; }
   .stat-box { background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius); padding: 8px 10px; }
   .stat-box.hl { background: var(--green-bg); border-color: #B8DECA; }
-  .stat-label { font-size: 9px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .07em; color: var(--text2); }
-  .stat-val { font-size: 15px; font-weight: 500; font-family: var(--mono); margin-top: 2px; }
-  .stat-unit { font-size: 9px; font-weight: 400; color: var(--text2); }
+  .stat-label { font-size: 10px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .07em; color: var(--text2); }
+  .stat-val { font-size: 18px; font-weight: 600; font-family: var(--mono); margin-top: 2px; }
+  .stat-unit { font-size: 10px; font-weight: 400; color: var(--text2); }
   .stat-val.green { color: var(--green); }
   .stat-val.red { color: var(--red); }
 
   /* Mortalità */
-  .btn-mort { width: 100%; padding: 12px; background: var(--red); color: #FFF; border: none; border-radius: var(--radius-lg); font-size: 13px; font-family: var(--font); font-weight: 600; cursor: pointer; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .btn-mort { width: 100%; padding: 13px; background: var(--red); color: #FFF; border: none; border-radius: var(--radius-lg); font-size: 15px; font-family: var(--font); font-weight: 700; cursor: pointer; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; }
   .btn-mort:active { opacity: .85; }
   .mort-row {
     display: flex; justify-content: space-between; align-items: center;
     padding: 8px 10px; background: var(--bg2); border-radius: var(--radius);
     margin-bottom: 4px; border: 0.5px solid var(--border);
   }
-  .mort-data { font-size: 12px; font-weight: 500; }
-  .mort-info { font-size: 10px; color: var(--text2); margin-top: 2px; }
-  .mort-capi { font-size: 20px; font-weight: 500; color: var(--red); font-family: var(--mono); }
+  .mort-data { font-size: 14px; font-weight: 600; }
+  .mort-info { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .mort-capi { font-size: 22px; font-weight: 600; color: var(--red); font-family: var(--mono); }
   .mort-capi-label { font-size: 10px; color: var(--text2); text-align: right; }
   .mort-totale { display: flex; justify-content: space-between; padding: 6px 10px; font-size: 11px; font-family: var(--mono); color: var(--text2); }
 
@@ -68,8 +68,8 @@
   .vd-card { background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
   .vd-row { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 0.5px solid var(--border); }
   .vd-row:last-child { border-bottom: none; }
-  .vd-date { font-size: 13px; font-weight: 500; font-family: var(--mono); }
-  .vd-detail { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .vd-date { font-size: 16px; font-weight: 600; font-family: var(--mono); }
+  .vd-detail { font-size: 12px; color: var(--text2); margin-top: 2px; }
   .vd-status { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 15px; font-weight: 700; }
 
   /* Modale mortalità */
@@ -83,7 +83,7 @@
 
   .empty { text-align: center; color: var(--text3); font-size: 13px; padding: 24px 0; }
   .loading { text-align: center; color: var(--text3); font-size: 13px; padding: 60px 0; }
-  .divider { border-top: 1px solid var(--border); margin: 16px 0; }
+  .divider { border-top: 1px solid var(--border); margin: 10px 0; }
 
   .toast { display: none; padding: 10px 14px; border-radius: var(--radius); margin-bottom: 12px; font-size: 13px; }
   .toast.ok { background: var(--green-bg); color: var(--green); border: 0.5px solid #B8DECA; }
@@ -225,12 +225,9 @@ function render() {
         <div class="lotto-codice">Lotto ${lotto.codice}</div>
         <div class="lotto-sub">${lotto.provenienza || ''} · ingresso ${fmtDateFull(lotto.data_ingresso)}${lotto.lettera_dop ? ' · ' + lotto.lettera_dop : ''}</div>
       </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
-        <div style="text-align:right">
-          <div style="font-size:18px;font-weight:500;color:var(--green);font-family:var(--mono)">${fmt(presenti)}</div>
-          <div style="font-size:10px;color:var(--text2)">presenti</div>
-        </div>
-        <div class="lotto-badge">+${lotto.incremento_giornaliero ? lotto.incremento_giornaliero.toFixed(3) : '—'} kg/gg</div>
+      <div style="text-align:right">
+        <div style="font-size:18px;font-weight:500;color:var(--green);font-family:var(--mono)">${fmt(presenti)}</div>
+        <div style="font-size:10px;color:var(--text2)">presenti</div>
       </div>
     </div>
 
