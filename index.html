@@ -3276,7 +3276,10 @@ function renderVenditeDirette() {
         <div style="font-size:13px;color:var(--text2);margin-top:3px;">${fmt(v.capi)} capi · ${v.peso_kg ? fmt(v.peso_kg,1)+' kg' : '—'}</div>
         ${catHtml}
       </div>
-      <div style="text-align:right;">
+      <div style="text-align:right;display:flex;flex-direction:column;gap:6px;">
+        <input type="number" value="${v.prezzo_kg != null ? v.prezzo_kg : ''}" placeholder="€/kg" step="0.001"
+          onchange="salvaPrezzoKgVendita(${v.id}, this.value)"
+          style="width:120px;padding:8px 12px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);text-align:right;background:var(--bg);">
         <input type="number" value="${v.prezzo != null ? v.prezzo : ''}" placeholder="prezzo €" step="0.01"
           onchange="salvaPrezzoVendita(${v.id}, this.value)"
           style="width:120px;padding:10px 12px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:15px;font-family:var(--mono);text-align:right;background:var(--bg);">
@@ -3352,6 +3355,20 @@ async function salvaPrezzoVendita(id, valore) {
     if(!r.ok) throw new Error(await r.text());
     const v = allVenditeDirette.find(x => x.id === id);
     if(v) v.prezzo = prezzo;
+  } catch(e) {
+    alert('Errore: ' + e.message);
+  }
+}
+async function salvaPrezzoKgVendita(id, valore) {
+  const prezzo_kg = valore === '' ? null : parseFloat(valore);
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/vendite_dirette?id=eq.${id}`, {
+      method: 'PATCH', headers: SB_H,
+      body: JSON.stringify({ prezzo_kg })
+    });
+    if(!r.ok) throw new Error(await r.text());
+    const v = allVenditeDirette.find(x => x.id === id);
+    if(v) v.prezzo_kg = prezzo_kg;
   } catch(e) {
     alert('Errore: ' + e.message);
   }
