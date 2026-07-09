@@ -3280,7 +3280,7 @@ function renderVenditeDirette() {
         <input type="number" value="${v.prezzo_kg != null ? v.prezzo_kg : ''}" placeholder="€/kg" step="0.001"
           onchange="salvaPrezzoKgVendita(${v.id}, this.value)"
           style="width:120px;padding:8px 12px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);text-align:right;background:var(--bg);">
-        <input type="number" value="${v.prezzo != null ? v.prezzo : ''}" placeholder="prezzo €" step="0.01"
+        <input type="number" id="vd-prezzo-${v.id}" value="${v.prezzo != null ? v.prezzo : ''}" placeholder="prezzo €" step="0.01"
           onchange="salvaPrezzoVendita(${v.id}, this.value)"
           style="width:120px;padding:10px 12px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:15px;font-family:var(--mono);text-align:right;background:var(--bg);">
       </div>
@@ -3361,14 +3361,18 @@ async function salvaPrezzoVendita(id, valore) {
 }
 async function salvaPrezzoKgVendita(id, valore) {
   const prezzo_kg = valore === '' ? null : parseFloat(valore);
+  const v = allVenditeDirette.find(x => x.id === id);
+  // Calcolo automatico del totale (senza IVA) = €/kg × peso registrato
+  const totaleCalcolato = (prezzo_kg != null && v?.peso_kg) ? Math.round(prezzo_kg * v.peso_kg * 100) / 100 : v?.prezzo ?? null;
   try {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/vendite_dirette?id=eq.${id}`, {
       method: 'PATCH', headers: SB_H,
-      body: JSON.stringify({ prezzo_kg })
+      body: JSON.stringify({ prezzo_kg, prezzo: totaleCalcolato })
     });
     if(!r.ok) throw new Error(await r.text());
-    const v = allVenditeDirette.find(x => x.id === id);
-    if(v) v.prezzo_kg = prezzo_kg;
+    if(v) { v.prezzo_kg = prezzo_kg; v.prezzo = totaleCalcolato; }
+    const inputTotale = document.getElementById(`vd-prezzo-${id}`);
+    if(inputTotale) inputTotale.value = totaleCalcolato != null ? totaleCalcolato : '';
   } catch(e) {
     alert('Errore: ' + e.message);
   }
