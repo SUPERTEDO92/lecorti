@@ -385,6 +385,8 @@
   </div>
 </div>
 
+<button class="back-btn" id="global-back-btn" onclick="showPage('home')" style="display:none;margin:12px 14px 0;">← Soccide</button>
+
 <!-- HOME -->
 <div class="page visible" id="page-home">
   <div style="padding:12px 0 4px">
@@ -1030,6 +1032,7 @@ function showPage(name, lottoId) {
   currentPage = name;
   document.getElementById(`page-${name}`).classList.add('visible');
   document.getElementById('topbar-nav').style.display = (name === 'home') ? 'flex' : 'none';
+  document.getElementById('global-back-btn').style.display = ['home','detail','inserimento','analisi','stampa'].includes(name) ? 'none' : 'flex';
   const navMap = {home:'home',storico:'storico',trasferimenti:'trasferimenti',archivio:'archivio',inserimento:'inserimento',calcolo:'calcolo'};
   const navName = navMap[name] || name;
   document.querySelectorAll('.nav-btn').forEach(b => {
