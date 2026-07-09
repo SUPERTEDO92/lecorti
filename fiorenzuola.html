@@ -196,6 +196,8 @@ const T = {
     btnMortalita: '🔴 Mortalità',
     btnUscita: '↗ Uscita',
     mortRegistrate: 'Mortalità registrate',
+    ingressiRegistrati: 'Ingressi',
+    totIngressi: 'Totale ingressi',
     usciteRegistrate: 'Uscite registrate',
     totMortalita: 'Totale mortalità',
     totUscito: 'Totale uscito',
@@ -232,6 +234,8 @@ const T = {
     btnMortalita: '🔴 ਮੌਤ',
     btnUscita: '↗ ਬਾਹਰ',
     mortRegistrate: 'ਦਰਜ ਮੌਤਾਂ',
+    ingressiRegistrati: 'ਦਾਖਲੇ',
+    totIngressi: 'ਕੁੱਲ ਦਾਖਲੇ',
     usciteRegistrate: 'ਦਰਜ ਨਿਕਾਸ',
     totMortalita: 'ਕੁੱਲ ਮੌਤਾਂ',
     totUscito: 'ਕੁੱਲ ਬਾਹਰ',
@@ -269,7 +273,7 @@ function toggleLang() {
 }
 
 let soccidaId = null;
-let allLotti = [], allMortalita = [], allUscite = [];
+let allLotti = [], allMortalita = [], allUscite = [], allIngressi = [];
 let _mortLottoId = null, _uscitaLottoId = null;
 
 function fmt(n, dec=0) {
@@ -307,6 +311,9 @@ async function loadAll() {
   const lottiIds = allLotti.map(l => l.id);
   allMortalita = allMortalita.filter(m => lottiIds.includes(m.lotto_id));
   allUscite = allUscite.filter(u => lottiIds.includes(u.lotto_id));
+  allIngressi = lottiIds.length
+    ? await sb('lotti_ingressi', `?lotto_id=in.(${lottiIds.join(',')})&order=data_ingresso.asc`)
+    : [];
 
   document.getElementById('header-agg').textContent = `${allLotti.length} lotto${allLotti.length !== 1 ? 'i' : ''} attivo${allLotti.length !== 1 ? 'i' : ''} · agg. ${new Date().toLocaleDateString('it-IT')}`;
   render();
@@ -348,6 +355,27 @@ function render() {
     </div>
 
     ${lotto.capannone ? `<div class="capannone-banner">📍 ${t('capannoneWord')}: ${lotto.capannone.toUpperCase()}</div>` : ''}
+
+    ${(() => {
+      const ingLotto = allIngressi.filter(i => i.lotto_id === lotto.id).sort((a,b) => a.data_ingresso.localeCompare(b.data_ingresso));
+      if(!ingLotto.length) return '';
+      const totIng = ingLotto.reduce((s,i) => s+(i.capi||0), 0);
+      return `
+      <div class="section-title" style="margin-top:0;">${t('ingressiRegistrati')}</div>
+      ${ingLotto.map(i => `
+        <div class="row-item">
+          <div>
+            <div class="row-data">${fmtDate(i.data_ingresso)}${i.capannone ? ` · <strong style="text-transform:uppercase;">${i.capannone}</strong>` : ''}</div>
+            ${i.kg ? `<div class="row-info">${fmt(i.kg,0)} kg</div>` : ''}
+          </div>
+          <div>
+            <div class="row-capi" style="color:var(--green);">${i.capi || 0}</div>
+            <div class="row-capi-label">${t('capiUnit')}</div>
+          </div>
+        </div>`).join('')}
+      <div class="row-totale"><span>${t('totIngressi')}</span><span style="color:var(--green);font-weight:500">${totIng} ${t('capiUnit')}</span></div>
+      `;
+    })()}
 
     <div class="stat-grid">
       <div class="stat-box hl">
