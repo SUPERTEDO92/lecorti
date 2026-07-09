@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Le Corti — Fiorenzuola</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Fiorenzuola">
+<meta name="theme-color" content="#1A1A18">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --mono: 'SF Mono', 'Fira Code', monospace;
+    --bg: #F5F3EE; --bg2: #EDEAE3;
+    --text: #1A1A18; --text2: #6B6860; --text3: #A0A090;
+    --border: #D8D4CB;
+    --green: #2A7A4B; --green-bg: #EBF5EF;
+    --red: #C0392B; --red-bg: #FDECEA;
+    --amber: #92600A; --amber-bg: #FEF9EC;
+    --accent: #2A6B8A;
+    --radius: 8px; --radius-lg: 12px;
+  }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 40px; }
+
+  .header { background: var(--text); color: #FFF; padding: 14px 16px 12px; position: sticky; top: 0; z-index: 10; }
+  .header-title { font-size: 16px; font-weight: 500; }
+  .header-sub { font-size: 11px; color: #AAA; margin-top: 2px; font-family: var(--mono); }
+
+  .container { max-width: 480px; margin: 0 auto; padding: 12px 14px; }
+
+  .section-title { font-size: 11px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .07em; color: var(--text2); margin: 20px 2px 8px; }
+  .section-title:first-child { margin-top: 2px; }
+
+  .lotto-header {
+    background: var(--bg2); border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg); padding: 10px 14px;
+    margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .lotto-codice { font-size: 15px; font-weight: 500; font-family: var(--mono); }
+  .lotto-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+  .capannone-banner {
+    background: var(--text); color: #FFF; border-radius: var(--radius); padding: 10px 14px;
+    margin-bottom: 8px; text-align: center; font-size: 14px; font-weight: 700;
+    font-family: var(--mono); letter-spacing: .05em;
+  }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin-bottom: 10px; }
+  .stat-box { background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius); padding: 8px 10px; }
+  .stat-box.hl { background: var(--green-bg); border-color: #B8DECA; }
+  .stat-label { font-size: 9px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .07em; color: var(--text2); }
+  .stat-val { font-size: 15px; font-weight: 500; font-family: var(--mono); margin-top: 2px; }
+  .stat-unit { font-size: 9px; font-weight: 400; color: var(--text2); }
+  .stat-val.green { color: var(--green); }
+  .stat-val.red { color: var(--red); }
+
+  .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .btn-mort { padding: 12px; background: var(--red); color: #FFF; border: none; border-radius: var(--radius-lg); font-size: 12px; font-family: var(--font); font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .btn-mort:active { opacity: .85; }
+  .btn-uscita { padding: 12px; background: var(--accent); color: #FFF; border: none; border-radius: var(--radius-lg); font-size: 12px; font-family: var(--font); font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .btn-uscita:active { opacity: .85; }
+
+  .row-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 10px; background: var(--bg2); border-radius: var(--radius);
+    margin-bottom: 4px; border: 0.5px solid var(--border);
+  }
+  .row-data { font-size: 12px; font-weight: 500; }
+  .row-info { font-size: 10px; color: var(--text2); margin-top: 2px; }
+  .row-capi { font-size: 20px; font-weight: 500; font-family: var(--mono); }
+  .row-capi-label { font-size: 10px; color: var(--text2); text-align: right; }
+  .row-totale { display: flex; justify-content: space-between; padding: 6px 10px; font-size: 11px; font-family: var(--mono); color: var(--text2); }
+
+  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-end; justify-content: center; }
+  .modal-box { background: #FFF; border-radius: 16px 16px 0 0; padding: 20px 16px 32px; width: 100%; max-width: 480px; }
+  .modal-title { font-size: 14px; font-weight: 500; font-family: var(--mono); }
+  .modal-info { font-size: 11px; color: var(--text2); background: var(--bg2); padding: 8px 10px; border-radius: var(--radius); margin: 12px 0; font-family: var(--mono); }
+  .field-label { font-size: 11px; font-family: var(--mono); color: var(--text2); margin-bottom: 4px; }
+  .field-input { width: 100%; padding: 9px 10px; border: 0.5px solid var(--border); border-radius: var(--radius); font-size: 13px; font-family: var(--font); background: var(--bg); }
+  .btn-primary { width: 100%; padding: 13px; border: none; border-radius: var(--radius-lg); font-size: 13px; font-family: var(--font); font-weight: 500; cursor: pointer; margin-top: 16px; color: #FFF; }
+
+  .empty { text-align: center; color: var(--text3); font-size: 13px; padding: 24px 0; }
+  .loading { text-align: center; color: var(--text3); font-size: 13px; padding: 60px 0; }
+  .divider { border-top: 1px solid var(--border); margin: 16px 0; }
+
+  .toast { display: none; padding: 10px 14px; border-radius: var(--radius); margin-bottom: 12px; font-size: 13px; }
+  .toast.ok { background: var(--green-bg); color: var(--green); border: 0.5px solid #B8DECA; }
+  .toast.err { background: var(--red-bg); color: var(--red); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">Le Corti — Fiorenzuola</div>
+  <div class="header-sub" id="header-agg">Caricamento…</div>
+</div>
+
+<div class="container">
+  <div id="toast" class="toast"></div>
+  <div class="section-title">Lotti attivi</div>
+  <div id="content"><div class="loading">Caricamento dati…</div></div>
+</div>
+
+<!-- MODALE MORTALITÀ -->
+<div class="modal" id="modal-mort">
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div class="modal-title">Registra mortalità</div>
+      <button onclick="chiudiModal('mort')" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
+    </div>
+    <div class="modal-info" id="modal-mort-info"></div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div>
+          <div class="field-label">DATA</div>
+          <input type="date" id="m-data" class="field-input">
+        </div>
+        <div>
+          <div class="field-label">N° CAPI MORTI</div>
+          <input type="number" id="m-capi" class="field-input" placeholder="es. 2" min="0">
+        </div>
+      </div>
+      <div>
+        <div class="field-label">NOTE (opz.)</div>
+        <input type="text" id="m-note" class="field-input" placeholder="es. causa, reparto...">
+      </div>
+    </div>
+    <button class="btn-primary" style="background:var(--red);" onclick="salvaMortalita()">✓ Salva mortalità</button>
+  </div>
+</div>
+
+<!-- MODALE USCITA -->
+<div class="modal" id="modal-uscita">
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div class="modal-title">Registra uscita</div>
+      <button onclick="chiudiModal('uscita')" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
+    </div>
+    <div class="modal-info" id="modal-uscita-info"></div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div>
+          <div class="field-label">DATA</div>
+          <input type="date" id="u-data" class="field-input">
+        </div>
+        <div>
+          <div class="field-label">N° CAPI</div>
+          <input type="number" id="u-capi" class="field-input" placeholder="es. 50" min="0">
+        </div>
+      </div>
+      <div>
+        <div class="field-label">KG TOTALI (opz.)</div>
+        <input type="number" id="u-kg" class="field-input" placeholder="es. 900" step="0.1">
+      </div>
+      <div>
+        <div class="field-label">NOTE (opz.)</div>
+        <input type="text" id="u-note" class="field-input" placeholder="es. destinazione, DDT...">
+      </div>
+    </div>
+    <button class="btn-primary" style="background:var(--accent);" onclick="salvaUscita()">✓ Salva uscita</button>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://wfvqgxkxmgcxchcsljzh.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmdnFneGt4bWdjeGNoY3NsanpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMTE1NTAsImV4cCI6MjA5NTg4NzU1MH0.hIhbdVFeCTDJ9bBBqetef87VTCtocMflYUQ_7kvxJF8';
+const SB_H = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
+const NOME_SOCCIDA = 'FIORENZUOLA';
+
+let soccidaId = null;
+let allLotti = [], allMortalita = [], allUscite = [];
+let _mortLottoId = null, _uscitaLottoId = null;
+
+function fmt(n, dec=0) {
+  if(n == null || isNaN(n)) return '—';
+  return Number(n).toLocaleString('it-IT', {minimumFractionDigits:dec, maximumFractionDigits:dec});
+}
+function fmtDate(d) {
+  if(!d) return '—';
+  const [y,m,g] = d.split('-');
+  return `${g}/${m}/${y}`;
+}
+function fmtDateFull(d) { return fmtDate(d); }
+
+async function sb(table, query='') {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}${query}`, {
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+  });
+  return r.json();
+}
+
+async function loadAll() {
+  const soccide = await sb('soccide', `?nome=eq.${encodeURIComponent(NOME_SOCCIDA)}`);
+  if(!soccide.length) {
+    document.getElementById('content').innerHTML = '<div class="empty">Soccida non trovata.</div>';
+    return;
+  }
+  soccidaId = soccide[0].id;
+
+  [allLotti, allMortalita, allUscite] = await Promise.all([
+    sb('lotti', `?soccida_id=eq.${soccidaId}&attivo=eq.true&order=data_ingresso.asc`),
+    sb('mortalita', `?order=data_evento.desc`),
+    sb('uscite', `?order=data_uscita.desc`),
+  ]);
+
+  const lottiIds = allLotti.map(l => l.id);
+  allMortalita = allMortalita.filter(m => lottiIds.includes(m.lotto_id));
+  allUscite = allUscite.filter(u => lottiIds.includes(u.lotto_id));
+
+  document.getElementById('header-agg').textContent = `${allLotti.length} lotto${allLotti.length !== 1 ? 'i' : ''} attivo${allLotti.length !== 1 ? 'i' : ''} · agg. ${new Date().toLocaleDateString('it-IT')}`;
+  render();
+}
+
+function render() {
+  if(!allLotti.length) {
+    document.getElementById('content').innerHTML = '<div class="empty">Nessun lotto attivo.</div>';
+    return;
+  }
+
+  let html = '';
+
+  allLotti.forEach((lotto, idx) => {
+    const mortLotto = allMortalita.filter(m => m.lotto_id === lotto.id).sort((a,b) => b.data_evento.localeCompare(a.data_evento));
+    const usciteLotto = allUscite.filter(u => u.lotto_id === lotto.id).sort((a,b) => b.data_uscita.localeCompare(a.data_uscita));
+    const totMorti = mortLotto.reduce((s,m) => s+(m.capi_morti||0), 0);
+    const totUsciti = usciteLotto.reduce((s,u) => s+(u.capi||0), 0);
+    const presenti = (lotto.capi_entrati||0) - totMorti - totUsciti;
+
+    html += `
+    ${idx > 0 ? '<div class="divider"></div>' : ''}
+
+    <div class="lotto-header">
+      <div>
+        <div class="lotto-codice">Lotto ${fmtDateFull(lotto.data_ingresso)}</div>
+        <div class="lotto-sub">${lotto.provenienza || ''}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:20px;font-weight:600;color:var(--green);font-family:var(--mono);">${fmt(presenti)}</div>
+        <div style="font-size:10px;color:var(--text2);">presenti</div>
+      </div>
+    </div>
+
+    ${lotto.capannone ? `<div class="capannone-banner">📍 CAPANNONE: ${lotto.capannone.toUpperCase()}</div>` : ''}
+
+    <div class="stat-grid">
+      <div class="stat-box hl">
+        <div class="stat-label">Presenti</div>
+        <div class="stat-val green">${fmt(presenti)} <span class="stat-unit">capi</span></div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Entrati</div>
+        <div class="stat-val">${fmt(lotto.capi_entrati)} <span class="stat-unit">capi</span></div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Lettera DOP</div>
+        <div class="stat-val">${lotto.lettera_dop || '—'}</div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-mort" onclick="apriModal('mort', ${lotto.id})">🔴 Mortalità</button>
+      <button class="btn-uscita" onclick="apriModal('uscita', ${lotto.id})">↗ Uscita</button>
+    </div>
+
+    ${mortLotto.length ? `
+      <div class="section-title" style="margin-top:12px;">Mortalità registrate</div>
+      ${mortLotto.map(m => `
+        <div class="row-item">
+          <div>
+            <div class="row-data">${fmtDate(m.data_evento)}</div>
+            ${m.note ? `<div class="row-info">${m.note}</div>` : ''}
+          </div>
+          <div>
+            <div class="row-capi" style="color:var(--red);">${m.capi_morti || 0}</div>
+            <div class="row-capi-label">capi</div>
+          </div>
+        </div>`).join('')}
+      <div class="row-totale"><span>Totale mortalità</span><span style="color:var(--red);font-weight:500">${totMorti} capi</span></div>
+    ` : ''}
+
+    ${usciteLotto.length ? `
+      <div class="section-title">Uscite registrate</div>
+      ${usciteLotto.map(u => `
+        <div class="row-item">
+          <div>
+            <div class="row-data">${fmtDate(u.data_uscita)}</div>
+            <div class="row-info">${u.kg_totali ? fmt(u.kg_totali,1) + ' kg' : ''}${u.note ? (u.kg_totali ? ' · ' : '') + u.note : ''}</div>
+          </div>
+          <div>
+            <div class="row-capi" style="color:var(--accent);">${u.capi || 0}</div>
+            <div class="row-capi-label">capi</div>
+          </div>
+        </div>`).join('')}
+      <div class="row-totale"><span>Totale uscito</span><span style="color:var(--accent);font-weight:500">${totUsciti} capi</span></div>
+    ` : ''}
+    `;
+  });
+
+  document.getElementById('content').innerHTML = html;
+}
+
+function apriModal(tipo, lottoId) {
+  const lotto = allLotti.find(l => l.id === lottoId);
+  const infoText = `${NOME_SOCCIDA} · Lotto ${fmtDateFull(lotto?.data_ingresso)}${lotto?.capannone ? ' · ' + lotto.capannone.toUpperCase() : ''}`;
+
+  if(tipo === 'mort') {
+    _mortLottoId = lottoId;
+    document.getElementById('modal-mort-info').textContent = infoText;
+    ['m-capi','m-note'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('m-data').value = new Date().toISOString().split('T')[0];
+    document.getElementById('modal-mort').style.display = 'flex';
+  } else {
+    _uscitaLottoId = lottoId;
+    document.getElementById('modal-uscita-info').textContent = infoText;
+    ['u-capi','u-kg','u-note'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('u-data').value = new Date().toISOString().split('T')[0];
+    document.getElementById('modal-uscita').style.display = 'flex';
+  }
+}
+
+function chiudiModal(tipo) {
+  document.getElementById(tipo === 'mort' ? 'modal-mort' : 'modal-uscita').style.display = 'none';
+}
+
+document.getElementById('modal-mort').addEventListener('click', function(e) { if(e.target === this) chiudiModal('mort'); });
+document.getElementById('modal-uscita').addEventListener('click', function(e) { if(e.target === this) chiudiModal('uscita'); });
+
+async function salvaMortalita() {
+  const data = document.getElementById('m-data').value;
+  const capi = parseInt(document.getElementById('m-capi').value) || 0;
+  const note = document.getElementById('m-note').value || null;
+  if(!data || capi <= 0) { showToast('Inserisci data e numero capi morti', false); return; }
+
+  const lotto = allLotti.find(l => l.id === _mortLottoId);
+
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/mortalita`, {
+      method: 'POST', headers: SB_H,
+      body: JSON.stringify({
+        lotto_id: _mortLottoId, soccida: NOME_SOCCIDA, data_evento: data,
+        lettera_dop: lotto?.lettera_dop || null, capi_morti: capi, note
+      })
+    });
+    if(!r.ok) throw new Error(await r.text());
+    const nuova = await r.json();
+    if(Array.isArray(nuova)) allMortalita.push(...nuova); else allMortalita.push(nuova);
+    chiudiModal('mort');
+    showToast(`✓ Mortalità registrata — ${capi} capi il ${fmtDate(data)}`, true);
+    render();
+  } catch(e) {
+    showToast('Errore: ' + e.message, false);
+  }
+}
+
+async function salvaUscita() {
+  const data = document.getElementById('u-data').value;
+  const capi = parseInt(document.getElementById('u-capi').value) || 0;
+  const kg = parseFloat(document.getElementById('u-kg').value) || null;
+  const note = document.getElementById('u-note').value || null;
+  if(!data || capi <= 0) { showToast('Inserisci data e numero capi', false); return; }
+
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/uscite`, {
+      method: 'POST', headers: SB_H,
+      body: JSON.stringify({
+        lotto_id: _uscitaLottoId, soccida_nome: NOME_SOCCIDA, data_uscita: data,
+        capi, kg_totali: kg, note
+      })
+    });
+    if(!r.ok) throw new Error(await r.text());
+    const nuova = await r.json();
+    if(Array.isArray(nuova)) allUscite.push(...nuova); else allUscite.push(nuova);
+    chiudiModal('uscita');
+    showToast(`✓ Uscita registrata — ${capi} capi il ${fmtDate(data)}`, true);
+    render();
+  } catch(e) {
+    showToast('Errore: ' + e.message, false);
+  }
+}
+
+function showToast(msg, ok) {
+  const t = document.getElementById('toast');
+  t.className = 'toast ' + (ok ? 'ok' : 'err');
+  t.textContent = msg;
+  t.style.display = 'block';
+  if(ok) setTimeout(() => t.style.display = 'none', 4000);
+}
+
+loadAll();
+</script>
+</body>
+</html>
