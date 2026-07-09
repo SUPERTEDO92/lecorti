@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Le Corti — Vendite dirette</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Vendite">
+<meta name="theme-color" content="#1A1A18">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --mono: 'SF Mono', 'Fira Code', monospace;
+    --bg: #F5F3EE; --bg2: #EDEAE3;
+    --text: #1A1A18; --text2: #6B6860; --text3: #A0A090;
+    --border: #D8D4CB;
+    --green: #2A7A4B; --green-bg: #EBF5EF;
+    --red: #C0392B; --red-bg: #FDECEA;
+    --accent: #2A6B8A;
+    --radius: 8px; --radius-lg: 12px;
+  }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 40px; }
+
+  .header { background: var(--accent); color: #FFF; padding: 14px 16px 12px; position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 10px; }
+  .back-btn { background: rgba(255,255,255,0.15); border: none; color: #FFF; font-size: 18px; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; flex-shrink: 0; }
+  .header-title { font-size: 18px; font-weight: 700; }
+  .header-sub { font-size: 11px; color: rgba(255,255,255,0.75); margin-top: 2px; font-family: var(--mono); }
+
+  .container { max-width: 480px; margin: 0 auto; padding: 12px; }
+
+  .vd-card { background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  .vd-row { display: flex; align-items: center; gap: 10px; padding: 14px; border-bottom: 0.5px solid var(--border); }
+  .vd-row:last-child { border-bottom: none; }
+  .vd-date { font-size: 20px; font-weight: 700; font-family: var(--mono); }
+  .vd-detail { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .vd-status { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 15px; font-weight: 700; }
+
+  .empty { text-align: center; color: var(--text3); font-size: 13px; padding: 24px 0; }
+  .loading { text-align: center; color: var(--text3); font-size: 13px; padding: 60px 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <button class="back-btn" onclick="location.href='vezzoli.html'">‹</button>
+  <div>
+    <div class="header-title">Vendite dirette</div>
+    <div class="header-sub" id="header-agg">Caricamento…</div>
+  </div>
+</div>
+
+<div class="container">
+  <div id="vendite-content"><div class="loading">Caricamento…</div></div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://wfvqgxkxmgcxchcsljzh.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmdnFneGt4bWdjeGNoY3NsanpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMTE1NTAsImV4cCI6MjA5NTg4NzU1MH0.hIhbdVFeCTDJ9bBBqetef87VTCtocMflYUQ_7kvxJF8';
+const NOME_SOCCIDA = 'VEZZOLI';
+
+let allVenditeDirette = [], allVenditeDiretteCategorie = [];
+
+function fmt(n, dec=0) {
+  if(n == null || isNaN(n)) return '—';
+  return Number(n).toLocaleString('it-IT', {minimumFractionDigits:dec, maximumFractionDigits:dec});
+}
+function fmtDate(d) {
+  if(!d) return '—';
+  const [y,m,g] = d.split('-');
+  return `${g}/${m}/${y}`;
+}
+
+async function sb(table, query='') {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}${query}`, {
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+  });
+  return r.json();
+}
+
+async function loadAll() {
+  const soccide = await sb('soccide', `?nome=eq.${encodeURIComponent(NOME_SOCCIDA)}`);
+  if(!soccide.length) {
+    document.getElementById('vendite-content').innerHTML = '<div class="empty">Soccida non trovata.</div>';
+    return;
+  }
+  const soccidaId = soccide[0].id;
+
+  allVenditeDirette = await sb('vendite_dirette', `?soccida_id=eq.${soccidaId}&order=data_vendita.desc`);
+  const venditaIds = allVenditeDirette.map(v => v.id);
+  allVenditeDiretteCategorie = venditaIds.length
+    ? await sb('vendite_dirette_categorie', `?vendita_id=in.(${venditaIds.join(',')})`)
+    : [];
+
+  document.getElementById('header-agg').textContent = `${allVenditeDirette.length} vendit${allVenditeDirette.length !== 1 ? 'e' : 'a'} · agg. ${new Date().toLocaleDateString('it-IT')}`;
+  render();
+}
+
+function render() {
+  const cont = document.getElementById('vendite-content');
+  if(!allVenditeDirette.length) {
+    cont.innerHTML = '<div class="vd-card"><div class="empty">Nessuna vendita diretta registrata.</div></div>';
+    return;
+  }
+  cont.innerHTML = `<div class="vd-card">` + allVenditeDirette.map(v => {
+    const cats = allVenditeDiretteCategorie.filter(c => c.vendita_id === v.id);
+    const catHtml = cats.length ? `<div class="vd-detail" style="margin-top:3px;">${cats.map(c => `${c.categoria}: ${fmt(c.capi)} capi${c.peso_kg ? ' · ' + fmt(c.peso_kg,1) + ' kg' : ''}`).join(' · ')}</div>` : '';
+    return `
+    <div class="vd-row">
+      <div style="flex:1;">
+        <div class="vd-date">${fmtDate(v.data_vendita)}</div>
+        <div class="vd-detail">${fmt(v.capi)} capi${v.peso_kg ? ' · ' + fmt(v.peso_kg,1) + ' kg' : ''}</div>
+        <div class="vd-detail">Importo: ${v.prezzo != null ? '€ ' + fmt(v.prezzo,2) : '—'}${v.prezzo_kg != null ? ' · € ' + fmt(v.prezzo_kg,3) + '/kg' : ''}</div>
+        ${catHtml}
+      </div>
+      <div class="vd-status" style="background:${v.pagato ? 'var(--green)' : 'var(--red-bg)'};border:0.5px solid ${v.pagato ? 'var(--green)' : 'var(--red)'};">
+        <span style="color:${v.pagato ? '#FFF' : 'var(--red)'};">${v.pagato ? '✓' : '✕'}</span>
+      </div>
+    </div>
+  `;
+  }).join('') + `</div>`;
+}
+
+loadAll();
+</script>
+</body>
+</html>

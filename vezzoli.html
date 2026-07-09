@@ -63,6 +63,11 @@
   .mort-capi { font-size: 22px; font-weight: 600; color: var(--red); font-family: var(--mono); }
   .mort-capi-label { font-size: 10px; color: var(--text2); text-align: right; }
   .mort-totale { display: flex; justify-content: space-between; padding: 6px 10px; font-size: 11px; font-family: var(--mono); color: var(--text2); }
+  .mort-scroll { max-height: 38vh; overflow-y: auto; -webkit-overflow-scrolling: touch; margin-bottom: 4px; }
+
+  /* Banner Vendite dirette */
+  .vd-banner { display: block; width: 100%; background: var(--accent); color: #FFF; border: none; border-radius: var(--radius-lg); padding: 14px 16px; margin-bottom: 12px; text-align: left; cursor: pointer; text-decoration: none; }
+  .vd-banner-title { font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: space-between; }
 
   /* Vendite dirette (sola lettura) */
   .vd-card { background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
@@ -100,11 +105,12 @@
 <div class="container">
   <div id="toast" class="toast"></div>
 
+  <a href="vezzoli-vendite.html" class="vd-banner">
+    <div class="vd-banner-title"><span>📋 Vendite dirette</span><span>›</span></div>
+  </a>
+
   <div class="section-title">Lotti attivi</div>
   <div id="content"><div class="loading">Caricamento dati…</div></div>
-
-  <div class="section-title">Vendite dirette</div>
-  <div id="vendite-content"><div class="loading">Caricamento…</div></div>
 </div>
 
 <!-- MODALE MORTALITÀ -->
@@ -146,7 +152,7 @@ const SB_H = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`
 const NOME_SOCCIDA = 'VEZZOLI';
 
 let soccidaId = null;
-let allLotti = [], allMortalita = [], allVenditeDirette = [], allVenditeDiretteCategorie = [];
+let allLotti = [], allMortalita = [];
 let _mortLottoId = null;
 
 function fmt(n, dec=0) {
@@ -180,22 +186,16 @@ async function loadAll() {
   }
   soccidaId = soccide[0].id;
 
-  [allLotti, allMortalita, allVenditeDirette] = await Promise.all([
+  [allLotti, allMortalita] = await Promise.all([
     sb('lotti', `?soccida_id=eq.${soccidaId}&attivo=eq.true&order=data_ingresso.asc`),
     sb('mortalita', `?order=data_evento.desc`),
-    sb('vendite_dirette', `?soccida_id=eq.${soccidaId}&order=data_vendita.desc`),
   ]);
-  const venditaIds = allVenditeDirette.map(v => v.id);
-  allVenditeDiretteCategorie = venditaIds.length
-    ? await sb('vendite_dirette_categorie', `?vendita_id=in.(${venditaIds.join(',')})`)
-    : [];
 
   const lottiIds = allLotti.map(l => l.id);
   allMortalita = allMortalita.filter(m => lottiIds.includes(m.lotto_id));
 
   document.getElementById('header-agg').textContent = `${allLotti.length} lotto${allLotti.length !== 1 ? 'i' : ''} attivo${allLotti.length !== 1 ? 'i' : ''} · agg. ${new Date().toLocaleDateString('it-IT')}`;
   render();
-  renderVendite();
 }
 
 function render() {
@@ -233,9 +233,10 @@ function render() {
 
     <!-- Stat grid (nessun valore economico) -->
     <div class="stat-grid">
-      <div class="stat-box hl">
-        <div class="stat-label">Presenti</div>
-        <div class="stat-val green">${fmt(presenti)} <span class="stat-unit">capi</span></div>
+      <div class="stat-box hl" style="background:${totMorti>0 ? 'var(--red-bg)' : 'var(--green-bg)'};border-color:${totMorti>0 ? '#F0BBBB' : '#B8DECA'};">
+        <div class="stat-label">Morti</div>
+        <div class="stat-val" style="color:${totMorti>0 ? 'var(--red)' : 'var(--green)'};">${fmt(totMorti)} <span class="stat-unit">capi</span></div>
+        ${lotto.capi_entrati ? `<div style="font-size:11px;font-family:var(--mono);color:${totMorti>0 ? 'var(--red)' : 'var(--text2)'};margin-top:1px;">${fmt(totMorti/lotto.capi_entrati*100,2)}%</div>` : ''}
       </div>
       <div class="stat-box">
         <div class="stat-label">Giorni stalla</div>
@@ -249,7 +250,9 @@ function render() {
 
     <button class="btn-mort" onclick="apriModal(${lotto.id})">🔴 Registra mortalità</button>
 
-    ${mortLotto.length ? mortLotto.map(m => `
+    ${mortLotto.length ? `
+    <div class="mort-scroll">
+      ${mortLotto.map(m => `
       <div class="mort-row">
         <div>
           <div class="mort-data">${fmtDate(m.data_evento)}</div>
@@ -259,39 +262,16 @@ function render() {
           <div class="mort-capi">${m.capi_morti || 0}</div>
           <div class="mort-capi-label">capi</div>
         </div>
-      </div>`).join('') + `
-      <div class="mort-totale">
-        <span>Totale mortalità</span>
-        <span style="color:var(--red);font-weight:500">${totMorti} capi${lotto.capi_entrati ? ` (${fmt(totMorti/lotto.capi_entrati*100,2)}%)` : ''}</span>
-      </div>` : '<div class="empty">Nessuna mortalità registrata.</div>'}`;
+      </div>`).join('')}
+    </div>
+    <div class="mort-totale">
+      <span>Totale mortalità</span>
+      <span style="color:var(--red);font-weight:500">${totMorti} capi${lotto.capi_entrati ? ` (${fmt(totMorti/lotto.capi_entrati*100,2)}%)` : ''}</span>
+    </div>
+    ` : '<div class="empty">Nessuna mortalità registrata.</div>'}`;
   });
 
   document.getElementById('content').innerHTML = html;
-}
-
-function renderVendite() {
-  const cont = document.getElementById('vendite-content');
-  if(!allVenditeDirette.length) {
-    cont.innerHTML = '<div class="vd-card"><div class="empty">Nessuna vendita diretta registrata.</div></div>';
-    return;
-  }
-  cont.innerHTML = `<div class="vd-card">` + allVenditeDirette.map(v => {
-    const cats = allVenditeDiretteCategorie.filter(c => c.vendita_id === v.id);
-    const catHtml = cats.length ? `<div class="vd-detail" style="margin-top:3px;">${cats.map(c => `${c.categoria}: ${fmt(c.capi)} capi${c.peso_kg ? ' · ' + fmt(c.peso_kg,1) + ' kg' : ''}`).join(' · ')}</div>` : '';
-    return `
-    <div class="vd-row">
-      <div style="flex:1;">
-        <div class="vd-date">${fmtDate(v.data_vendita)}</div>
-        <div class="vd-detail">${fmt(v.capi)} capi${v.peso_kg ? ' · ' + fmt(v.peso_kg,1) + ' kg' : ''}</div>
-        <div class="vd-detail">Importo: ${v.prezzo != null ? '€ ' + fmt(v.prezzo,2) : '—'}${v.prezzo_kg != null ? ' · € ' + fmt(v.prezzo_kg,3) + '/kg' : ''}</div>
-        ${catHtml}
-      </div>
-      <div class="vd-status" style="background:${v.pagato ? 'var(--green)' : 'var(--red-bg)'};border:0.5px solid ${v.pagato ? 'var(--green)' : 'var(--red)'};">
-        <span style="color:${v.pagato ? '#FFF' : 'var(--red)'};">${v.pagato ? '✓' : '✕'}</span>
-      </div>
-    </div>
-  `;
-  }).join('') + `</div>`;
 }
 
 function apriModal(lottoId) {
