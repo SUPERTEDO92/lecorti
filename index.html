@@ -1719,6 +1719,7 @@ function renderDetail(socId) {
       </button>
     </div>`;
     if(mortLotto.length) {
+      html += `<div style="max-height:38vh;overflow-y:auto;-webkit-overflow-scrolling:touch;margin-bottom:6px;">`;
       mortLotto.forEach(m => {
         html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--bg2);border-radius:var(--radius);margin-bottom:4px;border:0.5px solid var(--border);">
           <div>
@@ -1731,6 +1732,7 @@ function renderDetail(socId) {
           </div>
         </div>`;
       });
+      html += `</div>`;
       const totMorti = mortLotto.reduce((s,m) => s+(m.capi_morti||0), 0);
       html += `<div style="display:flex;justify-content:space-between;padding:6px 10px;font-size:11px;font-family:var(--mono);color:var(--text2);">
         <span>Totale mortalità lotto</span><span style="color:var(--red);font-weight:500;">${totMorti} capi</span>

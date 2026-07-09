@@ -277,7 +277,7 @@ function render() {
     <!-- TAB MORTALITÀ -->
     <div class="tab-content visible" id="tab-mort-${lotto.id}">
       <button class="btn-ins" onclick="apriModal(${lotto.id})">+ Registra mortalità</button>
-      ${mortLotto.length ? mortLotto.map(m => `
+      ${mortLotto.length ? `<div style="max-height:38vh;overflow-y:auto;-webkit-overflow-scrolling:touch;margin-bottom:6px;">` + mortLotto.map(m => `
         <div class="mort-row">
           <div>
             <div class="mort-data">${fmtDate(m.data_evento)}</div>
@@ -287,7 +287,7 @@ function render() {
             <div class="mort-capi">${m.capi_morti || 0}</div>
             <div class="mort-capi-label">capi</div>
           </div>
-        </div>`).join('') + `
+        </div>`).join('') + `</div>
         <div class="mort-totale">
           <span>Totale mortalità</span>
           <span style="color:var(--red);font-weight:500">${totMorti} capi</span>
