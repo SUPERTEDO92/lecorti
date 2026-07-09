@@ -58,7 +58,7 @@
     padding: 8px 10px; background: var(--bg2); border-radius: var(--radius);
     margin-bottom: 4px; border: 0.5px solid var(--border);
   }
-  .mort-data { font-size: 14px; font-weight: 600; }
+  .mort-data { font-size: 17px; font-weight: 700; font-family: var(--mono); }
   .mort-info { font-size: 11px; color: var(--text2); margin-top: 2px; }
   .mort-capi { font-size: 22px; font-weight: 600; color: var(--red); font-family: var(--mono); }
   .mort-capi-label { font-size: 10px; color: var(--text2); text-align: right; }
@@ -68,7 +68,7 @@
   .vd-card { background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
   .vd-row { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 0.5px solid var(--border); }
   .vd-row:last-child { border-bottom: none; }
-  .vd-date { font-size: 16px; font-weight: 600; font-family: var(--mono); }
+  .vd-date { font-size: 20px; font-weight: 700; font-family: var(--mono); }
   .vd-detail { font-size: 12px; color: var(--text2); margin-top: 2px; }
   .vd-status { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 15px; font-weight: 700; }
 
@@ -223,7 +223,7 @@ function render() {
     <div class="lotto-header">
       <div>
         <div class="lotto-codice">Lotto ${lotto.codice}</div>
-        <div class="lotto-sub">${lotto.provenienza || ''} · ingresso ${fmtDateFull(lotto.data_ingresso)}${lotto.lettera_dop ? ' · ' + lotto.lettera_dop : ''}</div>
+        <div class="lotto-sub">${lotto.provenienza || ''} · ingresso ${fmtDate(lotto.data_ingresso)}${lotto.lettera_dop ? ' · ' + lotto.lettera_dop : ''}</div>
       </div>
       <div style="text-align:right">
         <div style="font-size:18px;font-weight:500;color:var(--green);font-family:var(--mono)">${fmt(presenti)}</div>
@@ -262,7 +262,7 @@ function render() {
       </div>`).join('') + `
       <div class="mort-totale">
         <span>Totale mortalità</span>
-        <span style="color:var(--red);font-weight:500">${totMorti} capi</span>
+        <span style="color:var(--red);font-weight:500">${totMorti} capi${lotto.capi_entrati ? ` (${fmt(totMorti/lotto.capi_entrati*100,2)}%)` : ''}</span>
       </div>` : '<div class="empty">Nessuna mortalità registrata.</div>'}`;
   });
 
@@ -281,7 +281,7 @@ function renderVendite() {
     return `
     <div class="vd-row">
       <div style="flex:1;">
-        <div class="vd-date">${fmtDateFull(v.data_vendita)}</div>
+        <div class="vd-date">${fmtDate(v.data_vendita)}</div>
         <div class="vd-detail">${fmt(v.capi)} capi${v.peso_kg ? ' · ' + fmt(v.peso_kg,1) + ' kg' : ''}</div>
         <div class="vd-detail">Importo: ${v.prezzo != null ? '€ ' + fmt(v.prezzo,2) : '—'}${v.prezzo_kg != null ? ' · € ' + fmt(v.prezzo_kg,3) + '/kg' : ''}</div>
         ${catHtml}
