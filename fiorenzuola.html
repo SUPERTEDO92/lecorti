@@ -109,7 +109,13 @@
       <div class="modal-title">Registra mortalità</div>
       <button onclick="chiudiModal('mort')" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
     </div>
-    <div class="modal-info" id="modal-mort-info"></div>
+    <div style="margin:12px 0;">
+      <div class="field-label">CAPANNONE</div>
+      <select id="m-capannone" class="field-input" style="font-weight:700;font-size:16px;text-transform:uppercase;letter-spacing:.05em;font-family:var(--mono);">
+        <option value="cap 2">CAP 2</option>
+        <option value="cap 4">CAP 4</option>
+      </select>
+    </div>
     <div style="display:flex;flex-direction:column;gap:10px;">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
         <div>
@@ -268,7 +274,7 @@ function render() {
       ${mortLotto.map(m => `
         <div class="row-item">
           <div>
-            <div class="row-data">${fmtDate(m.data_evento)}</div>
+            <div class="row-data">${fmtDate(m.data_evento)}${m.capannone ? ` · <strong style="text-transform:uppercase;">${m.capannone}</strong>` : ''}</div>
             ${m.note ? `<div class="row-info">${m.note}</div>` : ''}
           </div>
           <div>
@@ -302,16 +308,16 @@ function render() {
 
 function apriModal(tipo, lottoId) {
   const lotto = allLotti.find(l => l.id === lottoId);
-  const infoText = `${NOME_SOCCIDA} · Lotto ${fmtDateFull(lotto?.data_ingresso)}${lotto?.capannone ? ' · ' + lotto.capannone.toUpperCase() : ''}`;
 
   if(tipo === 'mort') {
     _mortLottoId = lottoId;
-    document.getElementById('modal-mort-info').textContent = infoText;
+    document.getElementById('m-capannone').value = lotto?.capannone || 'cap 2';
     ['m-capi','m-note'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('m-data').value = new Date().toISOString().split('T')[0];
     document.getElementById('modal-mort').style.display = 'flex';
   } else {
     _uscitaLottoId = lottoId;
+    const infoText = `${NOME_SOCCIDA} · Lotto ${fmtDateFull(lotto?.data_ingresso)}${lotto?.capannone ? ' · ' + lotto.capannone.toUpperCase() : ''}`;
     document.getElementById('modal-uscita-info').textContent = infoText;
     ['u-capi','u-kg','u-note'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('u-data').value = new Date().toISOString().split('T')[0];
@@ -330,6 +336,7 @@ async function salvaMortalita() {
   const data = document.getElementById('m-data').value;
   const capi = parseInt(document.getElementById('m-capi').value) || 0;
   const note = document.getElementById('m-note').value || null;
+  const capannone = document.getElementById('m-capannone').value;
   if(!data || capi <= 0) { showToast('Inserisci data e numero capi morti', false); return; }
 
   const lotto = allLotti.find(l => l.id === _mortLottoId);
@@ -339,7 +346,7 @@ async function salvaMortalita() {
       method: 'POST', headers: SB_H,
       body: JSON.stringify({
         lotto_id: _mortLottoId, soccida: NOME_SOCCIDA, data_evento: data,
-        lettera_dop: lotto?.lettera_dop || null, capi_morti: capi, note
+        lettera_dop: lotto?.lettera_dop || null, capi_morti: capi, note, capannone
       })
     });
     if(!r.ok) throw new Error(await r.text());
