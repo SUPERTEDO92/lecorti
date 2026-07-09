@@ -374,7 +374,7 @@
     <span class="topbar-logo">LE CORTI</span>
     <span class="topbar-date" id="today-date"></span>
   </div>
-  <div class="topbar-nav">
+  <div class="topbar-nav" id="topbar-nav">
     <button class="nav-btn active" onclick="showPage('home')">Soccide</button>
     <button class="nav-btn" onclick="showPage('storico')">Storico</button>
     <button class="nav-btn" onclick="showPage('trasferimenti')">Trasferimenti</button>
@@ -1029,6 +1029,7 @@ function showPage(name, lottoId) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   currentPage = name;
   document.getElementById(`page-${name}`).classList.add('visible');
+  document.getElementById('topbar-nav').style.display = (name === 'home') ? 'flex' : 'none';
   const navMap = {home:'home',storico:'storico',trasferimenti:'trasferimenti',archivio:'archivio',inserimento:'inserimento',calcolo:'calcolo'};
   const navName = navMap[name] || name;
   document.querySelectorAll('.nav-btn').forEach(b => {
