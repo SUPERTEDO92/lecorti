@@ -222,7 +222,7 @@ function render() {
     <!-- Header lotto -->
     <div class="lotto-header">
       <div>
-        <div class="lotto-codice">Lotto ${lotto.codice}</div>
+        <div class="lotto-codice">Lotto ${lotto.codice} <span style="color:var(--text2);font-weight:500;">· ${fmt(lotto.capi_entrati)} scaricati</span></div>
         <div class="lotto-sub">${lotto.provenienza || ''} · ingresso ${fmtDate(lotto.data_ingresso)}${lotto.lettera_dop ? ' · ' + lotto.lettera_dop : ''}</div>
       </div>
       <div style="text-align:right">
