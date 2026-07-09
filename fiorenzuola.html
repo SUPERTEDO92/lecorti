@@ -92,13 +92,18 @@
 <body>
 
 <div class="header">
-  <div class="header-title">Le Corti — Fiorenzuola</div>
-  <div class="header-sub" id="header-agg">Caricamento…</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;">
+    <div>
+      <div class="header-title" id="header-title">Le Corti — Fiorenzuola</div>
+      <div class="header-sub" id="header-agg">Caricamento…</div>
+    </div>
+    <button id="btn-traduci" onclick="toggleLang()" style="padding:8px 14px;background:#FFF;color:var(--text);border:none;border-radius:var(--radius);font-size:12px;font-family:var(--font);font-weight:600;cursor:pointer;">Traduci</button>
+  </div>
 </div>
 
 <div class="container">
   <div id="toast" class="toast"></div>
-  <div class="section-title">Lotti attivi</div>
+  <div class="section-title" data-t="lottiAttivi">Lotti attivi</div>
   <div id="content"><div class="loading">Caricamento dati…</div></div>
 </div>
 
@@ -106,33 +111,33 @@
 <div class="modal" id="modal-mort">
   <div class="modal-box">
     <div style="display:flex;justify-content:space-between;align-items:center;">
-      <div class="modal-title">Registra mortalità</div>
+      <div class="modal-title" data-t="modalMortTitle">Registra mortalità</div>
       <button onclick="chiudiModal('mort')" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
     </div>
-    <div style="margin:12px 0;">
-      <div class="field-label">CAPANNONE</div>
-      <select id="m-capannone" class="field-input" style="font-weight:700;font-size:16px;text-transform:uppercase;letter-spacing:.05em;font-family:var(--mono);">
-        <option value="cap 2">CAP 2</option>
-        <option value="cap 4">CAP 4</option>
-      </select>
-    </div>
+    <div class="modal-info" id="modal-mort-info"></div>
     <div style="display:flex;flex-direction:column;gap:10px;">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
         <div>
-          <div class="field-label">DATA</div>
+          <div class="field-label" data-t="fieldData">DATA</div>
           <input type="date" id="m-data" class="field-input">
         </div>
         <div>
-          <div class="field-label">N° CAPI MORTI</div>
+          <div class="field-label" data-t="fieldCapiMorti">N° CAPI MORTI</div>
           <input type="number" id="m-capi" class="field-input" placeholder="es. 2" min="0">
         </div>
       </div>
       <div>
-        <div class="field-label">NOTE (opz.)</div>
-        <input type="text" id="m-note" class="field-input" placeholder="es. causa, reparto...">
+        <div class="field-label" data-t="fieldNote">CAUSA</div>
+        <select id="m-note" class="field-input">
+          <option value="" data-t="optDefault">— seleziona causa —</option>
+          <option value="Scarto" data-t="optScarto">Scarto</option>
+          <option value="Abbattuto" data-t="optAbbattuto">Abbattuto</option>
+          <option value="Streptococco" data-t="optStreptococco">Streptococco</option>
+          <option value="Diarrea" data-t="optDiarrea">Diarrea</option>
+        </select>
       </div>
     </div>
-    <button class="btn-primary" style="background:var(--red);" onclick="salvaMortalita()">✓ Salva mortalità</button>
+    <button class="btn-primary" style="background:var(--red);" onclick="salvaMortalita()" data-t="btnSalvaMort">✓ Salva mortalità</button>
   </div>
 </div>
 
@@ -140,31 +145,31 @@
 <div class="modal" id="modal-uscita">
   <div class="modal-box">
     <div style="display:flex;justify-content:space-between;align-items:center;">
-      <div class="modal-title">Registra uscita</div>
+      <div class="modal-title" data-t="modalUscitaTitle">Registra uscita</div>
       <button onclick="chiudiModal('uscita')" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
     </div>
     <div class="modal-info" id="modal-uscita-info"></div>
     <div style="display:flex;flex-direction:column;gap:10px;">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
         <div>
-          <div class="field-label">DATA</div>
+          <div class="field-label" data-t="fieldDataU">DATA</div>
           <input type="date" id="u-data" class="field-input">
         </div>
         <div>
-          <div class="field-label">N° CAPI</div>
+          <div class="field-label" data-t="fieldCapi">N° CAPI</div>
           <input type="number" id="u-capi" class="field-input" placeholder="es. 50" min="0">
         </div>
       </div>
       <div>
-        <div class="field-label">KG TOTALI (opz.)</div>
+        <div class="field-label" data-t="fieldKg">KG TOTALI (opz.)</div>
         <input type="number" id="u-kg" class="field-input" placeholder="es. 900" step="0.1">
       </div>
       <div>
-        <div class="field-label">NOTE (opz.)</div>
+        <div class="field-label" data-t="fieldNoteUscita">NOTE (opz.)</div>
         <input type="text" id="u-note" class="field-input" placeholder="es. destinazione, DDT...">
       </div>
     </div>
-    <button class="btn-primary" style="background:var(--accent);" onclick="salvaUscita()">✓ Salva uscita</button>
+    <button class="btn-primary" style="background:var(--accent);" onclick="salvaUscita()" data-t="btnSalvaUscita">✓ Salva uscita</button>
   </div>
 </div>
 
@@ -173,6 +178,95 @@ const SUPABASE_URL = 'https://wfvqgxkxmgcxchcsljzh.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmdnFneGt4bWdjeGNoY3NsanpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMTE1NTAsImV4cCI6MjA5NTg4NzU1MH0.hIhbdVFeCTDJ9bBBqetef87VTCtocMflYUQ_7kvxJF8';
 const SB_H = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
 const NOME_SOCCIDA = 'FIORENZUOLA';
+
+// ── TRADUZIONE IT / PUNJABI ──
+let lang = 'it';
+const T = {
+  it: {
+    headerTitle: 'Le Corti — Fiorenzuola',
+    translateBtn: 'Traduci',
+    lottiAttivi: 'Lotti attivi',
+    lotto: 'Lotto',
+    presenti: 'presenti',
+    capannoneWord: 'CAPANNONE',
+    statPresenti: 'Presenti',
+    statEntrati: 'Entrati',
+    statLettera: 'Lettera DOP',
+    capiUnit: 'capi',
+    btnMortalita: '🔴 Mortalità',
+    btnUscita: '↗ Uscita',
+    mortRegistrate: 'Mortalità registrate',
+    usciteRegistrate: 'Uscite registrate',
+    totMortalita: 'Totale mortalità',
+    totUscito: 'Totale uscito',
+    modalMortTitle: 'Registra mortalità',
+    modalUscitaTitle: 'Registra uscita',
+    fieldCapannone: 'CAPANNONE',
+    fieldData: 'DATA',
+    fieldDataU: 'DATA',
+    fieldCapiMorti: 'N° CAPI MORTI',
+    fieldNote: 'CAUSA',
+    fieldCapi: 'N° CAPI',
+    fieldKg: 'KG TOTALI (opz.)',
+    fieldNoteUscita: 'NOTE (opz.)',
+    btnSalvaMort: '✓ Salva mortalità',
+    btnSalvaUscita: '✓ Salva uscita',
+    optDefault: '— seleziona causa —',
+    optScarto: 'Scarto',
+    optAbbattuto: 'Abbattuto',
+    optStreptococco: 'Streptococco',
+    optDiarrea: 'Diarrea',
+    nessunLotto: 'Nessun lotto attivo.',
+  },
+  pa: {
+    headerTitle: 'ਲੇ ਕੋਰਤੀ — ਫਿਓਰੈਂਜ਼ੂਓਲਾ',
+    translateBtn: 'Italiano',
+    lottiAttivi: 'ਸਰਗਰਮ ਲਾਟ',
+    lotto: 'ਲਾਟ',
+    presenti: 'ਮੌਜੂਦ',
+    capannoneWord: 'ਸ਼ੈੱਡ',
+    statPresenti: 'ਮੌਜੂਦ',
+    statEntrati: 'ਦਾਖਲ ਹੋਏ',
+    statLettera: 'DOP ਅੱਖਰ',
+    capiUnit: 'ਜਾਨਵਰ',
+    btnMortalita: '🔴 ਮੌਤ',
+    btnUscita: '↗ ਬਾਹਰ',
+    mortRegistrate: 'ਦਰਜ ਮੌਤਾਂ',
+    usciteRegistrate: 'ਦਰਜ ਨਿਕਾਸ',
+    totMortalita: 'ਕੁੱਲ ਮੌਤਾਂ',
+    totUscito: 'ਕੁੱਲ ਬਾਹਰ',
+    modalMortTitle: 'ਮੌਤ ਦਰਜ ਕਰੋ',
+    modalUscitaTitle: 'ਬਾਹਰ ਜਾਣਾ ਦਰਜ ਕਰੋ',
+    fieldCapannone: 'ਸ਼ੈੱਡ',
+    fieldData: 'ਤਾਰੀਖ',
+    fieldDataU: 'ਤਾਰੀਖ',
+    fieldCapiMorti: 'ਮਰੇ ਜਾਨਵਰਾਂ ਦੀ ਗਿਣਤੀ',
+    fieldNote: 'ਕਾਰਨ',
+    fieldCapi: 'ਜਾਨਵਰਾਂ ਦੀ ਗਿਣਤੀ',
+    fieldKg: 'ਕੁੱਲ ਕਿਲੋ (ਚੋਣਵਾਂ)',
+    fieldNoteUscita: 'ਨੋਟ (ਚੋਣਵਾਂ)',
+    btnSalvaMort: '✓ ਸੰਭਾਲੋ',
+    btnSalvaUscita: '✓ ਸੰਭਾਲੋ',
+    optDefault: '— ਕਾਰਨ ਚੁਣੋ —',
+    optScarto: 'ਰੱਦ',
+    optAbbattuto: 'ਕਤਲ ਕੀਤਾ',
+    optStreptococco: 'ਸਟ੍ਰੈਪਟੋਕੋਕਸ',
+    optDiarrea: 'ਦਸਤ',
+    nessunLotto: 'ਕੋਈ ਸਰਗਰਮ ਲਾਟ ਨਹੀਂ।',
+  }
+};
+function t(key) { return T[lang][key] || T.it[key] || key; }
+
+function toggleLang() {
+  lang = (lang === 'it') ? 'pa' : 'it';
+  document.getElementById('header-title').textContent = t('headerTitle');
+  document.getElementById('btn-traduci').textContent = t('translateBtn');
+  document.querySelectorAll('[data-t]').forEach(el => {
+    const key = el.getAttribute('data-t');
+    el.textContent = t(key);
+  });
+  render();
+}
 
 let soccidaId = null;
 let allLotti = [], allMortalita = [], allUscite = [];
@@ -218,9 +312,15 @@ async function loadAll() {
   render();
 }
 
+function noteDisplay(note) {
+  if(!note) return '';
+  const map = { 'Scarto':'optScarto', 'Abbattuto':'optAbbattuto', 'Streptococco':'optStreptococco', 'Diarrea':'optDiarrea' };
+  return map[note] ? t(map[note]) : note;
+}
+
 function render() {
   if(!allLotti.length) {
-    document.getElementById('content').innerHTML = '<div class="empty">Nessun lotto attivo.</div>';
+    document.getElementById('content').innerHTML = `<div class="empty">${t('nessunLotto')}</div>`;
     return;
   }
 
@@ -238,55 +338,55 @@ function render() {
 
     <div class="lotto-header">
       <div>
-        <div class="lotto-codice">Lotto ${fmtDateFull(lotto.data_ingresso)}</div>
+        <div class="lotto-codice">${t('lotto')} ${fmtDateFull(lotto.data_ingresso)}</div>
         <div class="lotto-sub">${lotto.provenienza || ''}</div>
       </div>
       <div style="text-align:right;">
         <div style="font-size:20px;font-weight:600;color:var(--green);font-family:var(--mono);">${fmt(presenti)}</div>
-        <div style="font-size:10px;color:var(--text2);">presenti</div>
+        <div style="font-size:10px;color:var(--text2);">${t('presenti')}</div>
       </div>
     </div>
 
-    ${lotto.capannone ? `<div class="capannone-banner">📍 CAPANNONE: ${lotto.capannone.toUpperCase()}</div>` : ''}
+    ${lotto.capannone ? `<div class="capannone-banner">📍 ${t('capannoneWord')}: ${lotto.capannone.toUpperCase()}</div>` : ''}
 
     <div class="stat-grid">
       <div class="stat-box hl">
-        <div class="stat-label">Presenti</div>
-        <div class="stat-val green">${fmt(presenti)} <span class="stat-unit">capi</span></div>
+        <div class="stat-label">${t('statPresenti')}</div>
+        <div class="stat-val green">${fmt(presenti)} <span class="stat-unit">${t('capiUnit')}</span></div>
       </div>
       <div class="stat-box">
-        <div class="stat-label">Entrati</div>
-        <div class="stat-val">${fmt(lotto.capi_entrati)} <span class="stat-unit">capi</span></div>
+        <div class="stat-label">${t('statEntrati')}</div>
+        <div class="stat-val">${fmt(lotto.capi_entrati)} <span class="stat-unit">${t('capiUnit')}</span></div>
       </div>
       <div class="stat-box">
-        <div class="stat-label">Lettera DOP</div>
+        <div class="stat-label">${t('statLettera')}</div>
         <div class="stat-val">${lotto.lettera_dop || '—'}</div>
       </div>
     </div>
 
     <div class="btn-row">
-      <button class="btn-mort" onclick="apriModal('mort', ${lotto.id})">🔴 Mortalità</button>
-      <button class="btn-uscita" onclick="apriModal('uscita', ${lotto.id})">↗ Uscita</button>
+      <button class="btn-mort" onclick="apriModal('mort', ${lotto.id})">${t('btnMortalita')}</button>
+      <button class="btn-uscita" onclick="apriModal('uscita', ${lotto.id})">${t('btnUscita')}</button>
     </div>
 
     ${mortLotto.length ? `
-      <div class="section-title" style="margin-top:12px;">Mortalità registrate</div>
+      <div class="section-title" style="margin-top:12px;">${t('mortRegistrate')}</div>
       ${mortLotto.map(m => `
         <div class="row-item">
           <div>
             <div class="row-data">${fmtDate(m.data_evento)}${m.capannone ? ` · <strong style="text-transform:uppercase;">${m.capannone}</strong>` : ''}</div>
-            ${m.note ? `<div class="row-info">${m.note}</div>` : ''}
+            ${m.note ? `<div class="row-info">${noteDisplay(m.note)}</div>` : ''}
           </div>
           <div>
             <div class="row-capi" style="color:var(--red);">${m.capi_morti || 0}</div>
-            <div class="row-capi-label">capi</div>
+            <div class="row-capi-label">${t('capiUnit')}</div>
           </div>
         </div>`).join('')}
-      <div class="row-totale"><span>Totale mortalità</span><span style="color:var(--red);font-weight:500">${totMorti} capi</span></div>
+      <div class="row-totale"><span>${t('totMortalita')}</span><span style="color:var(--red);font-weight:500">${totMorti} ${t('capiUnit')}</span></div>
     ` : ''}
 
     ${usciteLotto.length ? `
-      <div class="section-title">Uscite registrate</div>
+      <div class="section-title">${t('usciteRegistrate')}</div>
       ${usciteLotto.map(u => `
         <div class="row-item">
           <div>
@@ -295,10 +395,10 @@ function render() {
           </div>
           <div>
             <div class="row-capi" style="color:var(--accent);">${u.capi || 0}</div>
-            <div class="row-capi-label">capi</div>
+            <div class="row-capi-label">${t('capiUnit')}</div>
           </div>
         </div>`).join('')}
-      <div class="row-totale"><span>Totale uscito</span><span style="color:var(--accent);font-weight:500">${totUsciti} capi</span></div>
+      <div class="row-totale"><span>${t('totUscito')}</span><span style="color:var(--accent);font-weight:500">${totUsciti} ${t('capiUnit')}</span></div>
     ` : ''}
     `;
   });
@@ -308,16 +408,16 @@ function render() {
 
 function apriModal(tipo, lottoId) {
   const lotto = allLotti.find(l => l.id === lottoId);
+  const infoText = `${NOME_SOCCIDA} · Lotto ${fmtDateFull(lotto?.data_ingresso)}${lotto?.capannone ? ' · ' + lotto.capannone.toUpperCase() : ''}`;
 
   if(tipo === 'mort') {
     _mortLottoId = lottoId;
-    document.getElementById('m-capannone').value = lotto?.capannone || 'cap 2';
+    document.getElementById('modal-mort-info').textContent = infoText;
     ['m-capi','m-note'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('m-data').value = new Date().toISOString().split('T')[0];
     document.getElementById('modal-mort').style.display = 'flex';
   } else {
     _uscitaLottoId = lottoId;
-    const infoText = `${NOME_SOCCIDA} · Lotto ${fmtDateFull(lotto?.data_ingresso)}${lotto?.capannone ? ' · ' + lotto.capannone.toUpperCase() : ''}`;
     document.getElementById('modal-uscita-info').textContent = infoText;
     ['u-capi','u-kg','u-note'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('u-data').value = new Date().toISOString().split('T')[0];
@@ -336,7 +436,6 @@ async function salvaMortalita() {
   const data = document.getElementById('m-data').value;
   const capi = parseInt(document.getElementById('m-capi').value) || 0;
   const note = document.getElementById('m-note').value || null;
-  const capannone = document.getElementById('m-capannone').value;
   if(!data || capi <= 0) { showToast('Inserisci data e numero capi morti', false); return; }
 
   const lotto = allLotti.find(l => l.id === _mortLottoId);
@@ -346,7 +445,7 @@ async function salvaMortalita() {
       method: 'POST', headers: SB_H,
       body: JSON.stringify({
         lotto_id: _mortLottoId, soccida: NOME_SOCCIDA, data_evento: data,
-        lettera_dop: lotto?.lettera_dop || null, capi_morti: capi, note, capannone
+        lettera_dop: lotto?.lettera_dop || null, capi_morti: capi, note
       })
     });
     if(!r.ok) throw new Error(await r.text());
