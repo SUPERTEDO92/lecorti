@@ -973,7 +973,7 @@ async function sb(table, query='') {
 }
 
 // State
-let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [], allMortalita = [], allSanitario = [], allVenditeDirette = [], allUsciteCategorie = [], allVenditeDiretteCategorie = [];
+let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [], allMortalita = [], allSanitario = [], allVenditeDirette = [], allUsciteCategorie = [], allVenditeDiretteCategorie = [], allIngressi = [];
 let storicoFilter = 'tutti';
 let currentPage = 'home';
 let currentLottoId = null;
@@ -1018,6 +1018,7 @@ async function loadAll() {
     sb('uscite_categorie', '?order=id'),
     sb('vendite_dirette_categorie', '?order=id'),
   ]);
+  allIngressi = await sb('lotti_ingressi', '?order=data_ingresso.asc');
   renderHome();
   renderStorico();
   renderTrasferimenti();
@@ -1562,6 +1563,24 @@ function renderDetail(socId) {
       html += `<div style="background:var(--text);color:#FFF;border-radius:var(--radius);padding:9px 14px;margin-bottom:8px;text-align:center;font-size:13px;font-weight:700;font-family:var(--mono);letter-spacing:.05em;">
         📍 CAPANNONE: ${lotto.capannone.toUpperCase()}
       </div>`;
+    }
+    const ingLotto = (allIngressi||[]).filter(i => i.lotto_id === lotto.id).sort((a,b) => a.data_ingresso.localeCompare(b.data_ingresso));
+    if(ingLotto.length) {
+      const totIng = ingLotto.reduce((s,i) => s+(i.capi||0), 0);
+      html += `<div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;color:var(--text2);margin:10px 2px 6px;">Ingressi</div>`;
+      ingLotto.forEach(i => {
+        html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--bg2);border-radius:var(--radius);margin-bottom:4px;border:0.5px solid var(--border);">
+          <div>
+            <div style="font-size:12px;font-weight:500;">${fmtDate(i.data_ingresso)}${i.capannone ? ` · <strong style="text-transform:uppercase;">${i.capannone}</strong>` : ''}</div>
+            ${i.kg ? `<div style="font-size:10px;color:var(--text2);margin-top:2px;">${fmt(i.kg)} kg</div>` : ''}
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:18px;font-weight:500;font-family:var(--mono);color:var(--green);">${fmt(i.capi)}</div>
+            <div style="font-size:10px;color:var(--text2);">capi</div>
+          </div>
+        </div>`;
+      });
+      html += `<div style="display:flex;justify-content:space-between;padding:6px 10px;font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:8px;"><span>Totale ingressi</span><span style="color:var(--green);font-weight:500">${fmt(totIng)} capi</span></div>`;
     }
     html += `<button onclick="apriModaleIncr(${lotto.id},${lotto.incremento_giornaliero||0})" type="button" style="width:100%;margin-bottom:8px;padding:8px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius);font-size:12px;font-family:var(--mono);font-weight:500;cursor:pointer;text-align:left;display:block;">
       Incremento: +${lotto.incremento_giornaliero ? lotto.incremento_giornaliero.toFixed(3) : '—'} kg/gg &nbsp;✎ modifica
