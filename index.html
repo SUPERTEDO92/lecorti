@@ -358,10 +358,11 @@
     .ilaria-table colgroup col:nth-child(5) { width: 36px; }
     .ilaria-table colgroup col:nth-child(6) { width: 60px; }
     .ilaria-table colgroup col:nth-child(7) { width: 44px; }
-    #page-calcolo { padding: 4mm 8mm !important; font-size: 10px !important; }
-    #page-calcolo * { margin-top: 0 !important; margin-bottom: 0 !important; }
-    #page-calcolo > div { padding: 6px 10px !important; margin-bottom: 6px !important; }
-    #page-calcolo input, #page-calcolo select { padding: 3px 6px !important; font-size: 10px !important; height: auto !important; }
+    #page-calcolo { padding: 3mm 6mm !important; font-size: 8.5px !important; }
+    #page-calcolo * { font-size: inherit !important; margin: 0 !important; }
+    #page-calcolo [style*="border-radius:12px"] { padding: 5px 8px !important; margin-bottom: 5px !important; }
+    #page-calcolo [style*="border-radius: 12px"] { padding: 5px 8px !important; margin-bottom: 5px !important; }
+    #page-calcolo input, #page-calcolo select { padding: 2px 4px !important; height: auto !important; }
     .cp-btn-row, #cp-placeholder-msg { display: none !important; }
     .ilaria-table colgroup col:nth-child(8) { width: 90px; }
     .ilaria-table th { font-size: 7px; padding: 3px 3px; }
@@ -2151,6 +2152,7 @@ function apriCostoAcquisto(trId, campo) {
   document.getElementById('modal-costo-info').textContent =
     `${t?.soccida_partenza || '—'} → ${t?.soccida_destinazione || '—'} · Lotto ${lotto?.codice || '—'} · ${t?.capi} capi · ${t?.kg ? fmt(t.kg)+' kg' : ''} · ${mediaKgTrasf ? 'media '+mediaKgTrasf+' kg/capo' : ''} · ${fmtDate(t?.data_trasferimento)}`;
   document.getElementById('costo-val').value = (t && t[_costoCampo] != null) ? t[_costoCampo] : '';
+  document.getElementById('btn-salva-costo-manuale').style.display = 'block';
   _cCalcoloDettaglio = (t && t.calcolo_prezzo && t.calcolo_prezzo.campo === _costoCampo) ? t.calcolo_prezzo : null;
 
   // Pre-compila kg e capi nel calcolatore integrato
@@ -2971,7 +2973,7 @@ function cCalcola() {
   const sconto=parseFloat(document.getElementById('c-sconto').value)||0;
   const ris=document.getElementById('c-risultato');
   const btnUsa=document.getElementById('btn-usa-valore');
-  if(isNaN(p1)||isNaN(p2)||isNaN(kg)||kg<=0||isNaN(capi)||capi<=0){ris.style.display='none';btnUsa.style.display='none';_cTotaleCalcolato=null;return;}
+  if(isNaN(p1)||isNaN(p2)||isNaN(kg)||kg<=0||isNaN(capi)||capi<=0){ris.style.display='none';btnUsa.style.display='none';document.getElementById('btn-salva-costo-manuale').style.display='block';_cTotaleCalcolato=null;return;}
   const diff=Math.abs(p1-p2);
   const deltaW=Math.abs(_cW2-_cW1);
   const media=kg/capi;
@@ -2990,7 +2992,8 @@ function cCalcola() {
   const rowS=document.getElementById('c-row-sconto');
   if(sconto>0){document.getElementById('c-r-sconto').textContent='– '+cFmt(sconto,2)+' €';rowS.style.display='flex';}else rowS.style.display='none';
   ris.style.display='block';btnUsa.style.display='block';
-  btnUsa.textContent='← Usa '+cFmt(totale,2)+' €';
+  document.getElementById('btn-salva-costo-manuale').style.display='none';
+  btnUsa.textContent='✓ Usa e salva '+cFmt(totale,2)+' €';
 }
 function usaValoreCalcolato() {
   if(_cTotaleCalcolato===null) return;
@@ -3020,7 +3023,7 @@ function usaValoreCalcolato() {
   };
   document.getElementById('calc-prezzo-panel').style.display='none';
   document.getElementById('btn-toggle-calc').textContent='🧮 Apri calcolatore prezzo';
-  document.getElementById('costo-val').focus();
+  salvaCostoAcquisto();
 }
 
 function stampaCalcoloPrezzo(trId) {
@@ -3670,7 +3673,7 @@ loadAll();
       </div>
       <button id="btn-usa-valore" onclick="usaValoreCalcolato()" style="display:none;width:100%;padding:10px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;"></button>
     </div>
-    <button onclick="salvaCostoAcquisto()" style="width:100%;padding:13px;background:var(--green);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:4px;">
+    <button id="btn-salva-costo-manuale" onclick="salvaCostoAcquisto()" style="width:100%;padding:13px;background:var(--green);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:4px;">
       ✓ Salva costo
     </button>
   </div>
