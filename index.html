@@ -400,6 +400,9 @@
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Inserimento dati
     </button>
+    <button id="btn-importa-doc" onclick="importaDocumentoPendente()" style="width:100%;padding:11px;margin-top:8px;background:var(--bg2);color:var(--text2);border:0.5px dashed var(--border);border-radius:var(--radius-lg);font-size:12px;font-family:var(--font);font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+      📥 Importa ultimo documento
+    </button>
   </div>
   <div id="soccide-list-container">
     <div class="loading">Caricamento...</div>
@@ -988,6 +991,22 @@ async function apriDocumento(docId) {
     window.open(url, '_blank');
   } catch(e) {
     alert('Errore apertura documento: ' + e.message);
+  }
+}
+async function importaDocumentoPendente() {
+  const btn = document.getElementById('btn-importa-doc');
+  const testoOriginale = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Importazione in corso...';
+  try {
+    const r = await fetch('https://wfvqgxkxmgcxchcsljzh.supabase.co/functions/v1/import-documento', { method: 'POST' });
+    const result = await r.json();
+    alert(result.ok ? ('✓ ' + result.message) : ('⚠ ' + result.message));
+  } catch(e) {
+    alert('Errore: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = testoOriginale;
   }
 }
 async function sb(table, query='') {
