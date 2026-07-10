@@ -400,9 +400,6 @@
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Inserimento dati
     </button>
-    <button id="btn-importa-doc" onclick="importaDocumentoPendente()" style="width:100%;padding:11px;margin-top:8px;background:var(--bg2);color:var(--text2);border:0.5px dashed var(--border);border-radius:var(--radius-lg);font-size:12px;font-family:var(--font);font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
-      📥 Importa ultimo documento
-    </button>
   </div>
   <div id="soccide-list-container">
     <div class="loading">Caricamento...</div>
@@ -1612,7 +1609,10 @@ function renderDetail(socId) {
     } else {
       html += `<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
       <div>
-        <div style="font-size:17px;font-weight:600;font-family:var(--mono)">Lotto ${lotto.codice}</div>
+        <div style="font-size:17px;font-weight:600;font-family:var(--mono);display:flex;align-items:center;gap:8px;">
+          <span>Lotto ${lotto.codice}</span>
+          ${lotto.ddt_ingresso_documento_id ? `<button onclick="apriDocumento(${lotto.ddt_ingresso_documento_id})" style="background:var(--green-bg);border:0.5px solid #B8DECA;border-radius:10px;padding:2px 9px;font-size:11px;font-weight:600;color:var(--green);cursor:pointer;font-family:var(--font);">📄 DDT</button>` : ''}
+        </div>
         <div style="font-size:13px;color:var(--text2);margin-top:4px">${lotto.provenienza || ''} · ingresso ${fmtDateFull(lotto.data_ingresso)}${lotto.lettera_dop ? ` · <strong style="color:var(--text);font-weight:700;">${lotto.lettera_dop}</strong>` : ''}</div>
       </div>
       <div style="text-align:right;">
