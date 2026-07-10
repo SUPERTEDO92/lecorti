@@ -346,7 +346,7 @@
   @media print {
     @page { margin: 0; size: A4 landscape; }
     html, body { width: 297mm; height: 210mm; margin: 0; padding: 0; }
-    .topbar, .print-btn-row, .ilaria-bar { display: none !important; }
+    .topbar, .print-btn-row, .ilaria-bar, .back-btn, #global-back-btn { display: none !important; }
     .page { padding: 6mm !important; max-width: 297mm !important; width: 297mm !important; }
     body { background: #FFF; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .ilaria-print-wrap { overflow: visible; width: 100%; }
@@ -358,6 +358,11 @@
     .ilaria-table colgroup col:nth-child(5) { width: 36px; }
     .ilaria-table colgroup col:nth-child(6) { width: 60px; }
     .ilaria-table colgroup col:nth-child(7) { width: 44px; }
+    #page-calcolo { padding: 4mm 8mm !important; font-size: 10px !important; }
+    #page-calcolo * { margin-top: 0 !important; margin-bottom: 0 !important; }
+    #page-calcolo > div { padding: 6px 10px !important; margin-bottom: 6px !important; }
+    #page-calcolo input, #page-calcolo select { padding: 3px 6px !important; font-size: 10px !important; height: auto !important; }
+    .cp-btn-row, #cp-placeholder-msg { display: none !important; }
     .ilaria-table colgroup col:nth-child(8) { width: 90px; }
     .ilaria-table th { font-size: 7px; padding: 3px 3px; }
     .ilaria-table td { font-size: 8px; padding: 3px 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -550,7 +555,7 @@
       <div style="font-family:var(--mono);font-size:12px;">Inserisci i due listini CUN e i dati del lotto per calcolare il prezzo</div>
     </div>
 
-    <div style="display:flex;gap:10px;">
+    <div class="cp-btn-row" style="display:flex;gap:10px;">
       <button onclick="cpCalcola()" style="flex:1;padding:11px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;">Calcola</button>
       <button onclick="window.print()" style="flex:1;padding:11px;background:var(--text);color:#FFF;border:none;border-radius:var(--radius);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;">🖨 Stampa / PDF</button>
       <button onclick="cpReset()" style="flex:1;padding:11px;background:var(--bg2);color:var(--text);border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;">Azzera</button>
