@@ -1946,6 +1946,7 @@ function stampaTrasferimenti() {
       );
       return !speculare;
     })
+    .filter(t => trasfFilter === 'tutti' || t.data_trasferimento.startsWith(trasfFilter))
     .sort((a,b) => b.data_trasferimento.localeCompare(a.data_trasferimento));
 
   const nomiMese = ['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
@@ -1960,23 +1961,24 @@ function stampaTrasferimenti() {
   <title>Le Corti — Movimenti</title>
   <style>
     * { box-sizing:border-box; margin:0; padding:0; }
-    body { font-family:-apple-system,Arial,sans-serif; font-size:11px; color:#1A1A18; padding:20px 24px; }
-    h1 { font-size:16px; font-weight:600; margin-bottom:4px; }
-    .sub { font-size:10px; color:#666; margin-bottom:20px; }
-    .month { font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:#555; border-bottom:1.5px solid #1A1A18; padding-bottom:3px; margin:18px 0 8px; }
+    body { font-family:-apple-system,Arial,sans-serif; font-size:9.5px; color:#1A1A18; padding:14px 18px; }
+    h1 { font-size:14px; font-weight:600; margin-bottom:3px; }
+    .sub { font-size:9px; color:#666; margin-bottom:12px; }
+    .month { font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:#555; border-bottom:1.5px solid #1A1A18; padding-bottom:2px; margin:10px 0 5px; }
     table { width:100%; border-collapse:collapse; }
-    th { font-size:9px; text-transform:uppercase; letter-spacing:.07em; color:#888; text-align:left; padding:4px 6px; border-bottom:0.5px solid #D8D4CB; }
-    td { padding:5px 6px; border-bottom:0.5px solid #EDEAE3; vertical-align:top; }
+    th { font-size:7.5px; text-transform:uppercase; letter-spacing:.05em; color:#888; text-align:left; padding:3px 4px; border-bottom:0.5px solid #D8D4CB; }
+    td { padding:3px 4px; border-bottom:0.5px solid #EDEAE3; vertical-align:top; }
     td.num { text-align:right; font-family:'Courier New',monospace; }
     td.green { color:#2A7A4B; font-weight:500; }
     td.pending { color:#997700; font-style:italic; }
-    .badge { display:inline-block; font-size:9px; font-weight:600; padding:1px 6px; border-radius:8px; }
+    .badge { display:inline-block; font-size:7.5px; font-weight:600; padding:1px 5px; border-radius:8px; }
     .badge-acq { background:#EBF5EF; color:#2A7A4B; }
     .badge-trasf { background:#EEF2FB; color:#3A5AA0; }
-    @media print { @page { margin:1.5cm; } }
+    @page { size: A4 portrait; margin: 1.2cm; }
+    @media print { @page { size: A4 portrait; margin: 1.2cm; } }
   </style></head><body>
   <h1>Soc. Agr. Le Corti Srl — Movimenti</h1>
-  <div class="sub">Stampato il ${new Date().toLocaleDateString('it-IT')} · Acquisti e trasferimenti</div>`;
+  <div class="sub">Stampato il ${new Date().toLocaleDateString('it-IT')} · Acquisti e trasferimenti${trasfFilter !== 'tutti' ? ' · ' + nomiMese[parseInt(trasfFilter.split('-')[1])] + ' ' + trasfFilter.split('-')[0] : ' · tutti i periodi'}</div>`;
 
   Object.keys(byMonth).sort().reverse().forEach(m => {
     const [y,mo] = m.split('-');
@@ -2114,10 +2116,10 @@ function renderTrasferimenti() {
         </div>` : ''}
         ${isVend
           ? `<div style="display:flex;gap:6px;margin-top:6px;">
-              ${!t.costo_acquisto ? `<button onclick="apriCostoAcquisto(${t.id},'costo_acquisto')" style="flex:1;padding:7px;background:var(--amber-bg);color:var(--amber);border:0.5px solid #F0DC8A;border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">+ Prezzo ingresso</button>` : ''}
-              ${!t.valore ? `<button onclick="apriCostoAcquisto(${t.id},'valore')" style="flex:1;padding:7px;background:var(--amber-bg);color:var(--amber);border:0.5px solid #F0DC8A;border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">+ Prezzo uscita</button>` : ''}
+              <button onclick="apriCostoAcquisto(${t.id},'costo_acquisto')" title="Modifica prezzo ingresso" style="flex:1;padding:7px;background:${t.costo_acquisto ? 'var(--bg2)' : 'var(--amber-bg)'};color:${t.costo_acquisto ? 'var(--text2)' : 'var(--amber)'};border:0.5px solid ${t.costo_acquisto ? 'var(--border)' : '#F0DC8A'};border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">${t.costo_acquisto ? '✎ Modifica prezzo ingresso' : '+ Prezzo ingresso'}</button>
+              <button onclick="apriCostoAcquisto(${t.id},'valore')" title="Modifica prezzo uscita" style="flex:1;padding:7px;background:${t.valore ? 'var(--bg2)' : 'var(--amber-bg)'};color:${t.valore ? 'var(--text2)' : 'var(--amber)'};border:0.5px solid ${t.valore ? 'var(--border)' : '#F0DC8A'};border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">${t.valore ? '✎ Modifica prezzo uscita' : '+ Prezzo uscita'}</button>
             </div>`
-          : (!t.costo_acquisto ? `<button onclick="apriCostoAcquisto(${t.id},'costo_acquisto')" style="margin-top:6px;width:100%;padding:7px;background:var(--amber-bg);color:var(--amber);border:0.5px solid #F0DC8A;border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">+ Inserisci valore</button>` : '')}
+          : `<button onclick="apriCostoAcquisto(${t.id},'costo_acquisto')" title="Modifica valore" style="margin-top:6px;width:100%;padding:7px;background:${t.costo_acquisto ? 'var(--bg2)' : 'var(--amber-bg)'};color:${t.costo_acquisto ? 'var(--text2)' : 'var(--amber)'};border:0.5px solid ${t.costo_acquisto ? 'var(--border)' : '#F0DC8A'};border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">${t.costo_acquisto ? '✎ Modifica valore' : '+ Inserisci valore'}</button>`}
       </div>`;
     }).join('');
   });
@@ -2139,7 +2141,7 @@ function apriCostoAcquisto(trId, campo) {
   document.getElementById('modal-costo-title').textContent = etichetta;
   document.getElementById('modal-costo-info').textContent =
     `${t?.soccida_partenza || '—'} → ${t?.soccida_destinazione || '—'} · Lotto ${lotto?.codice || '—'} · ${t?.capi} capi · ${t?.kg ? fmt(t.kg)+' kg' : ''} · ${mediaKgTrasf ? 'media '+mediaKgTrasf+' kg/capo' : ''} · ${fmtDate(t?.data_trasferimento)}`;
-  document.getElementById('costo-val').value = '';
+  document.getElementById('costo-val').value = (t && t[_costoCampo] != null) ? t[_costoCampo] : '';
 
   // Pre-compila kg e capi nel calcolatore integrato
   if(t?.kg) document.getElementById('c-kg').value = t.kg;
