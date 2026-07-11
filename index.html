@@ -975,10 +975,15 @@ const CESSIONARI = ['FM FONTANELLE','OPAS','OPAS ALIMENTARE','__MANUALE__'];
 
 async function apriDocumento(docId) {
   try {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/documenti?id=eq.${docId}&select=nome_file,content_type,contenuto`, { headers: SB_H });
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/documenti?id=eq.${docId}&select=nome_file,content_type,contenuto,storage_path`, { headers: SB_H });
     const rows = await r.json();
     if(!rows.length) { alert('Documento non trovato.'); return; }
     const doc = rows[0];
+    if(doc.storage_path) {
+      window.open(`${SUPABASE_URL}/storage/v1/object/public/documenti/${doc.storage_path}`, '_blank');
+      return;
+    }
+    // fallback per eventuali documenti vecchi non ancora migrati
     let hex = doc.contenuto;
     if(hex.startsWith('\\x')) hex = hex.slice(2);
     const bytes = new Uint8Array(hex.length / 2);
