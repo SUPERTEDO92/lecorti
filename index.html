@@ -2243,6 +2243,9 @@ function renderTrasferimenti() {
 
       const margine = (isVend && t.valore != null && t.costo_acquisto != null) ? (t.valore - t.costo_acquisto) : null;
 
+      const ingT = (allIngressi||[]).filter(i => i.lotto_id === t.lotto_id).sort((a,b) => a.data_ingresso.localeCompare(b.data_ingresso));
+      const multiArrivo = isAcq && ingT.length > 1;
+
       return `<div class="trasfrow">
         <div class="trasf-top">
           <div style="display:flex;align-items:center;gap:6px;">
@@ -2251,6 +2254,9 @@ function renderTrasferimenti() {
           </div>
           <span style="font-size:10px;font-family:var(--mono);font-weight:500;padding:2px 8px;border-radius:10px;${badgeStyle}">${t.tipo || 'TRASF.'}</span>
         </div>
+        ${multiArrivo ? `<div style="font-size:10.5px;color:var(--text2);font-family:var(--mono);margin:-2px 0 6px;">
+          ${ingT.map(i => `${i.numero_ddt ? 'DDT '+i.numero_ddt+' ' : ''}(${fmtDate(i.data_ingresso)}, ${fmt(i.capi)} capi)`).join(' + ')}
+        </div>` : ''}
         <div class="trasf-line">
           <div class="tc"><div class="tc-label">lotto</div><div class="tc-val">${lotto?.codice || '—'}</div></div>
           <div class="tc"><div class="tc-label">capi</div><div class="tc-val">${fmt(t.capi)}</div></div>
