@@ -558,7 +558,7 @@
 
     <div class="cp-btn-row" style="display:flex;gap:10px;">
       <button onclick="cpCalcola()" style="flex:1;padding:11px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;">Calcola</button>
-      <button onclick="window.print()" style="flex:1;padding:11px;background:var(--text);color:#FFF;border:none;border-radius:var(--radius);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;">🖨 Stampa / PDF</button>
+      <button onclick="cpStampaPDF()" style="flex:1;padding:11px;background:var(--text);color:#FFF;border:none;border-radius:var(--radius);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;">🖨 Stampa / PDF</button>
       <button onclick="cpReset()" style="flex:1;padding:11px;background:var(--bg2);color:var(--text);border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;">Azzera</button>
     </div>
   </div>
@@ -1485,6 +1485,112 @@ function cpReset() {
   document.getElementById('cp-placeholder-msg').style.display = 'block';
   document.getElementById('cp-n2').style.background = 'var(--bg2)';
   document.getElementById('cp-n2').style.color = 'var(--text2)';
+}
+
+function cpStampaPDF() {
+  const p1 = parseFloat(document.getElementById('cp-p1').value);
+  const p2 = parseFloat(document.getElementById('cp-p2').value);
+  const w1 = parseFloat(document.getElementById('cp-w1').value) || 30;
+  const w2 = parseFloat(document.getElementById('cp-w2').value) || 40;
+  const capi = parseFloat(document.getElementById('cp-capi').value);
+  const kgTot = parseFloat(document.getElementById('cp-kg-tot').value);
+  const media = parseFloat(document.getElementById('cp-media').value);
+  const premio = parseFloat(document.getElementById('cp-premio').value) || 0;
+  const sconto = parseFloat(document.getElementById('cp-sconto').value) || 0;
+
+  if(isNaN(p1) || isNaN(p2) || isNaN(kgTot) || kgTot <= 0 || isNaN(media) || media <= 0) {
+    alert('Completa i listini e i dati del lotto prima di stampare.');
+    return;
+  }
+
+  const diff = Math.abs(p1 - p2);
+  const deltaW = Math.abs(w2 - w1);
+  const wMin = Math.min(w1, w2);
+  const scalare = (diff / deltaW) * (media - wMin);
+  const prezzoKg = p1 - scalare + premio;
+  const imponibileLordo = prezzoKg * kgTot;
+  const imponibileNetto = imponibileLordo - sconto;
+  const iva = imponibileNetto * 0.10;
+  const totale = imponibileNetto + iva;
+  const perCapo = !isNaN(capi) && capi > 0 ? totale / capi : null;
+
+  const oggi = new Date().toLocaleDateString('it-IT', {day:'2-digit', month:'2-digit', year:'numeric'});
+  const row = (label, val, opts={}) => `
+    <div class="row${opts.tot?' tot':''}${opts.neg?' neg':''}">
+      <span class="label">${label}</span>
+      <span class="val">${val}</span>
+    </div>`;
+
+  const html = `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8">
+  <title>Le Corti — Calcolo prezzo suinetti</title>
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:Arial,Helvetica,sans-serif; font-size:12.5px; color:#1A1A18; padding:30px 34px; max-width:580px; margin:0 auto; }
+    .header { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #1A1A18; padding-bottom:12px; margin-bottom:20px; }
+    .company { font-size:15px; font-weight:700; letter-spacing:.01em; }
+    .company-sub { font-size:10px; color:#777; margin-top:3px; line-height:1.5; }
+    .doc-meta { text-align:right; }
+    .doc-title { font-size:10px; text-transform:uppercase; letter-spacing:.09em; color:#999; }
+    .doc-date { font-size:12px; color:#1A1A18; margin-top:3px; font-weight:500; }
+    h2 { font-size:10px; text-transform:uppercase; letter-spacing:.1em; color:#999; margin:20px 0 8px; font-weight:600; }
+    h2:first-of-type { margin-top:0; }
+    .row { display:flex; justify-content:space-between; padding:6.5px 0; border-bottom:1px solid #EEECE6; }
+    .row .label { color:#555; }
+    .row .val { font-variant-numeric:tabular-nums; font-weight:600; }
+    .row.neg .val { color:#A03030; }
+    .row.tot { border-top:2px solid #1A1A18; border-bottom:none; margin-top:8px; padding-top:14px; align-items:baseline; }
+    .row.tot .label { font-size:13.5px; font-weight:700; color:#1A1A18; }
+    .row.tot .val { font-size:22px; font-weight:700; }
+    .highlight { background:#F5F3EE; border-radius:8px; padding:12px 14px; margin:4px 0 4px; }
+    .highlight .row { border-bottom:none; padding:4px 0; }
+    .highlight .row .val { font-size:17px; color:#C17B2A; }
+    .footer { margin-top:28px; font-size:9px; color:#AAA; border-top:1px solid #EEECE6; padding-top:10px; line-height:1.5; }
+    @media print { body { padding:14px 18px; } }
+    @page { size: A4 portrait; margin: 1.2cm; }
+  </style></head><body>
+    <div class="header">
+      <div>
+        <div class="company">SOC. AGR. LE CORTI SRL</div>
+        <div class="company-sub">Via Bargnano, 5 — 25030 Longhena (BS)<br>P.IVA 02973670983</div>
+      </div>
+      <div class="doc-meta">
+        <div class="doc-title">Calcolo prezzo suinetti</div>
+        <div class="doc-date">${oggi}</div>
+      </div>
+    </div>
+
+    <h2>Listini CUN di riferimento</h2>
+    ${row('Listino 1 — base (' + fmt(w1) + ' kg)', cpFmt(p1,3) + ' €/kg')}
+    ${row('Listino 2 — secondo (' + fmt(w2) + ' kg)', cpFmt(p2,3) + ' €/kg')}
+    ${row('Scalare applicato', '– ' + cpFmt(scalare,4) + ' €/kg', {neg:true})}
+    ${row('Premio', '+ ' + cpFmt(premio,3) + ' €/kg')}
+
+    <div class="highlight">
+      ${row('Prezzo finale', cpFmt(prezzoKg,4) + ' €/kg', {tot:false})}
+    </div>
+
+    <h2>Dati del lotto</h2>
+    ${row('N° capi', fmt(capi) + ' capi')}
+    ${row('Kg totali', fmt(kgTot) + ' kg')}
+    ${row('Media kg/capo', cpFmt(media,3) + ' kg')}
+
+    <h2>Riepilogo economico</h2>
+    ${row('Imponibile lordo', cpFmt(imponibileLordo,2) + ' €')}
+    ${sconto > 0 ? row('Sconto sull\'imponibile', '– ' + cpFmt(sconto,2) + ' €', {neg:true}) : ''}
+    ${sconto > 0 ? row('Imponibile netto', cpFmt(imponibileNetto,2) + ' €') : ''}
+    ${row('IVA 10%', cpFmt(iva,2) + ' €')}
+    ${row('TOTALE FATTURA', cpFmt(totale,2) + ' €', {tot:true})}
+
+    <h2>Riepilogo per capo</h2>
+    ${row('Valore €/capo', perCapo !== null ? cpFmt(perCapo,2) + ' €' : '—')}
+
+    <div class="footer">Documento generato dal gestionale Le Corti il ${oggi} — calcolo interno, senza valore fiscale.</div>
+  </body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  setTimeout(() => win.print(), 400);
 }
 
 function fmt(n, dec=0) {
