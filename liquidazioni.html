@@ -421,9 +421,10 @@ function render() {
 
       let out = `<div class="liq-row">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><strong style="color:var(--text);font-size:16px;font-family:var(--mono);">${fmtDate(u.data_uscita)}</strong>${u.numero_ddt ? `<span style="font-size:20px;font-family:var(--mono);font-weight:600;color:var(--text);">Bolla n. ${u.numero_ddt}</span>` : ''}</div>
-        ${(u.ddt_documento_id || u.liquidazione_documento_id) ? `<div style="display:flex;gap:6px;margin-bottom:8px;">
+        ${(u.ddt_documento_id || u.liquidazione_documento_id || u.fattura_documento_id) ? `<div style="display:flex;gap:6px;margin-bottom:8px;">
           ${u.ddt_documento_id ? `<button onclick="apriDocumento(${u.ddt_documento_id})" style="flex:1;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:6px 10px;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;font-family:var(--font);">📄 DDT</button>` : ''}
           ${u.liquidazione_documento_id ? `<button onclick="apriDocumento(${u.liquidazione_documento_id})" style="flex:1;background:var(--green-bg,#EBF5EF);border:0.5px solid #B8DECA;border-radius:var(--radius);padding:6px 10px;font-size:12px;font-weight:600;color:var(--green,#2A7A4B);cursor:pointer;font-family:var(--font);">📄 Liquidazione</button>` : ''}
+          ${u.fattura_documento_id ? `<button onclick="apriDocumento(${u.fattura_documento_id})" style="flex:1;background:#FDF3E7;border:0.5px solid #EAD2A8;border-radius:var(--radius);padding:6px 10px;font-size:12px;font-weight:600;color:var(--accent,#C17B2A);cursor:pointer;font-family:var(--font);">📄 Fattura</button>` : ''}
         </div>` : ''}
         <div class="liq-top">
           <div>
