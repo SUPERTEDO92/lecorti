@@ -107,7 +107,7 @@
   .back-btn:hover, .back-btn:active { opacity: .85; }
   .detail-header {
     background: var(--text); color: #F5F3EE;
-    border-radius: var(--radius-lg); padding: 14px 16px; margin-bottom: 12px;
+    border-radius: var(--radius-lg); padding: 10px 16px; margin-bottom: 12px;
   }
   .detail-title { font-size: 17px; font-weight: 500; font-family: var(--mono); }
   .detail-sub { font-size: 11px; color: #AAA; margin-top: 3px; }
@@ -1686,7 +1686,6 @@ function renderDetail(socId) {
 
   let html = `<div class="detail-header">
     <div class="detail-title">${soc.nome}</div>
-    <div class="detail-sub">${lotti.length} lotto${lotti.length > 1 ? 'i attivi' : ' attivo'}</div>
   </div>`;
 
   if(soc.nome === 'VEZZOLI') {
