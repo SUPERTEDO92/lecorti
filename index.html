@@ -2279,7 +2279,11 @@ function renderTrasferimenti() {
             <span class="trasf-da">${fmtDate(t.data_trasferimento)} · ${t.soccida_partenza}</span>
             <span style="font-size:11px;color:var(--text2)">→ ${t.soccida_destinazione}</span>
           </div>
-          <span style="font-size:10px;font-family:var(--mono);font-weight:500;padding:2px 8px;border-radius:10px;${badgeStyle}">${t.tipo || 'TRASF.'}</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            ${t.ddt_documento_id ? `<button onclick="apriDocumento(${t.ddt_documento_id})" style="background:#FFF;border:0.5px solid var(--border);border-radius:10px;padding:2px 8px;font-size:10px;color:var(--text2);cursor:pointer;font-family:var(--font);">📄 DDT</button>` : ''}
+            ${t.calcolo_documento_id ? `<button onclick="apriDocumento(${t.calcolo_documento_id})" style="background:#FDF3E7;border:0.5px solid #EAD2A8;border-radius:10px;padding:2px 8px;font-size:10px;color:var(--accent);font-weight:600;cursor:pointer;font-family:var(--font);">📄 Conteggio</button>` : ''}
+            <span style="font-size:10px;font-family:var(--mono);font-weight:500;padding:2px 8px;border-radius:10px;${badgeStyle}">${t.tipo || 'TRASF.'}</span>
+          </div>
         </div>
         ${multiArrivo ? `<div style="font-size:10.5px;color:var(--text2);font-family:var(--mono);margin:-2px 0 6px;">
           ${ingT.map(i => `${i.numero_ddt ? 'DDT '+i.numero_ddt+' ' : ''}(${fmtDate(i.data_ingresso)}, ${fmt(i.capi)} capi)`).join(' + ')}
