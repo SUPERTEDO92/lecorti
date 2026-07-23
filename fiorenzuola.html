@@ -323,7 +323,6 @@ function render() {
     html += `
     ${idx > 0 ? '<div class="divider"></div>' : ''}
 
-    ${ingLotto.length ? `` : `
     <div class="lotto-header">
       <div>
         <div class="lotto-codice">${t('lotto')} ${fmtDateFull(lotto.data_ingresso)}</div>
@@ -334,7 +333,18 @@ function render() {
         <div style="font-size:10px;color:var(--text2);">${t('presenti')}</div>
       </div>
     </div>
-    `}
+
+    ${ingLotto.length ? `
+    <div class="stat-box" style="margin-bottom:10px;">
+      <div class="stat-label">${t('ingressiRegistrati')}</div>
+      ${ingLotto.map(i => `
+        <div class="row-item">
+          <div class="row-data">${t('arrivo')} ${fmtDate(i.data_ingresso)}${i.capannone ? ` · <strong style="text-transform:uppercase;">${i.capannone}</strong>` : ''}</div>
+          <div class="row-capi">${fmt(i.capi)}</div>
+        </div>`).join('')}
+      <div class="row-totale"><span>${t('totale')}</span><span style="font-weight:600;">${fmt(totIng)} ${t('capiUnit')}</span></div>
+    </div>
+    ` : ''}
 
     ${lotto.capannone ? `<div class="capannone-banner">📍 ${t('capannoneWord')}: ${lotto.capannone.toUpperCase()}</div>` : ''}
 
