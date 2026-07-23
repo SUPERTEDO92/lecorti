@@ -239,7 +239,7 @@
 const SUPABASE_URL = 'https://wfvqgxkxmgcxchcsljzh.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmdnFneGt4bWdjeGNoY3NsanpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMTE1NTAsImV4cCI6MjA5NTg4NzU1MH0.hIhbdVFeCTDJ9bBBqetef87VTCtocMflYUQ_7kvxJF8';
 
-let allUscite = [], allLotti = [], allSoccide = [], allTrasferimenti = [];
+let allUscite = [], allLotti = [], allSoccide = [], allTrasferimenti = [], allIngressi = [];
 let filtroMese = 'tutti';
 let filtroMeseTrasf = 'tutti';
 let paginaAttiva = 'liq';
@@ -289,11 +289,12 @@ async function sb(table, query='') {
 }
 
 async function loadAll() {
-  [allSoccide, allLotti, allUscite, allTrasferimenti] = await Promise.all([
+  [allSoccide, allLotti, allUscite, allTrasferimenti, allIngressi] = await Promise.all([
     sb('soccide', '?order=nome'),
     sb('lotti', '?order=data_ingresso.desc'),
     sb('uscite', '?order=data_uscita.desc'),
     sb('trasferimenti', '?order=data_trasferimento.desc'),
+    sb('lotti_ingressi', '?order=data_ingresso'),
   ]);
 
   const oggi = new Date().toLocaleDateString('it-IT', {day:'2-digit', month:'2-digit', year:'numeric'});
@@ -639,6 +640,8 @@ function renderTrasf() {
         ? 'background:#FBEFEE;color:#A0453A;border:0.5px solid #F0C0C0;'
         : 'background:#EEF2FB;color:#3A5AA0;border:0.5px solid #C0CFF0;';
       const margine = (isVend && t.valore != null && t.costo_acquisto != null) ? (t.valore - t.costo_acquisto) : null;
+      const ingT = (allIngressi||[]).filter(i => i.lotto_id === t.lotto_id).sort((a,b) => a.data_ingresso.localeCompare(b.data_ingresso));
+      const multiArrivo = isAcq && ingT.length > 1;
 
       return `<div class="trasf-row">
         <div class="trasf-top2">
@@ -649,6 +652,9 @@ function renderTrasf() {
             <span class="trasf-badge" style="${badgeStyle}">${t.tipo || 'TRASF.'}</span>
           </div>
         </div>
+        ${multiArrivo ? `<div style="font-size:10.5px;color:var(--text2);font-family:var(--mono);margin:-2px 0 6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+          ${ingT.map(i => `<span>${i.numero_ddt ? 'DDT '+i.numero_ddt+' ' : ''}(${fmtDate(i.data_ingresso)}, ${fmt(i.capi)} capi)${i.ddt_documento_id ? ` <button onclick="apriDocumento(${i.ddt_documento_id})" style="background:#FFF;border:0.5px solid var(--border);border-radius:8px;padding:0px 6px;font-size:9px;color:var(--text2);cursor:pointer;font-family:var(--font);">📄</button>` : ''}</span>`).join(' + ')}
+        </div>` : ''}
         <div style="font-size:12px;color:var(--text2);font-family:var(--mono);margin-bottom:8px;">${fmtDate(t.data_trasferimento)} · Lotto ${lotto?.codice || '—'}${t.lettera_dop ? ' · ' + t.lettera_dop : ''}</div>
         <div class="trasf-grid">
           <div class="tg"><div class="tg-label">Capi</div><div class="tg-val">${fmt(t.capi)}</div></div>
