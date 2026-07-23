@@ -1680,22 +1680,8 @@ function renderDetail(socId) {
   const soc = allSoccide.find(s => s.id === socId);
   if(!soc) return;
   const oggi = new Date();
-  // Ordina i lotti per peso stimato oggi (dal più leggero al più pesante) — più intuitivo che l'ordine
-  // di ingresso quando ci sono più lotti attivi in contemporanea sulla stessa soccida
   const lotti = allLotti.filter(l => l.soccida_id === socId && l.attivo)
-    .map(lotto => {
-      const ggL = Math.floor((oggi - new Date(lotto.data_ingresso)) / 86400000);
-      const mediaBase = lotto.media_ingresso || ((lotto.kg_totali_ingresso && lotto.capi_entrati) ? lotto.kg_totali_ingresso / lotto.capi_entrati : null);
-      const pesoOggiSort = (mediaBase !== null && lotto.incremento_giornaliero) ? mediaBase + ggL * lotto.incremento_giornaliero : null;
-      return { lotto, pesoOggiSort };
-    })
-    .sort((a, b) => {
-      if(a.pesoOggiSort === null && b.pesoOggiSort === null) return a.lotto.data_ingresso.localeCompare(b.lotto.data_ingresso);
-      if(a.pesoOggiSort === null) return 1;
-      if(b.pesoOggiSort === null) return -1;
-      return a.pesoOggiSort - b.pesoOggiSort;
-    })
-    .map(x => x.lotto);
+    .sort((a,b) => a.data_ingresso.localeCompare(b.data_ingresso));
   if(!lotti.length) return;
 
   let html = `<div class="detail-header">
@@ -1739,8 +1725,16 @@ function renderDetail(socId) {
     </div>`;
 
     // Dettaglio arrivi (da lotti_ingressi, se il lotto ha ricevuto più DDT/arrivi separati) — riquadro
-    // aggiuntivo sotto l'header standard, mai sostitutivo
-    const ingLotto = (allIngressi||[]).filter(i => i.lotto_id === lotto.id).sort((a,b) => a.data_ingresso.localeCompare(b.data_ingresso));
+    // aggiuntivo sotto l'header standard, mai sostitutivo. Righe ordinate per peso medio ingresso,
+    // dal più leggero al più pesante (più intuitivo del semplice ordine cronologico)
+    const ingLotto = (allIngressi||[]).filter(i => i.lotto_id === lotto.id).sort((a,b) => {
+      const ma = (a.kg && a.capi) ? a.kg / a.capi : null;
+      const mb = (b.kg && b.capi) ? b.kg / b.capi : null;
+      if(ma === null && mb === null) return a.data_ingresso.localeCompare(b.data_ingresso);
+      if(ma === null) return 1;
+      if(mb === null) return -1;
+      return ma - mb;
+    });
     if(ingLotto.length) {
       // Pesi per riga: media ingresso e stima ad oggi, calcolati singolarmente per ogni arrivo
       // (arrivi diversi possono partire da pesi molto differenti — l'aggregato del lotto da solo è fuorviante)
