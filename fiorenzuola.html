@@ -323,19 +323,7 @@ function render() {
     html += `
     ${idx > 0 ? '<div class="divider"></div>' : ''}
 
-    ${ingLotto.length ? `
-    <div class="lotto-header" style="display:block;">
-      ${Object.entries(gruppiCapannone).map(([cap, capi]) => `
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:0.5px solid var(--border);">
-          <span style="font-size:12px;">📍 <strong style="text-transform:uppercase;">${cap}</strong></span>
-          <span style="font-size:14px;font-weight:600;font-family:var(--mono);">${fmt(capi)}</span>
-        </div>`).join('')}
-      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:6px;">
-        <span style="font-size:13px;font-weight:600;">${t('totale')}</span>
-        <span style="font-size:22px;font-weight:700;color:var(--green);font-family:var(--mono);">${fmt(totIng)}</span>
-      </div>
-    </div>
-    ` : `
+    ${ingLotto.length ? `` : `
     <div class="lotto-header">
       <div>
         <div class="lotto-codice">${t('lotto')} ${fmtDateFull(lotto.data_ingresso)}</div>
