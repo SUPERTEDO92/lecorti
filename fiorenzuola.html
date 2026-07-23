@@ -314,16 +314,21 @@ function render() {
     const ingLotto = allIngressi.filter(i => i.lotto_id === lotto.id).sort((a,b) => a.data_ingresso.localeCompare(b.data_ingresso));
     const totIng = ingLotto.reduce((s,i) => s+(i.capi||0), 0);
     const presenti = (ingLotto.length ? totIng : (lotto.capi_entrati||0)) - totMorti;
+    const gruppiCapannone = {};
+    ingLotto.forEach(i => {
+      const capKey = (i.capannone || '—').toUpperCase();
+      gruppiCapannone[capKey] = (gruppiCapannone[capKey]||0) + (i.capi||0);
+    });
 
     html += `
     ${idx > 0 ? '<div class="divider"></div>' : ''}
 
     ${ingLotto.length ? `
     <div class="lotto-header" style="display:block;">
-      ${ingLotto.map(i => `
+      ${Object.entries(gruppiCapannone).map(([cap, capi]) => `
         <div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:0.5px solid var(--border);">
-          <span style="font-size:12px;">${t('arrivo')} ${fmtDate(i.data_ingresso)}${i.capannone ? ` · <strong style="text-transform:uppercase;">${i.capannone}</strong>` : ''}</span>
-          <span style="font-size:14px;font-weight:600;font-family:var(--mono);">${fmt(i.capi)}</span>
+          <span style="font-size:12px;">📍 <strong style="text-transform:uppercase;">${cap}</strong></span>
+          <span style="font-size:14px;font-weight:600;font-family:var(--mono);">${fmt(capi)}</span>
         </div>`).join('')}
       <div style="display:flex;justify-content:space-between;align-items:center;padding-top:6px;">
         <span style="font-size:13px;font-weight:600;">${t('totale')}</span>
