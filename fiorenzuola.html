@@ -319,14 +319,19 @@ function render() {
       const capKey = (i.capannone || '—').toUpperCase();
       gruppiCapannone[capKey] = (gruppiCapannone[capKey]||0) + (i.capi||0);
     });
+    // Il flusso di lavoro segue il capannone, non il numero di lotto — quindi in testa mostriamo
+    // il/i capannone/i (da lotti_ingressi se ci sono più arrivi, altrimenti dal campo lotto.capannone)
+    const capannoniLotto = ingLotto.length
+      ? [...new Set(ingLotto.map(i => (i.capannone || '—').toUpperCase()))]
+      : (lotto.capannone ? [lotto.capannone.toUpperCase()] : []);
 
     html += `
     ${idx > 0 ? '<div class="divider"></div>' : ''}
 
     <div class="lotto-header">
       <div>
-        <div class="lotto-codice">${t('lotto')} ${fmtDateFull(lotto.data_ingresso)}</div>
-        <div class="lotto-sub">${lotto.provenienza || ''}</div>
+        <div class="lotto-codice" style="font-size:18px;">${capannoniLotto.length ? '📍 ' + capannoniLotto.join(' · ') : '—'}</div>
+        <div class="lotto-sub">${lotto.provenienza || ''} · ${fmtDateFull(lotto.data_ingresso)}</div>
       </div>
       <div style="text-align:right;">
         <div style="font-size:20px;font-weight:600;color:var(--green);font-family:var(--mono);">${fmt(presenti)}</div>
@@ -345,8 +350,6 @@ function render() {
       <div class="row-totale"><span>${t('totale')}</span><span style="font-weight:600;">${fmt(totIng)} ${t('capiUnit')}</span></div>
     </div>
     ` : ''}
-
-    ${lotto.capannone ? `<div class="capannone-banner">📍 ${t('capannoneWord')}: ${lotto.capannone.toUpperCase()}</div>` : ''}
 
     <div class="stat-grid">
       <div class="stat-box hl">
