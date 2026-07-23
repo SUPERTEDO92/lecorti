@@ -1725,7 +1725,7 @@ function renderDetail(socId) {
       const spread = mediePresenti.length > 1 ? (Math.max(...mediePresenti) - Math.min(...mediePresenti)) : 0;
       html += `<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:10px 14px;margin-bottom:8px;">`;
       if(spread > 10) {
-        html += `<div style="font-size:10.5px;color:var(--amber);background:var(--amber-bg);border:0.5px solid #F0DC8A;border-radius:6px;padding:5px 8px;margin-bottom:8px;">⚠ Arrivi con pesi di partenza molto diversi (Δ ${fmt(spread,1)} kg/capo) — i box "Peso arrivo"/"Previsione peso" qui sotto sono una media aggregata, guarda il dettaglio per riga</div>`;
+        html += `<div style="font-size:10.5px;color:var(--amber);background:var(--amber-bg);border:0.5px solid #F0DC8A;border-radius:6px;padding:5px 8px;margin-bottom:8px;">⚠ Arrivi con pesi di partenza molto diversi — i box "Peso arrivo"/"Previsione peso" qui sotto sono una media aggregata, guarda il dettaglio per riga</div>`;
       }
       ingLotto.forEach((i, idx) => {
         const p = pesiRiga[idx];
