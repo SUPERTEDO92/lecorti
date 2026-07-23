@@ -528,7 +528,7 @@ function render() {
             <div class="liq-soccida">${socNome}</div>
 
           </div>
-          <div class="liq-macello">${u.macello || '—'}</div>
+          <div class="liq-macello">MACELLO: ${u.macello || '—'}</div>
         </div>
         <div style="background:${u.cessionario ? '#FDF3E0' : '#F5F3EE'};border:0.5px solid ${u.cessionario ? '#F0C870' : 'var(--border)'};border-radius:var(--radius);padding:6px 10px;margin-bottom:8px;font-size:14px;font-weight:600;color:${u.cessionario ? '#9A6010' : 'var(--text3)'};display:flex;align-items:center;gap:6px;">📄 Fatturare a: ${u.cessionario || '—'}</div>
         <div class="liq-grid">
