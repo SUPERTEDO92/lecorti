@@ -100,14 +100,18 @@
   /* DETAIL PAGE */
   .back-btn {
     display: inline-flex; align-items: center; gap: 6px;
-    font-size: 13px; font-weight: 600; color: #FFF; cursor: pointer;
+    font-size: 12px; font-weight: 600; color: #FFF; cursor: pointer;
     background: #2A6B8A; border: none; font-family: var(--font);
-    padding: 8px 14px; margin: -22px 0 6px; border-radius: var(--radius);
+    padding: 6px 12px; margin: -22px 0 6px; border-radius: var(--radius);
   }
   .back-btn:hover, .back-btn:active { opacity: .85; }
+  .detail-sticky-wrap {
+    position: sticky; top: 40px; z-index: 90;
+    background: var(--bg); margin: -22px 0 8px; padding-top: 4px; padding-bottom: 2px;
+  }
   .detail-header {
     background: var(--text); color: #F5F3EE;
-    border-radius: var(--radius-lg); padding: 10px 16px; margin-bottom: 12px;
+    border-radius: var(--radius-lg); padding: 10px 16px; margin-bottom: 0;
   }
   .detail-title { font-size: 17px; font-weight: 500; font-family: var(--mono); }
   .detail-sub { font-size: 11px; color: #AAA; margin-top: 3px; }
@@ -897,7 +901,10 @@
 
 <!-- DETAIL -->
 <div class="page" id="page-detail">
-  <button class="back-btn" onclick="showPage('home')">← Soccide</button>
+  <div class="detail-sticky-wrap">
+    <button class="back-btn" onclick="showPage('home')" style="margin:0 0 6px;">← Soccide</button>
+    <div id="detail-header-sticky"></div>
+  </div>
   <div id="detail-content">
     <div class="loading">Caricamento...</div>
   </div>
@@ -1684,9 +1691,11 @@ function renderDetail(socId) {
     .sort((a,b) => a.data_ingresso.localeCompare(b.data_ingresso));
   if(!lotti.length) return;
 
-  let html = `<div class="detail-header">
+  document.getElementById('detail-header-sticky').innerHTML = `<div class="detail-header">
     <div class="detail-title">${soc.nome}</div>
   </div>`;
+
+  let html = '';
 
   if(soc.nome === 'VEZZOLI') {
     html += `<button onclick="apriVenditeDirette(${soc.id})" type="button" style="width:100%;margin-bottom:10px;padding:10px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);font-size:12px;font-family:var(--font);font-weight:500;cursor:pointer;text-align:left;display:flex;align-items:center;justify-content:space-between;color:var(--text);">
