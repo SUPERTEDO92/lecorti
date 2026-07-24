@@ -331,13 +331,13 @@ function render() {
     html += `<div id="ltab-incremento-${lotto.id}" style="display:none;">`;
     html += `<div class="incr-bar">
       <div>
-        <div style="font-size:10px;opacity:0.8;font-family:var(--mono);text-transform:uppercase;">Incremento giornaliero</div>
+        <div style="font-size:10px;opacity:0.8;font-family:var(--mono);text-transform:uppercase;">Incremento giornaliero ponderato</div>
         <div class="incr-val">${lotto.incremento_giornaliero != null ? fmt(lotto.incremento_giornaliero,3) + ' kg/gg' : '—'}</div>
       </div>
       <button class="incr-edit-btn" onclick="apriFormIncremento(${lotto.id})">✎ modifica</button>
     </div>`;
     html += `<div id="form-incremento-${lotto.id}" style="display:none;" class="form-box">
-      <div class="field-label">NUOVO INCREMENTO (kg/gg)</div>
+      <div class="field-label">NUOVO INCREMENTO PONDERATO (kg/gg)</div>
       <input type="number" step="0.001" id="i-val-${lotto.id}" class="field-input" value="${lotto.incremento_giornaliero || ''}" placeholder="es. 0.750">
       <button class="btn-mort" style="margin-bottom:0;background:var(--accent);" onclick="salvaIncremento(${lotto.id})">✓ Salva</button>
     </div>`;
