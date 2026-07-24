@@ -1717,15 +1717,20 @@ function renderDetail(socId) {
     const totaleLiquidato = uscite.reduce((s,u) => s+(u.liquidazione||0), 0);
 
     // Dettaglio arrivi (da lotti_ingressi, se il lotto ha ricevuto più DDT/arrivi separati). Calcolato qui perché
-    // serve anche all'header per FIORENZUOLA (vedi sotto). Righe ordinate per peso medio ingresso,
-    // dal più leggero al più pesante (più intuitivo del semplice ordine cronologico)
-    const ingLotto = (allIngressi||[]).filter(i => i.lotto_id === lotto.id).sort((a,b) => {
-      const ma = (a.kg && a.capi) ? a.kg / a.capi : null;
-      const mb = (b.kg && b.capi) ? b.kg / b.capi : null;
-      if(ma === null && mb === null) return a.data_ingresso.localeCompare(b.data_ingresso);
-      if(ma === null) return 1;
-      if(mb === null) return -1;
-      return ma - mb;
+    // serve anche all'header per FIORENZUOLA (vedi sotto). Per ogni arrivo calcolo peso medio ingresso e stima
+    // oggi, poi ordino le righe per peso stimato OGGI (non peso ingresso) — arrivi con date diverse crescono
+    // per un numero diverso di giorni, quindi il peso ingresso da solo non riflette l'ordine reale di oggi
+    const ingLotto = (allIngressi||[]).filter(i => i.lotto_id === lotto.id).map(i => {
+      const mediaRiga = (i.kg && i.capi) ? (i.kg / i.capi) : null;
+      const ggRiga = Math.floor((oggi - new Date(i.data_ingresso)) / 86400000);
+      const pesoOggiRiga = (mediaRiga !== null && lotto.incremento_giornaliero)
+        ? mediaRiga + ggRiga * lotto.incremento_giornaliero : null;
+      return { ...i, mediaRiga, pesoOggiRiga };
+    }).sort((a,b) => {
+      if(a.pesoOggiRiga === null && b.pesoOggiRiga === null) return a.data_ingresso.localeCompare(b.data_ingresso);
+      if(a.pesoOggiRiga === null) return 1;
+      if(b.pesoOggiRiga === null) return -1;
+      return a.pesoOggiRiga - b.pesoOggiRiga;
     });
 
     // FIORENZUOLA è un caso a parte: il lavoro segue il capannone, non il numero di lotto — quindi
@@ -1753,18 +1758,9 @@ function renderDetail(socId) {
 
     // Dettaglio arrivi — riquadro aggiuntivo sotto l'header standard, mai sostitutivo
     if(ingLotto.length) {
-      // Pesi per riga: media ingresso e stima ad oggi, calcolati singolarmente per ogni arrivo
-      // (arrivi diversi possono partire da pesi molto differenti — l'aggregato del lotto da solo è fuorviante)
-      const pesiRiga = ingLotto.map(i => {
-        const mediaRiga = (i.kg && i.capi) ? (i.kg / i.capi) : null;
-        const ggRiga = Math.floor((oggi - new Date(i.data_ingresso)) / 86400000);
-        const pesoOggiRiga = (mediaRiga !== null && lotto.incremento_giornaliero)
-          ? mediaRiga + ggRiga * lotto.incremento_giornaliero : null;
-        return { mediaRiga, pesoOggiRiga };
-      });
       html += `<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:10px 14px;margin-bottom:8px;">`;
-      ingLotto.forEach((i, idx) => {
-        const p = pesiRiga[idx];
+      ingLotto.forEach((i) => {
+        const p = { mediaRiga: i.mediaRiga, pesoOggiRiga: i.pesoOggiRiga };
         html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid var(--border);">
           <div>
             <div style="font-size:12px;">Arrivo ${fmtDate(i.data_ingresso)}${i.capannone ? ` · <strong style="text-transform:uppercase;">${i.capannone}</strong>` : ''}${i.ddt_documento_id ? ` <button onclick="apriDocumento(${i.ddt_documento_id})" style="background:#FFF;border:0.5px solid var(--border);border-radius:10px;padding:1px 7px;font-size:9px;color:var(--text2);cursor:pointer;font-family:var(--font);">📄</button>` : ''}</div>
