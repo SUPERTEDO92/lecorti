@@ -29,15 +29,37 @@
 
   .container { max-width: 480px; margin: 0 auto; padding: 14px 14px 0; }
 
-  .soc-selector { display: flex; gap: 6px; margin-bottom: 16px; }
-  .soc-btn {
-    flex: 1; padding: 12px 6px; border-radius: var(--radius-lg); border: 0.5px solid var(--border);
-    background: #FFF; color: var(--text2); font-size: 13px; font-family: var(--mono); font-weight: 500;
-    cursor: pointer; text-align: center;
+  /* Lista soccide, come home index */
+  .soccide-list { display: flex; flex-direction: column; gap: 2px; }
+  .soccida-card {
+    background: #FFF; border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg); padding: 12px 14px;
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer; transition: all .12s;
   }
-  .soc-btn.active { background: var(--text); color: #FFF; border-color: var(--text); }
+  .soccida-card:hover { border-color: var(--border2); background: var(--bg2); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot-green { background: var(--green); }
+  .dot-amber { background: var(--accent); }
+  .dot-gray { background: var(--text3); }
+  .soc-main { flex: 1; min-width: 0; }
+  .soc-nome { font-size: 14px; font-weight: 500; }
+  .soc-meta { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .soc-badge { font-size: 10px; font-family: var(--mono); padding: 3px 8px; border-radius: 20px; font-weight: 500; }
+  .badge-green { background: var(--green-bg); color: var(--green); }
+  .badge-amber { background: var(--amber-bg); color: var(--amber); }
+  .badge-gray { background: var(--bg3); color: var(--text2); }
+  .soc-arrow { color: var(--text3); font-size: 18px; }
 
-  .soccida-header { background: var(--text); color: #F5F3EE; border-radius: var(--radius-lg); padding: 10px 16px; margin-bottom: 10px; }
+  /* Header sticky pagina dettaglio */
+  .detail-sticky-wrap { position: sticky; top: 0; z-index: 90; background: var(--bg); padding-bottom: 4px; margin: -14px -14px 10px; padding-left: 14px; padding-right: 14px; padding-top: 14px; }
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 600; color: #FFF; cursor: pointer;
+    background: #2A6B8A; border: none; font-family: var(--font);
+    padding: 7px 13px; border-radius: var(--radius); margin-bottom: 8px;
+  }
+  .soccida-header { background: var(--text); color: #F5F3EE; border-radius: var(--radius-lg); padding: 10px 16px; }
   .soccida-title { font-size: 17px; font-weight: 500; font-family: var(--mono); }
 
   .lotto-header {
@@ -47,10 +69,6 @@
   .lotto-codice { font-size: 17px; font-weight: 600; font-family: var(--mono); }
   .lotto-sub { font-size: 13px; color: var(--text2); margin-top: 4px; }
 
-  .arrivi-box { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 10px 14px; margin-bottom: 8px; }
-  .arrivo-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 0.5px solid var(--border); }
-  .arrivo-row:last-child { border-bottom: none; }
-
   .capannone-banner { background: var(--text); color: #FFF; border-radius: var(--radius); padding: 9px 14px; margin-bottom: 8px; text-align: center; font-size: 13px; font-weight: 700; font-family: var(--mono); letter-spacing: .05em; }
 
   .stat-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 6px; margin-bottom: 10px; }
@@ -59,8 +77,9 @@
   .stat-label { font-size: 10px; color: var(--text2); font-family: var(--mono); text-transform: uppercase; letter-spacing: .05em; }
   .stat-val { font-size: 18px; font-weight: 500; color: var(--text); margin-top: 2px; }
   .stat-val.green { color: var(--green); }
-  .stat-val.red { color: var(--red); }
   .stat-unit { font-size: 11px; color: var(--text2); font-weight: 300; }
+
+  .section-label { font-size: 10px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--text2); margin: 12px 0 6px; }
 
   .ltab { flex: 1; padding: 8px 4px; border-radius: var(--radius); border: 0.5px solid var(--border); background: var(--bg2); color: var(--text2); font-size: 12px; font-family: var(--font); font-weight: 500; cursor: pointer; }
   .ltab-active { border-color: var(--accent) !important; background: var(--accent) !important; color: #FFF !important; }
@@ -98,7 +117,6 @@
 
 <div class="container">
   <div id="toast" class="toast"></div>
-  <div class="soc-selector" id="soc-selector"></div>
   <div id="content"><div class="loading">Caricamento dati…</div></div>
 </div>
 
@@ -128,30 +146,65 @@ async function loadAll() {
     lottiIds.length ? sb('lotti_ingressi', `?lotto_id=in.(${lottiIds.join(',')})&order=data_ingresso.asc`) : [],
   ]);
 
-  renderSelector();
-  document.getElementById('content').innerHTML = '<div class="empty">Seleziona una soccida qui sopra.</div>';
+  renderLista();
 }
 
-function renderSelector() {
-  document.getElementById('soc-selector').innerHTML = SOCCIDE_MOSTRATE.map(nome => `
-    <button class="soc-btn${nome === soccidaAttiva ? ' active' : ''}" onclick="apriSoccida('${nome}')">${nome}</button>
-  `).join('');
+// ── LISTA SOCCIDE (come home di index) ──
+function renderLista() {
+  soccidaAttiva = null;
+  const html = `<div class="soccide-list">${SOCCIDE_MOSTRATE.map(nome => {
+    const soc = allSoccide.find(s => s.nome === nome);
+    if(!soc) return '';
+    const lotti = allLotti.filter(l => l.soccida_id === soc.id);
+    if(!lotti.length) {
+      return `<div class="soccida-card" style="opacity:0.5;cursor:default;">
+        <div class="dot dot-gray"></div>
+        <div class="soc-main"><div class="soc-nome">${nome}</div><div class="soc-meta">nessun lotto attivo</div></div>
+      </div>`;
+    }
+    const totPresenti = lotti.reduce((tot, lotto) => {
+      const capiUsciti = allUscite.filter(u => u.lotto_id === lotto.id).reduce((s,u) => s+(u.capi||0), 0);
+      const capiMorti = allMortalita.filter(m => m.lotto_id === lotto.id).reduce((s,m) => s+(m.capi_morti||0), 0);
+      const ing = allIngressi.filter(i => i.lotto_id === lotto.id);
+      const base = ing.length ? ing.reduce((s,i)=>s+(i.capi||0),0) : (lotto.capi_entrati||0);
+      return tot + base - capiUsciti - capiMorti;
+    }, 0);
+    const dot = totPresenti > 50 ? 'dot-green' : totPresenti > 10 ? 'dot-amber' : 'dot-gray';
+    const badge = totPresenti > 50 ? 'badge-green' : totPresenti > 0 ? 'badge-amber' : 'badge-gray';
+    const badgeText = totPresenti > 50 ? 'attivo' : totPresenti > 0 ? 'in uscita' : 'concluso';
+    const metaLotti = lotti.length > 1 ? `${lotti.length} lotti · ` : (lotti[0].codice + ' · ');
+    const lettere = [...new Set(lotti.map(l => l.lettera_dop).filter(Boolean))].join(', ');
+
+    return `<div class="soccida-card" onclick="apriSoccida('${nome}')">
+      <div class="dot ${dot}"></div>
+      <div class="soc-main">
+        <div class="soc-nome">${nome}</div>
+        <div class="soc-meta">${metaLotti}${fmt(totPresenti)} capi${lettere ? ' · ' + lettere : ''}</div>
+      </div>
+      <span class="soc-badge ${badge}">${badgeText}</span>
+      <span class="soc-arrow">&#8250;</span>
+    </div>`;
+  }).join('')}</div>`;
+  document.getElementById('content').innerHTML = html;
 }
 
 function apriSoccida(nome) {
   soccidaAttiva = nome;
-  renderSelector();
   render();
 }
 
+// ── DETTAGLIO SOCCIDA ──
 function render() {
   const soc = allSoccide.find(s => s.nome === soccidaAttiva);
   const content = document.getElementById('content');
-  if(!soc) { content.innerHTML = '<div class="empty">Soccida non trovata.</div>'; return; }
+  if(!soc) { renderLista(); return; }
+
+  let html = `<div class="detail-sticky-wrap">
+    <button class="back-btn" onclick="renderLista()">← Soccide</button>
+    <div class="soccida-header"><div class="soccida-title">${soc.nome}</div></div>
+  </div>`;
 
   const lotti = allLotti.filter(l => l.soccida_id === soc.id);
-  let html = `<div class="soccida-header"><div class="soccida-title">${soc.nome}</div></div>`;
-
   if(!lotti.length) {
     html += `<div class="empty">Nessun lotto attivo.</div>`;
     content.innerHTML = html;
@@ -195,16 +248,8 @@ function render() {
       <div class="stat-box"><div class="stat-label">Mortalità</div><div class="stat-val" style="color:${capiMorti > 0 ? 'var(--red)' : 'inherit'}">${capiMorti} <span class="stat-unit">capi</span></div></div>
     </div>`;
 
-    // Tabbar: Ingresso / Uscite / Mortalità / Incremento
-    html += `<div style="display:flex;gap:4px;margin-bottom:10px;">
-      <button onclick="switchTab(${lotto.id},'ingresso',this)" class="ltab ltab-active" data-lotto="${lotto.id}">Ingresso</button>
-      <button onclick="switchTab(${lotto.id},'uscite',this)" class="ltab" data-lotto="${lotto.id}">Uscite</button>
-      <button onclick="switchTab(${lotto.id},'mortalita',this)" class="ltab" data-lotto="${lotto.id}">Mortalità</button>
-      <button onclick="switchTab(${lotto.id},'incremento',this)" class="ltab" data-lotto="${lotto.id}">Incremento</button>
-    </div>`;
-
-    // TAB INGRESSO — solo data + peso medio
-    html += `<div id="ltab-ingresso-${lotto.id}">`;
+    // INGRESSO — sempre visibile, solo data + peso medio
+    html += `<div class="section-label">Ingresso</div>`;
     if(ingLotto.length) {
       html += `<div class="simple-container">`;
       ingLotto.forEach(i => {
@@ -222,10 +267,9 @@ function render() {
     } else {
       html += `<div class="empty">Nessun dato di peso ingresso.</div>`;
     }
-    html += `</div>`;
 
-    // TAB USCITE — solo data + peso medio
-    html += `<div id="ltab-uscite-${lotto.id}" style="display:none;">`;
+    // USCITE — sempre visibile, solo data + peso medio
+    html += `<div class="section-label">Uscite</div>`;
     if(uscite.length) {
       html += `<div class="simple-container">`;
       uscite.forEach(u => {
@@ -239,10 +283,15 @@ function render() {
     } else {
       html += `<div class="empty">Nessuna uscita registrata.</div>`;
     }
-    html += `</div>`;
+
+    // TABBAR solo Mortalità / Incremento
+    html += `<div style="display:flex;gap:4px;margin:12px 0 10px;">
+      <button onclick="switchTab(${lotto.id},'mortalita',this)" class="ltab ltab-active" data-lotto="${lotto.id}">Mortalità</button>
+      <button onclick="switchTab(${lotto.id},'incremento',this)" class="ltab" data-lotto="${lotto.id}">Incremento</button>
+    </div>`;
 
     // TAB MORTALITA — inserimento + elenco
-    html += `<div id="ltab-mortalita-${lotto.id}" style="display:none;">`;
+    html += `<div id="ltab-mortalita-${lotto.id}">`;
     html += `<button class="btn-mort" onclick="apriFormMortalita(${lotto.id})">🔴 Registra mortalità</button>`;
     html += `<div id="form-mortalita-${lotto.id}" style="display:none;" class="form-box">
       <div class="field-label">DATA</div>
@@ -295,7 +344,7 @@ function render() {
 }
 
 function switchTab(lottoId, tab, btn) {
-  ['ingresso','uscite','mortalita','incremento'].forEach(t => {
+  ['mortalita','incremento'].forEach(t => {
     const el = document.getElementById(`ltab-${t}-${lottoId}`);
     if(el) el.style.display = t === tab ? 'block' : 'none';
   });
@@ -334,7 +383,6 @@ async function salvaMortalita(lottoId) {
     allMortalita.push(Array.isArray(nuova) ? nuova[0] : nuova);
     showToast(`✓ Mortalità registrata — ${capi} capi il ${fmtDate(data)}`, true);
     render();
-    switchTabAfterRender(lottoId, 'mortalita');
   } catch(e) {
     showToast('Errore: ' + e.message, false);
   }
@@ -359,15 +407,9 @@ async function salvaIncremento(lottoId) {
     lotto.incremento_giornaliero = val;
     showToast(`✓ Incremento aggiornato — ${fmt(val,3)} kg/gg`, true);
     render();
-    switchTabAfterRender(lottoId, 'incremento');
   } catch(e) {
     showToast('Errore: ' + e.message, false);
   }
-}
-
-function switchTabAfterRender(lottoId, tab) {
-  const btn = document.querySelector(`.ltab[data-lotto="${lottoId}"][onclick*="'${tab}'"]`);
-  if(btn) switchTab(lottoId, tab, btn);
 }
 
 function showToast(msg, ok) {
