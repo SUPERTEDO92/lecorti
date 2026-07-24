@@ -254,8 +254,11 @@ function render() {
       html += `<div class="simple-container">`;
       ingLotto.forEach(i => {
         html += `<div class="simple-row">
-          <span class="simple-date">${fmtDate(i.data_ingresso)}${i.capannone ? ` · ${i.capannone.toUpperCase()}` : ''}</span>
-          <span class="simple-peso">${i.mediaRiga !== null ? fmt(i.mediaRiga,1) + ' kg' : '—'}</span>
+          <span class="simple-date">${fmtDate(i.data_ingresso)}${i.capannone ? ` · ${i.capannone.toUpperCase()}` : ''}${i.numero_ddt ? ` · DDT ${i.numero_ddt}` : ''}</span>
+          <span style="display:flex;align-items:center;gap:6px;">
+            ${i.ddt_documento_id ? `<button onclick="apriDocumento(${i.ddt_documento_id})" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:8px;padding:3px 8px;font-size:11px;color:var(--text2);cursor:pointer;font-family:var(--font);">📄 Bolla</button>` : ''}
+            <span class="simple-peso">${i.mediaRiga !== null ? fmt(i.mediaRiga,1) + ' kg' : '—'}</span>
+          </span>
         </div>`;
       });
       html += `</div>`;
@@ -275,8 +278,11 @@ function render() {
       uscite.forEach(u => {
         const mediaU = (u.kg_totali && u.capi) ? (u.kg_totali / u.capi) : null;
         html += `<div class="simple-row">
-          <span class="simple-date">${fmtDate(u.data_uscita)}</span>
-          <span class="simple-peso">${mediaU !== null ? fmt(mediaU,1) + ' kg' : '—'}</span>
+          <span class="simple-date">${fmtDate(u.data_uscita)}${u.numero_ddt ? ` · DDT ${u.numero_ddt}` : ''}</span>
+          <span style="display:flex;align-items:center;gap:6px;">
+            ${u.ddt_documento_id ? `<button onclick="apriDocumento(${u.ddt_documento_id})" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:8px;padding:3px 8px;font-size:11px;color:var(--text2);cursor:pointer;font-family:var(--font);">📄 Bolla</button>` : ''}
+            <span class="simple-peso">${mediaU !== null ? fmt(mediaU,1) + ' kg' : '—'}</span>
+          </span>
         </div>`;
       });
       html += `</div>`;
