@@ -41,3 +41,30 @@ async function sb(table, query = '') {
   });
   return r.json();
 }
+
+// Apre un documento (DDT/liquidazione/referto/fattura) collegato a un record.
+// Legge storage_path e apre il file da Supabase Storage; fallback su decodifica
+// bytea per eventuali documenti vecchi non ancora migrati a Storage.
+async function apriDocumento(docId) {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/documenti?id=eq.${docId}&select=nome_file,content_type,contenuto,storage_path`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
+    const rows = await r.json();
+    if (!rows.length) { alert('Documento non trovato.'); return; }
+    const doc = rows[0];
+    if (doc.storage_path) {
+      window.open(`${SUPABASE_URL}/storage/v1/object/public/documenti/${doc.storage_path}`, '_blank');
+      return;
+    }
+    let hex = doc.contenuto;
+    if (hex.startsWith('\\x')) hex = hex.slice(2);
+    const bytes = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < hex.length; i += 2) bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
+    const blob = new Blob([bytes], { type: doc.content_type || 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  } catch (e) {
+    alert('Errore apertura documento: ' + e.message);
+  }
+}
