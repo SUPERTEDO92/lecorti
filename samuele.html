@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Le Corti — Samuele</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Samuele">
+<meta name="theme-color" content="#1A1A18">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F5F3EE; --bg2: #EDEAE3; --bg3: #E3DFD6;
+    --text: #1A1A18; --text2: #6B6B66; --text3: #9C9C96;
+    --accent: #C17B2A; --accent2: #E8A84A;
+    --green: #2A7A4A; --green-bg: #E8F5EE;
+    --amber: #9A6010; --amber-bg: #FDF3E0;
+    --red: #A03030; --red-bg: #FCEAEA;
+    --border: #D4D0C8; --border2: #C4C0B8;
+    --font: 'IBM Plex Sans', sans-serif; --mono: 'IBM Plex Mono', monospace;
+    --radius: 6px; --radius-lg: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; padding-bottom: 40px; }
+
+  .topbar { position: sticky; top: 0; z-index: 100; background: var(--text); color: #F5F3EE; padding: 12px 20px 10px; display: flex; align-items: baseline; justify-content: space-between; }
+  .topbar-logo { font-family: var(--mono); font-size: 15px; font-weight: 500; letter-spacing: .1em; }
+  .topbar-date { font-size: 11px; color: #888; font-family: var(--mono); }
+
+  .container { max-width: 480px; margin: 0 auto; padding: 14px 14px 0; }
+
+  .soccida-header {
+    background: var(--text); color: #F5F3EE;
+    border-radius: var(--radius-lg); padding: 10px 16px; margin: 18px 0 10px;
+  }
+  .soccida-header:first-child { margin-top: 0; }
+  .soccida-title { font-size: 17px; font-weight: 500; font-family: var(--mono); }
+
+  .lotto-header {
+    background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius-lg);
+    padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .lotto-codice { font-size: 17px; font-weight: 600; font-family: var(--mono); }
+  .lotto-sub { font-size: 13px; color: var(--text2); margin-top: 4px; }
+
+  .arrivi-box { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 10px 14px; margin-bottom: 8px; }
+  .arrivo-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 0.5px solid var(--border); }
+  .arrivo-row:last-child { border-bottom: none; }
+
+  .capannone-banner { background: var(--text); color: #FFF; border-radius: var(--radius); padding: 9px 14px; margin-bottom: 8px; text-align: center; font-size: 13px; font-weight: 700; font-family: var(--mono); letter-spacing: .05em; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin-bottom: 10px; }
+  .stat-box { background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 10px 12px; }
+  .stat-box.hl { background: var(--green-bg); border-color: #B8DECA; }
+  .stat-label { font-size: 10px; color: var(--text2); font-family: var(--mono); text-transform: uppercase; letter-spacing: .05em; }
+  .stat-val { font-size: 18px; font-weight: 500; color: var(--text); margin-top: 2px; }
+  .stat-val.green { color: var(--green); }
+  .stat-unit { font-size: 11px; color: var(--text2); font-weight: 300; }
+
+  .ltab { flex: 1; padding: 7px 4px; border-radius: var(--radius); border: 0.5px solid var(--border); background: var(--bg2); color: var(--text2); font-size: 11px; font-family: var(--font); font-weight: 500; cursor: pointer; }
+  .ltab-active { border-color: var(--accent) !important; background: var(--accent) !important; color: #FFF !important; }
+
+  .uscite-container { background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 12px; }
+  .uscite-header { padding: 9px 14px; border-bottom: 0.5px solid var(--border); background: var(--bg2); }
+  .uscite-header-text { font-size: 10px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--text2); }
+  .uscita-row { padding: 8px 14px; border-bottom: 0.5px solid var(--border); }
+  .uscita-row:last-child { border-bottom: none; }
+  .uscita-date { font-size: 11px; font-weight: 500; color: var(--text); font-family: var(--mono); margin-bottom: 4px; }
+  .uscita-line { display: flex; gap: 0; }
+  .uc { flex: 1; min-width: 0; }
+  .uc-label { font-size: 9px; color: var(--text3); font-family: var(--mono); text-transform: uppercase; }
+  .uc-val { font-size: 12px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .uc-val.green { color: var(--green); }
+
+  .totale-bar { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .tot-label { font-size: 11px; color: var(--text2); }
+  .tot-val { font-size: 15px; font-weight: 500; color: var(--green); font-family: var(--mono); }
+
+  .empty { text-align: center; padding: 24px; color: var(--text3); font-size: 12px; }
+  .loading { text-align: center; padding: 60px 20px; color: var(--text2); font-size: 13px; font-family: var(--mono); }
+
+  .doc-btn-sm { background: #FFF; border: 0.5px solid var(--border); border-radius: 10px; padding: 1px 7px; font-size: 9px; color: var(--text2); cursor: pointer; font-family: var(--font); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-logo">LE CORTI — SAMUELE</span>
+  <span class="topbar-date" id="topbar-date"></span>
+</div>
+
+<div class="container" id="content">
+  <div class="loading">Caricamento dati…</div>
+</div>
+
+<script src="lecorti-shared.js"></script>
+<script>
+const SOCCIDE_MOSTRATE = ['FILIPPINI', 'MIGLIORATI', 'SCARATTI'];
+
+let allSoccide = [], allLotti = [], allUscite = [], allMortalita = [], allSanitario = [], allIngressi = [];
+
+document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('it-IT');
+
+function calcGg(dataIngresso, dataUscita) {
+  if(!dataIngresso || !dataUscita) return null;
+  return Math.round((new Date(dataUscita) - new Date(dataIngresso)) / 86400000);
+}
+function calcIncr(u, lotto) {
+  if(u.incremento) return fmt(u.incremento, 3);
+  const gg = u.giorni_permanenza || calcGg(lotto.data_ingresso, u.data_uscita);
+  if(!gg || !u.kg_totali || !u.capi || !lotto.media_ingresso) return '—';
+  return fmt((u.kg_totali / u.capi - lotto.media_ingresso) / gg, 3);
+}
+function calcGgStr(u, lotto) {
+  return u.giorni_permanenza || calcGg(lotto.data_ingresso, u.data_uscita) || '—';
+}
+
+function switchLottoTab(lottoId, tab, btn) {
+  ['uscite','mortalita','izs'].forEach(t => {
+    const el = document.getElementById(`ltab-${t}-${lottoId}`);
+    if(el) el.style.display = t === tab ? 'block' : 'none';
+  });
+  document.querySelectorAll(`.ltab[data-lotto="${lottoId}"]`).forEach(b => {
+    b.classList.toggle('ltab-active', b === btn);
+  });
+}
+
+async function loadAll() {
+  allSoccide = await sb('soccide', `?nome=in.(${SOCCIDE_MOSTRATE.map(n=>encodeURIComponent(n)).join(',')})`);
+  const socIds = allSoccide.map(s => s.id);
+  if(!socIds.length) {
+    document.getElementById('content').innerHTML = '<div class="empty">Nessuna soccida trovata.</div>';
+    return;
+  }
+
+  allLotti = await sb('lotti', `?soccida_id=in.(${socIds.join(',')})&attivo=eq.true&order=data_ingresso.asc`);
+  const lottiIds = allLotti.map(l => l.id);
+
+  [allUscite, allMortalita, allSanitario, allIngressi] = await Promise.all([
+    lottiIds.length ? sb('uscite', `?lotto_id=in.(${lottiIds.join(',')})&order=data_uscita.asc`) : [],
+    lottiIds.length ? sb('mortalita', `?lotto_id=in.(${lottiIds.join(',')})&order=data_evento.asc`) : [],
+    lottiIds.length ? sb('sanitario', `?lotto_id=in.(${lottiIds.join(',')})&order=data_referto.asc`) : [],
+    lottiIds.length ? sb('lotti_ingressi', `?lotto_id=in.(${lottiIds.join(',')})&order=data_ingresso.asc`) : [],
+  ]);
+
+  render();
+}
+
+function render() {
+  const oggi = new Date();
+  let html = '';
+
+  SOCCIDE_MOSTRATE.forEach(nome => {
+    const soc = allSoccide.find(s => s.nome === nome);
+    html += `<div class="soccida-header"><div class="soccida-title">${nome}</div></div>`;
+    if(!soc) { html += `<div class="empty">Soccida non trovata.</div>`; return; }
+
+    const lotti = allLotti.filter(l => l.soccida_id === soc.id);
+    if(!lotti.length) { html += `<div class="empty">Nessun lotto attivo.</div>`; return; }
+
+    lotti.forEach(lotto => {
+      const ingLotto = allIngressi.filter(i => i.lotto_id === lotto.id).map(i => {
+        const mediaRiga = (i.kg && i.capi) ? (i.kg / i.capi) : null;
+        const ggRiga = Math.floor((oggi - new Date(i.data_ingresso)) / 86400000);
+        const pesoOggiRiga = (mediaRiga !== null && lotto.incremento_giornaliero)
+          ? mediaRiga + ggRiga * lotto.incremento_giornaliero : null;
+        return { ...i, mediaRiga, pesoOggiRiga };
+      }).sort((a,b) => {
+        if(a.pesoOggiRiga === null && b.pesoOggiRiga === null) return a.data_ingresso.localeCompare(b.data_ingresso);
+        if(a.pesoOggiRiga === null) return 1;
+        if(b.pesoOggiRiga === null) return -1;
+        return a.pesoOggiRiga - b.pesoOggiRiga;
+      });
+
+      const uscite = allUscite.filter(u => u.lotto_id === lotto.id);
+      const mortLotto = allMortalita.filter(m => m.lotto_id === lotto.id);
+      const sanLotto = allSanitario.filter(s => s.lotto_id === lotto.id);
+      const capiMorti = mortLotto.reduce((s,m) => s+(m.capi_morti||0), 0);
+      const capiUsciti = uscite.reduce((s,u) => s+(u.capi||0), 0);
+      const totIng = ingLotto.length ? ingLotto.reduce((s,i)=>s+(i.capi||0),0) : (lotto.capi_entrati||0);
+      const presenti = totIng - capiMorti - capiUsciti;
+      const gg = Math.floor((oggi - new Date(lotto.data_ingresso)) / 86400000);
+      const prevPeso = lotto.media_ingresso && lotto.incremento_giornaliero
+        ? Math.round(lotto.media_ingresso + gg * lotto.incremento_giornaliero) : null;
+      const totaleLiquidato = uscite.reduce((s,u) => s+(u.liquidazione||0), 0);
+
+      html += `<div class="lotto-header">
+        <div>
+          <div class="lotto-codice">Lotto ${lotto.codice}</div>
+          <div class="lotto-sub">${lotto.provenienza || ''}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:15px;font-weight:600;font-family:var(--mono);">${fmtDate(lotto.data_ingresso)}</div>
+          ${lotto.lettera_dop ? `<div style="font-size:13px;font-weight:700;color:var(--text);margin-top:2px;">LETTERA: ${lotto.lettera_dop}</div>` : ''}
+        </div>
+      </div>`;
+
+      if(ingLotto.length) {
+        html += `<div class="arrivi-box">`;
+        ingLotto.forEach(i => {
+          html += `<div class="arrivo-row">
+            <div>
+              <div style="font-size:12px;">Arrivo ${fmtDate(i.data_ingresso)}${i.capannone ? ` · <strong style="text-transform:uppercase;">${i.capannone}</strong>` : ''}${i.ddt_documento_id ? ` <button class="doc-btn-sm" onclick="apriDocumento(${i.ddt_documento_id})">📄</button>` : ''}</div>
+              ${i.mediaRiga !== null ? `<div style="font-size:10px;color:var(--text2);font-family:var(--mono);margin-top:2px;">${fmt(i.mediaRiga,1)} kg/capo ingresso${i.pesoOggiRiga !== null ? ` → ~${fmt(i.pesoOggiRiga,1)} kg/capo oggi` : ''}</div>` : ''}
+            </div>
+            <span style="font-size:14px;font-weight:600;font-family:var(--mono);">${fmt(i.capi)}</span>
+          </div>`;
+        });
+        html += `</div>`;
+      }
+
+      if(lotto.capannone) {
+        html += `<div class="capannone-banner">📍 CAPANNONE: ${lotto.capannone.toUpperCase()}</div>`;
+      }
+
+      html += `<div class="stat-grid">
+        <div class="stat-box"><div class="stat-label">Capi entrati</div><div class="stat-val">${fmt(totIng)} <span class="stat-unit">capi</span></div></div>
+        <div class="stat-box hl"><div class="stat-label">Presenti stimati</div><div class="stat-val green">${fmt(presenti)} <span class="stat-unit">capi</span></div></div>
+        <div class="stat-box"><div class="stat-label">Giorni in stalla</div><div class="stat-val">${gg} <span class="stat-unit">gg</span></div></div>
+        <div class="stat-box"><div class="stat-label">Peso arrivo</div><div class="stat-val">${lotto.media_ingresso ? fmt(lotto.media_ingresso,1) : '—'} <span class="stat-unit">kg/capo</span></div></div>
+        <div class="stat-box"><div class="stat-label">Previsione peso</div><div class="stat-val">${prevPeso ? prevPeso : '—'} <span class="stat-unit">kg</span></div></div>
+        <div class="stat-box"><div class="stat-label">Mortalità</div><div class="stat-val" style="color:${capiMorti > 0 ? 'var(--red)' : 'inherit'}">${capiMorti} <span class="stat-unit">capi</span></div></div>
+      </div>`;
+
+      html += `<div style="display:flex;gap:4px;margin-bottom:10px;">
+        <button onclick="switchLottoTab(${lotto.id},'uscite',this)" class="ltab ltab-active" data-lotto="${lotto.id}">Uscite${uscite.length ? ' ('+uscite.length+')' : ''}</button>
+        <button onclick="switchLottoTab(${lotto.id},'mortalita',this)" class="ltab" data-lotto="${lotto.id}">Mortalità${mortLotto.length ? ' ('+mortLotto.length+')' : ''}</button>
+        <button onclick="switchLottoTab(${lotto.id},'izs',this)" class="ltab" data-lotto="${lotto.id}">Referti${sanLotto.length ? ' ('+sanLotto.length+')' : ''}</button>
+      </div>`;
+
+      html += `<div id="ltab-uscite-${lotto.id}">`;
+      if(uscite.length) {
+        html += `<div class="uscite-container"><div class="uscite-header"><span class="uscite-header-text">Uscite lotto ${lotto.codice}</span></div>`;
+        html += uscite.map(u => `
+          <div class="uscita-row">
+            <div class="uscita-date">${fmtDate(u.data_uscita)}${u.numero_ddt ? ' · DDT ' + u.numero_ddt : ''} · ${u.macello || '—'}</div>
+            <div class="uscita-line">
+              <div class="uc"><div class="uc-label">capi</div><div class="uc-val">${fmt(u.capi)}</div></div>
+              <div class="uc"><div class="uc-label">kg</div><div class="uc-val">${fmt(u.kg_totali)}</div></div>
+              <div class="uc"><div class="uc-label">media</div><div class="uc-val">${u.kg_totali && u.capi ? fmt(u.kg_totali/u.capi,1) : '—'}</div></div>
+              <div class="uc"><div class="uc-label">gg</div><div class="uc-val">${calcGgStr(u, lotto)}</div></div>
+              <div class="uc"><div class="uc-label">incr.</div><div class="uc-val">${calcIncr(u, lotto)}</div></div>
+              <div class="uc"><div class="uc-label">liquid.</div><div class="uc-val green">${u.liquidazione ? fmt(u.liquidazione) + ' €' : '—'}</div></div>
+            </div>
+          </div>`).join('');
+        html += `</div>`;
+        if(totaleLiquidato > 0) {
+          html += `<div class="totale-bar"><span class="tot-label">Totale liquidato lotto ${lotto.codice}</span><span class="tot-val">${fmt(totaleLiquidato)} €</span></div>`;
+        }
+      } else {
+        html += `<div class="empty">Nessuna uscita registrata.</div>`;
+      }
+      html += `</div>`;
+
+      html += `<div id="ltab-mortalita-${lotto.id}" style="display:none;">`;
+      if(mortLotto.length) {
+        html += `<div style="max-height:38vh;overflow-y:auto;margin-bottom:6px;">`;
+        mortLotto.forEach(m => {
+          html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--bg2);border-radius:var(--radius);margin-bottom:4px;border:0.5px solid var(--border);">
+            <div>
+              <div style="font-size:12px;font-weight:500;">${fmtDate(m.data_evento)}</div>
+              <div style="font-size:10px;color:var(--text2);margin-top:2px;">${m.lettera_dop ? 'Lettera ' + m.lettera_dop + ' · ' : ''}${m.trattamento ? 'Tratt. ' + m.trattamento : ''}${m.note ? ' · ' + m.note : ''}</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:18px;font-weight:500;color:var(--red);font-family:var(--mono);">${m.capi_morti || 0}</div>
+              <div style="font-size:10px;color:var(--text2);">capi</div>
+            </div>
+          </div>`;
+        });
+        html += `</div><div style="display:flex;justify-content:space-between;padding:6px 10px;font-size:11px;font-family:var(--mono);color:var(--text2);">
+          <span>Totale mortalità lotto</span><span style="color:var(--red);font-weight:500;">${capiMorti} capi</span>
+        </div>`;
+      } else {
+        html += `<div class="empty">Nessuna mortalità registrata.</div>`;
+      }
+      html += `</div>`;
+
+      html += `<div id="ltab-izs-${lotto.id}" style="display:none;">`;
+      if(sanLotto.length) {
+        sanLotto.forEach(r => {
+          html += `<div style="padding:8px 10px;background:var(--bg2);border-radius:var(--radius);margin-bottom:4px;border:0.5px solid var(--border);">
+            <div style="font-size:10px;color:var(--text2);font-family:var(--mono);">${fmtDate(r.data_referto)}</div>
+            <div style="font-size:12px;margin-top:2px;">${r.patologia || '—'}</div>
+            ${r.note_trattamento ? `<div style="font-size:10px;color:var(--text2);margin-top:2px;">${r.note_trattamento}</div>` : ''}
+          </div>`;
+        });
+      } else {
+        html += `<div class="empty">Nessun referto IZS registrato.</div>`;
+      }
+      html += `</div>`;
+
+      html += `<div style="border-top:1px solid var(--border);margin:16px 0"></div>`;
+    });
+  });
+
+  document.getElementById('content').innerHTML = html;
+}
+
+loadAll();
+</script>
+</body>
+</html>
