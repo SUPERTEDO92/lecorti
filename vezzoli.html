@@ -187,7 +187,7 @@ async function loadAll() {
   soccidaId = soccide[0].id;
 
   [allLotti, allMortalita] = await Promise.all([
-    sb('lotti', `?soccida_id=eq.${soccidaId}&attivo=eq.true&order=data_ingresso.asc`),
+    sb('lotti', `?soccida_id=eq.${soccidaId}&attivo=eq.true&order=data_ingresso.desc`),
     sb('mortalita', `?order=data_evento.desc`),
   ]);
 
