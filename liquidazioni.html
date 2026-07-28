@@ -474,6 +474,7 @@ function render() {
       }
 
       const valoreCapo = (totLiqG && totCapiG) ? totLiqG / totCapiG : null;
+      const noteRighe = righe.map(r => r.note).filter(Boolean);
 
       let out = `<div class="liq-row">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><strong style="color:var(--text);font-size:16px;font-family:var(--mono);">${fmtDate(u.data_uscita)}</strong>${u.numero_ddt ? `<span style="font-size:20px;font-family:var(--mono);font-weight:600;color:var(--text);">Bolla n. ${u.numero_ddt}</span>` : ''}</div>
@@ -498,7 +499,8 @@ function render() {
         </div>
         ${valoreCapo ? `<div style="text-align:right;margin-top:4px;font-size:13px;font-family:var(--mono);color:var(--green);font-weight:500;">valore/capo: ${fmt(valoreCapo,0)} €</div>` : ''}
 
-        ${dettaglioLiq}`;
+        ${dettaglioLiq}
+        ${noteRighe.length ? `<div style="margin-top:6px;font-size:11px;color:var(--text2);background:var(--bg2);border-radius:var(--radius);padding:6px 10px;">ℹ️ ${noteRighe.join(' · ')}</div>` : ''}`;
 
       if(multi) {
         out += `<div style="margin-top:8px;padding-top:8px;border-top:0.5px dashed var(--border);">
