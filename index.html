@@ -2272,7 +2272,8 @@ function renderTrasferimenti() {
 
       const margine = (isVend && t.valore != null && t.costo_acquisto != null) ? (t.valore - t.costo_acquisto) : null;
 
-      const ingT = (allIngressi||[]).filter(i => i.lotto_id === t.lotto_id && i.data_ingresso === t.data_trasferimento).sort((a,b) => a.data_ingresso.localeCompare(b.data_ingresso));
+      const acquistiStessoLotto = isAcq ? allTrasferimenti.filter(x => x.tipo === 'ACQUISTO' && x.lotto_id === t.lotto_id) : [];
+      const ingT = (allIngressi||[]).filter(i => i.lotto_id === t.lotto_id && (acquistiStessoLotto.length <= 1 || i.data_ingresso === t.data_trasferimento)).sort((a,b) => a.data_ingresso.localeCompare(b.data_ingresso));
       const multiArrivo = isAcq && ingT.length >= 1;
 
       return `<div class="trasfrow">
