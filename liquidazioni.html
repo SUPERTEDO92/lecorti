@@ -610,7 +610,7 @@ function renderTrasf() {
           <div style="display:flex;align-items:center;gap:6px;">
             ${t.ddt_documento_id ? `<button onclick="apriDocumento(${t.ddt_documento_id})" style="background:#FFF;border:0.5px solid var(--border);border-radius:10px;padding:3px 9px;font-size:11px;color:var(--text2);cursor:pointer;font-family:var(--font);">📄 DDT</button>` : ''}
             ${t.calcolo_documento_id ? `<button onclick="apriDocumento(${t.calcolo_documento_id})" style="background:#FDF3E7;border:0.5px solid #EAD2A8;border-radius:10px;padding:3px 9px;font-size:11px;color:var(--accent,#C17B2A);font-weight:600;cursor:pointer;font-family:var(--font);">📄 Conteggio</button>` : ''}
-            ${t.fattura_documento_id ? `<button onclick="apriDocumento(${t.fattura_documento_id})" style="background:#FDF3E7;border:0.5px solid #EAD2A8;border-radius:10px;padding:3px 9px;font-size:11px;color:var(--accent,#C17B2A);font-weight:600;cursor:pointer;font-family:var(--font);">📄 Fattura</button>` : (isVend ? `<span style="background:#FCEAEA;border:0.5px solid #F0BBBB;border-radius:10px;padding:3px 9px;font-size:11px;color:var(--red,#A03030);font-weight:600;">⚠️ Non fatturato</span>` : '')}
+            ${t.fattura_documento_id ? `<button onclick="apriDocumento(${t.fattura_documento_id})" style="background:#FDF3E7;border:0.5px solid #EAD2A8;border-radius:10px;padding:3px 9px;font-size:11px;color:var(--accent,#C17B2A);font-weight:600;cursor:pointer;font-family:var(--font);">📄 Fattura</button>` : ''}
             <span class="trasf-badge" style="${badgeStyle}">${t.tipo || 'TRASF.'}</span>
           </div>
         </div>
