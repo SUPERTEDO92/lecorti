@@ -2272,8 +2272,8 @@ function renderTrasferimenti() {
 
       const margine = (isVend && t.valore != null && t.costo_acquisto != null) ? (t.valore - t.costo_acquisto) : null;
 
-      const ingT = (allIngressi||[]).filter(i => i.lotto_id === t.lotto_id).sort((a,b) => a.data_ingresso.localeCompare(b.data_ingresso));
-      const multiArrivo = isAcq && ingT.length > 1;
+      const ingT = (allIngressi||[]).filter(i => i.lotto_id === t.lotto_id && i.data_ingresso === t.data_trasferimento).sort((a,b) => a.data_ingresso.localeCompare(b.data_ingresso));
+      const multiArrivo = isAcq && ingT.length >= 1;
 
       return `<div class="trasfrow">
         <div class="trasf-top">
@@ -2284,6 +2284,7 @@ function renderTrasferimenti() {
           <div style="display:flex;align-items:center;gap:6px;">
             ${t.ddt_documento_id ? `<button onclick="apriDocumento(${t.ddt_documento_id})" style="background:#FFF;border:0.5px solid var(--border);border-radius:10px;padding:2px 8px;font-size:10px;color:var(--text2);cursor:pointer;font-family:var(--font);">📄 DDT</button>` : ''}
             ${t.calcolo_documento_id ? `<button onclick="apriDocumento(${t.calcolo_documento_id})" style="background:#FDF3E7;border:0.5px solid #EAD2A8;border-radius:10px;padding:2px 8px;font-size:10px;color:var(--accent);font-weight:600;cursor:pointer;font-family:var(--font);">📄 Conteggio</button>` : ''}
+            ${t.fattura_documento_id ? `<button onclick="apriDocumento(${t.fattura_documento_id})" style="background:#FDF3E7;border:0.5px solid #EAD2A8;border-radius:10px;padding:2px 8px;font-size:10px;color:var(--accent);font-weight:600;cursor:pointer;font-family:var(--font);">📄 Fattura</button>` : ''}
             <span style="font-size:10px;font-family:var(--mono);font-weight:500;padding:2px 8px;border-radius:10px;${badgeStyle}">${t.tipo || 'TRASF.'}</span>
           </div>
         </div>
