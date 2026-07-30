@@ -2277,19 +2277,21 @@ function renderTrasferimenti() {
       const multiArrivo = isAcq && ingT.length >= 1;
 
       return `<div class="trasfrow">
-        <div class="trasf-top">
-          <div style="display:flex;align-items:center;gap:6px;">
-            <span class="trasf-da">${fmtDate(t.data_trasferimento)} · ${t.soccida_partenza}</span>
-            <span style="font-size:11px;color:var(--text2)">→ ${t.soccida_destinazione}</span>
+        <div style="font-size:14px;font-weight:600;font-family:var(--mono);margin-bottom:4px;">${fmtDate(t.data_trasferimento)}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div style="font-size:13px;">
+            <span style="font-weight:500;">${t.soccida_partenza}</span>
+            <span style="color:var(--text2);"> → </span>
+            <span style="font-weight:500;">${t.soccida_destinazione}</span>
           </div>
-          <div style="display:flex;align-items:center;gap:6px;">
-            ${t.ddt_documento_id ? `<button onclick="apriDocumento(${t.ddt_documento_id})" style="background:#FFF;border:0.5px solid var(--border);border-radius:10px;padding:2px 8px;font-size:10px;color:var(--text2);cursor:pointer;font-family:var(--font);">📄 DDT</button>` : ''}
-            ${t.calcolo_documento_id ? `<button onclick="apriDocumento(${t.calcolo_documento_id})" style="background:#FDF3E7;border:0.5px solid #EAD2A8;border-radius:10px;padding:2px 8px;font-size:10px;color:var(--accent);font-weight:600;cursor:pointer;font-family:var(--font);">📄 Conteggio</button>` : ''}
-            ${t.fattura_documento_id ? `<button onclick="apriDocumento(${t.fattura_documento_id})" style="background:#FDF3E7;border:0.5px solid #EAD2A8;border-radius:10px;padding:2px 8px;font-size:10px;color:var(--accent);font-weight:600;cursor:pointer;font-family:var(--font);">📄 Fattura</button>` : ''}
-            <span style="font-size:10px;font-family:var(--mono);font-weight:500;padding:2px 8px;border-radius:10px;${badgeStyle}">${t.tipo || 'TRASF.'}</span>
-          </div>
+          <span style="font-size:10px;font-family:var(--mono);font-weight:500;padding:3px 9px;border-radius:10px;${badgeStyle}">${t.tipo || 'TRASF.'}</span>
         </div>
-        ${multiArrivo ? `<div style="font-size:10.5px;color:var(--text2);font-family:var(--mono);margin:-2px 0 6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+        ${(t.ddt_documento_id || t.calcolo_documento_id || t.fattura_documento_id) ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+          ${t.ddt_documento_id ? `<button onclick="apriDocumento(${t.ddt_documento_id})" style="background:#FFF;border:0.5px solid var(--border);border-radius:10px;padding:3px 9px;font-size:10.5px;color:var(--text2);cursor:pointer;font-family:var(--font);">📄 DDT</button>` : ''}
+          ${t.calcolo_documento_id ? `<button onclick="apriDocumento(${t.calcolo_documento_id})" style="background:#FDF3E7;border:0.5px solid #EAD2A8;border-radius:10px;padding:3px 9px;font-size:10.5px;color:var(--accent);font-weight:600;cursor:pointer;font-family:var(--font);">📄 Conteggio</button>` : ''}
+          ${t.fattura_documento_id ? `<button onclick="apriDocumento(${t.fattura_documento_id})" style="background:#FDF3E7;border:0.5px solid #EAD2A8;border-radius:10px;padding:3px 9px;font-size:10.5px;color:var(--accent);font-weight:600;cursor:pointer;font-family:var(--font);">📄 Fattura</button>` : ''}
+        </div>` : ''}
+        ${multiArrivo ? `<div style="font-size:10.5px;color:var(--text2);font-family:var(--mono);margin-bottom:8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:var(--bg2);border-radius:8px;padding:6px 8px;">
           ${ingT.map(i => `<span>${i.numero_ddt ? 'DDT '+i.numero_ddt+' ' : ''}(${fmtDate(i.data_ingresso)}, ${fmt(i.capi)} capi)${i.ddt_documento_id ? ` <button onclick="apriDocumento(${i.ddt_documento_id})" style="background:#FFF;border:0.5px solid var(--border);border-radius:8px;padding:0px 6px;font-size:9px;color:var(--text2);cursor:pointer;font-family:var(--font);">📄</button>` : ''}</span>`).join(' + ')}
         </div>` : ''}
         <div class="trasf-line">
