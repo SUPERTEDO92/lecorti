@@ -69,18 +69,18 @@
   @property --wipe {
     syntax: '<percentage>';
     inherits: false;
-    initial-value: -10%;
+    initial-value: -28%;
   }
   .page.visible {
     display: block;
-    --wipe: -10%;
-    animation: pageWipeIn .7s cubic-bezier(.4,0,.2,1) forwards;
-    -webkit-mask-image: linear-gradient(to right, black 0%, black calc(var(--wipe) - 10%), transparent var(--wipe), transparent 100%);
-    mask-image: linear-gradient(to right, black 0%, black calc(var(--wipe) - 10%), transparent var(--wipe), transparent 100%);
+    --wipe: -28%;
+    animation: pageWipeIn .8s cubic-bezier(.4,0,.2,1) forwards;
+    -webkit-mask-image: linear-gradient(to right, black 0%, black calc(var(--wipe) - 28%), transparent var(--wipe), transparent 100%);
+    mask-image: linear-gradient(to right, black 0%, black calc(var(--wipe) - 28%), transparent var(--wipe), transparent 100%);
   }
   @keyframes pageWipeIn {
-    from { --wipe: -10%; }
-    to   { --wipe: 110%; }
+    from { --wipe: -28%; }
+    to   { --wipe: 128%; }
   }
 
   /* CARDS SOCCIDE */
