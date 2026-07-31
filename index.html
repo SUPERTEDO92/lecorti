@@ -82,6 +82,14 @@
     from { --wipe: -28%; }
     to   { --wipe: 128%; }
   }
+  .page.incoming {
+    position: fixed; inset: 0;
+    overflow-y: auto;
+    background: var(--bg);
+    z-index: 200;
+    max-width: none;
+    margin: 0;
+  }
 
   /* CARDS SOCCIDE */
   .soccide-list { display: flex; flex-direction: column; gap: 2px; margin-top: 12px; }
@@ -1175,10 +1183,12 @@ function apriSoccidaConAnimazione(socId) {
 }
 
 function showPage(name, lottoId) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('visible'));
+  const newPage = document.getElementById(`page-${name}`);
+  const oldPages = Array.from(document.querySelectorAll('.page.visible')).filter(p => p !== newPage);
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   currentPage = name;
-  document.getElementById(`page-${name}`).classList.add('visible');
+  newPage.classList.add('incoming');
+  newPage.classList.add('visible');
   document.getElementById('topbar-nav').style.display = (name === 'home') ? 'flex' : 'none';
   document.getElementById('global-back-btn').style.display = ['home','detail','inserimento','analisi','stampa'].includes(name) ? 'none' : 'flex';
   const navMap = {home:'home',storico:'storico',trasferimenti:'trasferimenti',archivio:'archivio',inserimento:'inserimento',calcolo:'calcolo'};
@@ -1195,6 +1205,10 @@ function showPage(name, lottoId) {
   if(name === 'analisi' && !lottoId && currentLottoId) renderAnalisi(currentLottoId);
   if(name === 'stampa' && lottoId) { currentLottoId = lottoId; renderStampa(lottoId); }
   window.scrollTo(0,0);
+  setTimeout(() => {
+    newPage.classList.remove('incoming');
+    oldPages.forEach(p => p.classList.remove('visible'));
+  }, 820);
 }
 
 let macelliAnnoFiltro = 'tutti';
