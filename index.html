@@ -53,10 +53,10 @@
   .topbar-date { font-size: 11px; color: #888; font-family: var(--mono); }
   .topbar-nav {
     display: flex; flex-wrap: wrap; gap: 4px;
-    padding: 8px 12px 10px;
+    padding: 6px 12px 8px;
     border-top: 0.5px solid rgba(255,255,255,.08);
     overflow: hidden;
-    max-height: 100px;
+    max-height: 92px;
     opacity: 1;
     transition: max-height .55s cubic-bezier(.4,0,.2,1), opacity .45s ease, padding .55s cubic-bezier(.4,0,.2,1), border-color .55s ease;
   }
@@ -68,7 +68,7 @@
     border-top-color: transparent;
   }
   .nav-btn {
-    flex: 1 1 30%; padding: 8px 4px; border-radius: var(--radius); border: none;
+    flex: 1 1 30%; padding: 7px 4px; border-radius: var(--radius); border: none;
     font-size: 13px; font-family: var(--font); cursor: pointer; text-align: center;
     background: transparent; color: #888; transition: all .15s;
   }
@@ -1165,26 +1165,29 @@ async function loadAll() {
 }
 
 function apriSoccidaConAnimazione(socId) {
-  const herd = document.getElementById('piglet-herd');
-  herd.classList.remove('go');
-  const N = 135;
-  let html = '';
-  for(let i = 0; i < N; i++) {
-    const top = (Math.random() * 96).toFixed(1);
-    const delay = Math.round(Math.random() * 420);
-    const size = Math.round(26 + Math.random() * 46);
-    html += `<span style="top:${top}%;font-size:${size}px;animation-delay:${delay}ms;">🐖</span>`;
-  }
-  herd.innerHTML = html;
-  void herd.offsetWidth;
-  herd.classList.add('go');
+  document.getElementById('topbar-nav').classList.add('collapsed');
   setTimeout(() => {
-    showPage('detail', socId);
-  }, 320);
-  setTimeout(() => {
+    const herd = document.getElementById('piglet-herd');
     herd.classList.remove('go');
-    herd.innerHTML = '';
-  }, 1400);
+    const N = 135;
+    let html = '';
+    for(let i = 0; i < N; i++) {
+      const top = (Math.random() * 96).toFixed(1);
+      const delay = Math.round(Math.random() * 420);
+      const size = Math.round(26 + Math.random() * 46);
+      html += `<span style="top:${top}%;font-size:${size}px;animation-delay:${delay}ms;">🐖</span>`;
+    }
+    herd.innerHTML = html;
+    void herd.offsetWidth;
+    herd.classList.add('go');
+    setTimeout(() => {
+      showPage('detail', socId);
+    }, 320);
+    setTimeout(() => {
+      herd.classList.remove('go');
+      herd.innerHTML = '';
+    }, 1400);
+  }, 480);
 }
 
 function showPage(name, lottoId) {
