@@ -82,13 +82,6 @@
     transform: translateX(105vw);
     will-change: transform;
   }
-  #page-curtain.go {
-    animation: curtainSlide .85s cubic-bezier(.45,0,.15,1) forwards;
-  }
-  @keyframes curtainSlide {
-    from { transform: translateX(0); }
-    to   { transform: translateX(105vw); }
-  }
 
   /* CARDS SOCCIDE */
   .soccide-list { display: flex; flex-direction: column; gap: 2px; margin-top: 12px; }
@@ -484,6 +477,7 @@
     100% { transform: translateX(calc(100vw + 160px)) scaleX(-1); opacity: 0; }
   }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 </head>
 <body>
 
@@ -1188,12 +1182,23 @@ function showPage(name, lottoId) {
   currentPage = name;
 
   const curtain = document.getElementById('page-curtain');
-  curtain.classList.remove('go');
-  curtain.style.transition = 'none';
-  curtain.style.transform = 'translateX(0)';
-  void curtain.offsetWidth;
-  curtain.style.transition = '';
-  curtain.classList.add('go');
+  gsap.killTweensOf(curtain);
+  gsap.fromTo(curtain,
+    { x: '0vw' },
+    {
+      x: '105vw',
+      duration: 0.85,
+      ease: 'power3.inOut',
+      onComplete: () => {
+        newPage.classList.remove('incoming');
+        document.getElementById('topbar-nav').style.display = (name === 'home') ? 'flex' : 'none';
+        document.getElementById('global-back-btn').style.display = ['home','detail','inserimento','analisi','stampa'].includes(name) ? 'none' : 'flex';
+        document.querySelectorAll('.nav-btn').forEach(b => {
+          b.classList.toggle('active', b.getAttribute('onclick')?.includes(`'${navName}'`));
+        });
+      }
+    }
+  );
 
   newPage.classList.add('incoming');
   newPage.classList.add('visible');
@@ -1208,14 +1213,6 @@ function showPage(name, lottoId) {
   if(name === 'analisi' && !lottoId && currentLottoId) renderAnalisi(currentLottoId);
   if(name === 'stampa' && lottoId) { currentLottoId = lottoId; renderStampa(lottoId); }
   window.scrollTo(0,0);
-  setTimeout(() => {
-    newPage.classList.remove('incoming');
-    document.getElementById('topbar-nav').style.display = (name === 'home') ? 'flex' : 'none';
-    document.getElementById('global-back-btn').style.display = ['home','detail','inserimento','analisi','stampa'].includes(name) ? 'none' : 'flex';
-    document.querySelectorAll('.nav-btn').forEach(b => {
-      b.classList.toggle('active', b.getAttribute('onclick')?.includes(`'${navName}'`));
-    });
-  }, 900);
 }
 
 let macelliAnnoFiltro = 'tutti';
