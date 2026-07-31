@@ -438,34 +438,39 @@
     @keyframes loadingPulse { 0%,100% { opacity: .45; } 50% { opacity: 1; } }
   }
 
-  /* ── OVERLAY MAIALINO — transizione veloce all'apertura di una soccida ── */
-  .loading-overlay {
+  /* ── MANDRIA DI MAIALINI — attraversano lo schermo all'apertura di una soccida ── */
+  .piglet-herd {
     position: fixed; inset: 0; z-index: 300;
-    background: rgba(245,243,238,.94);
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
-    opacity: 0; pointer-events: none;
-    transition: opacity .18s ease;
+    pointer-events: none;
   }
-  .loading-overlay.show { opacity: 1; pointer-events: all; }
-  .loading-overlay .pig-load {
-    font-size: 52px;
-    animation: pigLoadBounce .5s ease-in-out infinite;
+  .piglet-herd span {
+    position: absolute; left: -140px;
+    font-size: 64px; transform: scaleX(-1);
+    filter: drop-shadow(0 6px 8px rgba(26,26,24,.25));
+    opacity: 0;
   }
-  .loading-overlay .pig-load-text {
-    font-size: 12px; font-family: var(--mono); color: var(--text2);
-    text-transform: uppercase; letter-spacing: .08em;
+  .piglet-herd.go span {
+    animation: herdRun .85s cubic-bezier(.5,0,.5,1) forwards;
   }
-  @keyframes pigLoadBounce {
-    0%, 100% { transform: translateY(0) scaleX(-1); }
-    50% { transform: translateY(-14px) scaleX(-1); }
+  .piglet-herd span:nth-child(1) { top: 4%;  animation-delay: 0ms; }
+  .piglet-herd span:nth-child(2) { top: 19%; animation-delay: 45ms; }
+  .piglet-herd span:nth-child(3) { top: 34%; animation-delay: 90ms; }
+  .piglet-herd span:nth-child(4) { top: 49%; animation-delay: 135ms; }
+  .piglet-herd span:nth-child(5) { top: 64%; animation-delay: 180ms; }
+  .piglet-herd span:nth-child(6) { top: 79%; animation-delay: 225ms; }
+  .piglet-herd span:nth-child(7) { top: 92%; animation-delay: 270ms; }
+  @keyframes herdRun {
+    0%   { left: -140px; opacity: 0; }
+    10%  { opacity: 1; }
+    90%  { opacity: 1; }
+    100% { left: 108vw; opacity: 0; }
   }
 </style>
 </head>
 <body>
 
-<div class="loading-overlay" id="loading-overlay">
-  <div class="pig-load">🐖</div>
-  <div class="pig-load-text">Apro la scheda…</div>
+<div class="piglet-herd" id="piglet-herd">
+  <span>🐖</span><span>🐖</span><span>🐖</span><span>🐖</span><span>🐖</span><span>🐖</span><span>🐖</span>
 </div>
 
 <div class="topbar">
@@ -1138,12 +1143,16 @@ async function loadAll() {
 }
 
 function apriSoccidaConAnimazione(socId) {
-  const overlay = document.getElementById('loading-overlay');
-  overlay.classList.add('show');
+  const herd = document.getElementById('piglet-herd');
+  herd.classList.remove('go');
+  void herd.offsetWidth;
+  herd.classList.add('go');
   setTimeout(() => {
     showPage('detail', socId);
-    overlay.classList.remove('show');
-  }, 520);
+  }, 500);
+  setTimeout(() => {
+    herd.classList.remove('go');
+  }, 1150);
 }
 
 function showPage(name, lottoId) {
