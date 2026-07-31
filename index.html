@@ -79,7 +79,7 @@
   .page { display: none; padding: 20px; max-width: 480px; margin: 0 auto; background: var(--bg); }
   .page.visible { display: block; }
   .page.incoming {
-    position: fixed; inset: 0;
+    position: fixed; left: 0; right: 0; bottom: 0;
     overflow-y: auto;
     background: var(--bg);
     z-index: 200;
@@ -1206,6 +1206,26 @@ function showPage(name, lottoId) {
   document.querySelectorAll('.page').forEach(p => { if(p !== newPage) p.classList.remove('visible'); });
   currentPage = name;
 
+  // assesto SUBITO lo stato finale del topbar (senza transizione, per poterne misurare l'altezza reale)
+  const navRow = document.getElementById('topbar-nav');
+  const shouldCollapse = name !== 'home';
+  const prevTransition = navRow.style.transition;
+  navRow.style.transition = 'none';
+  navRow.classList.toggle('collapsed', shouldCollapse);
+  void navRow.offsetWidth;
+  navRow.style.transition = prevTransition;
+
+  document.getElementById('global-back-btn').style.display = ['home','detail','inserimento','analisi','stampa'].includes(name) ? 'none' : 'flex';
+  const navMap = {home:'home',storico:'storico',trasferimenti:'trasferimenti',archivio:'archivio',inserimento:'inserimento',calcolo:'calcolo'};
+  const navName = navMap[name] || name;
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('onclick')?.includes(`'${navName}'`));
+  });
+
+  // ora che il topbar e' nel suo stato finale, misuro la sua altezza vera e ci allineo la pagina in arrivo
+  const topbarH = document.querySelector('.topbar').offsetHeight;
+  newPage.style.top = topbarH + 'px';
+
   const curtain = document.getElementById('page-curtain');
   gsap.killTweensOf(curtain);
   gsap.fromTo(curtain,
@@ -1216,19 +1236,13 @@ function showPage(name, lottoId) {
       ease: 'power3.inOut',
       onComplete: () => {
         newPage.classList.remove('incoming');
-        document.getElementById('topbar-nav').classList.toggle('collapsed', name !== 'home');
-        document.getElementById('global-back-btn').style.display = ['home','detail','inserimento','analisi','stampa'].includes(name) ? 'none' : 'flex';
-        document.querySelectorAll('.nav-btn').forEach(b => {
-          b.classList.toggle('active', b.getAttribute('onclick')?.includes(`'${navName}'`));
-        });
+        newPage.style.top = '';
       }
     }
   );
 
   newPage.classList.add('incoming');
   newPage.classList.add('visible');
-  const navMap = {home:'home',storico:'storico',trasferimenti:'trasferimenti',archivio:'archivio',inserimento:'inserimento',calcolo:'calcolo'};
-  const navName = navMap[name] || name;
   if(name === 'detail' && lottoId) { currentLottoId = lottoId; renderDetail(lottoId); }
   if(name === 'inserimento') initInserimento();
   if(name === 'archivio') renderArchivio();
