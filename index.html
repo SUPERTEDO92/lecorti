@@ -71,6 +71,20 @@
     from { clip-path: inset(0 100% 0 0); }
     to   { clip-path: inset(0 0 0 0); }
   }
+  .page.visible::after {
+    content: '';
+    position: fixed; top: 0; bottom: 0; left: 0;
+    width: 140px;
+    background: linear-gradient(to right, transparent, rgba(245,243,238,.85) 45%, rgba(245,243,238,.85) 55%, transparent);
+    filter: blur(14px);
+    pointer-events: none;
+    z-index: 250;
+    animation: wipeGlow .7s cubic-bezier(.4,0,.2,1) forwards;
+  }
+  @keyframes wipeGlow {
+    from { transform: translateX(-140px); opacity: 1; }
+    to   { transform: translateX(100vw); opacity: 0; }
+  }
 
   /* CARDS SOCCIDE */
   .soccide-list { display: flex; flex-direction: column; gap: 2px; margin-top: 12px; }
@@ -1143,7 +1157,7 @@ async function loadAll() {
 function apriSoccidaConAnimazione(socId) {
   const herd = document.getElementById('piglet-herd');
   herd.classList.remove('go');
-  const N = 55;
+  const N = 105;
   let html = '';
   for(let i = 0; i < N; i++) {
     const top = (Math.random() * 96).toFixed(1);
