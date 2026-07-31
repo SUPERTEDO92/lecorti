@@ -69,18 +69,18 @@
   @property --wipe {
     syntax: '<percentage>';
     inherits: false;
-    initial-value: -28%;
+    initial-value: -45%;
   }
   .page.visible {
     display: block;
-    --wipe: -28%;
+    --wipe: -45%;
     animation: pageWipeIn .9s cubic-bezier(.4,0,.2,1) forwards;
-    -webkit-mask-image: linear-gradient(to right, black 0%, black calc(var(--wipe) - 28%), transparent var(--wipe), transparent 100%);
-    mask-image: linear-gradient(to right, black 0%, black calc(var(--wipe) - 28%), transparent var(--wipe), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black 0%, black calc(var(--wipe) - 45%), transparent var(--wipe), transparent 100%);
+    mask-image: linear-gradient(to right, black 0%, black calc(var(--wipe) - 45%), transparent var(--wipe), transparent 100%);
   }
   @keyframes pageWipeIn {
-    from { --wipe: -28%; }
-    to   { --wipe: 128%; }
+    from { --wipe: -45%; }
+    to   { --wipe: 145%; }
   }
   .page.incoming {
     position: fixed; inset: 0;
