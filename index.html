@@ -44,15 +44,6 @@
   .topbar {
     position: sticky; top: 0; z-index: 100;
     background: var(--text); color: #F5F3EE;
-    transition: background-color .25s ease, backdrop-filter .25s ease;
-  }
-  .topbar.over-photo {
-    background: rgba(26,26,24,.42);
-    backdrop-filter: blur(10px) saturate(1.1);
-    -webkit-backdrop-filter: blur(10px) saturate(1.1);
-  }
-  .topbar.over-photo .nav-btn, .topbar.over-photo .topbar-date, .topbar.over-photo .topbar-logo {
-    text-shadow: 0 1px 4px rgba(0,0,0,.55);
   }
   .topbar-title {
     padding: 12px 20px 8px;
@@ -450,7 +441,7 @@
 </head>
 <body>
 
-<div class="topbar over-photo">
+<div class="topbar">
   <div class="topbar-title">
     <span class="topbar-logo">LE CORTI</span>
     <span class="topbar-date" id="today-date"></span>
@@ -470,12 +461,11 @@
 
 <!-- HOME -->
 <div class="page visible" id="page-home">
-  <div style="position:absolute; top:0; left:0; right:0; height:220px; z-index:-1; overflow:hidden; pointer-events:none;">
-    <img src="img/bg-home-piglets.jpg" alt="" style="width:100%; height:100%; object-fit:cover; object-position:center 30%; display:block;">
-    <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(26,26,24,.10) 0%, rgba(26,26,24,.05) 45%, var(--bg) 100%);"></div>
+  <div style="margin:-20px -20px 16px; height:230px; position:relative; overflow:hidden;">
+    <img src="img/bg-home-piglets.jpg" alt="" style="width:100%; height:100%; object-fit:cover; object-position:center 32%; display:block;">
+    <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(26,26,24,.08) 0%, rgba(26,26,24,.05) 55%, var(--bg) 96%);"></div>
   </div>
-  <div style="height:64px;"></div>
-  <div id="soccide-list-container" style="position:relative;">
+  <div id="soccide-list-container">
     <div class="loading">Caricamento...</div>
   </div>
 </div>
@@ -1124,7 +1114,6 @@ function showPage(name, lottoId) {
   currentPage = name;
   document.getElementById(`page-${name}`).classList.add('visible');
   document.getElementById('topbar-nav').style.display = (name === 'home') ? 'flex' : 'none';
-  document.querySelector('.topbar').classList.toggle('over-photo', name === 'home');
   document.getElementById('global-back-btn').style.display = ['home','detail','inserimento','analisi','stampa'].includes(name) ? 'none' : 'flex';
   const navMap = {home:'home',storico:'storico',trasferimenti:'trasferimenti',archivio:'archivio',inserimento:'inserimento',calcolo:'calcolo'};
   const navName = navMap[name] || name;
