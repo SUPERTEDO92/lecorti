@@ -192,15 +192,15 @@
   .tg-val { font-size: 15px; font-family: var(--mono); font-weight: 500; margin-top: 2px; }
   .tg-val.green { color: var(--green); }
 
-  /* ── MICRO-ANIMAZIONI — bottoni, hover, transizioni (31/07/2026, intensificate) ── */
+  /* ── MICRO-ANIMAZIONI — bottoni, hover, transizioni (31/07/2026, ritmo regolato) ── */
   @media (prefers-reduced-motion: no-preference) {
     button, .chip, .tab-btn, .liq-row, .trasf-row {
-      transition: transform .16s cubic-bezier(.34,1.56,.64,1),
-                  background-color .15s ease, border-color .15s ease,
-                  box-shadow .2s ease, opacity .15s ease;
+      transition: transform .24s cubic-bezier(.34,1.56,.64,1),
+                  background-color .18s ease, border-color .18s ease,
+                  box-shadow .26s ease, opacity .18s ease;
     }
     button:active:not(:disabled), .chip:active, .tab-btn:active {
-      transform: scale(.91);
+      transform: scale(.88);
     }
     .chip:hover:not(.active), .tab-btn:hover:not(.active) {
       transform: translateY(-2px);
@@ -215,14 +215,14 @@
       box-shadow: var(--shadow-md);
     }
     .liq-row, .trasf-row {
-      animation: rowIn .28s cubic-bezier(.22,1,.36,1) backwards;
+      animation: rowIn .38s cubic-bezier(.22,1,.36,1) backwards;
     }
-    .list-wrap .liq-row:nth-child(1), #list .liq-row:nth-child(1) { animation-delay: .02s; }
-    #list .liq-row:nth-child(2) { animation-delay: .05s; }
-    #list .liq-row:nth-child(3) { animation-delay: .08s; }
-    #list .liq-row:nth-child(4) { animation-delay: .11s; }
-    #list .liq-row:nth-child(5) { animation-delay: .14s; }
-    #list .liq-row:nth-child(n+6) { animation-delay: .16s; }
+    .list-wrap .liq-row:nth-child(1), #list .liq-row:nth-child(1) { animation-delay: .03s; }
+    #list .liq-row:nth-child(2) { animation-delay: .08s; }
+    #list .liq-row:nth-child(3) { animation-delay: .13s; }
+    #list .liq-row:nth-child(4) { animation-delay: .18s; }
+    #list .liq-row:nth-child(5) { animation-delay: .23s; }
+    #list .liq-row:nth-child(n+6) { animation-delay: .26s; }
     @keyframes rowIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .loading { animation: loadingPulse 1.3s ease-in-out infinite; }
     @keyframes loadingPulse { 0%,100% { opacity: .45; } 50% { opacity: 1; } }

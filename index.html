@@ -396,20 +396,20 @@
     .print-sub { font-size: 8px; }
   }
 
-  /* ── MICRO-ANIMAZIONI — bottoni, hover, transizioni (31/07/2026, intensificate) ── */
+  /* ── MICRO-ANIMAZIONI — bottoni, hover, transizioni (31/07/2026, ritmo regolato) ── */
   @media (prefers-reduced-motion: no-preference) {
     button,
     .nav-btn, .chip, .soccida-card, .back-btn, .btn-izs, .btn-print,
     .btn-ilaria, .ltab, .btn-do-print, .btn-back-print {
-      transition: transform .16s cubic-bezier(.34,1.56,.64,1),
-                  background-color .15s ease, border-color .15s ease,
-                  box-shadow .2s ease, opacity .15s ease;
+      transition: transform .24s cubic-bezier(.34,1.56,.64,1),
+                  background-color .18s ease, border-color .18s ease,
+                  box-shadow .26s ease, opacity .18s ease;
     }
     button:active:not(:disabled),
     .nav-btn:active, .chip:active, .soccida-card:active, .back-btn:active,
     .btn-izs:active, .btn-print:active, .btn-ilaria:active, .ltab:active,
     .btn-do-print:active, .btn-back-print:active {
-      transform: scale(.91);
+      transform: scale(.88);
     }
     /* hover: sollevamento + ombra su bottoni con sfondo pieno */
     .nav-btn:hover:not(.active), .back-btn:hover, .btn-izs:hover, .btn-print:hover,
@@ -423,24 +423,24 @@
       border-color: var(--border2);
     }
     .stat-box, .uscita-row, .storico-row, .trasfrow, .referto-card {
-      transition: background-color .15s ease, transform .15s ease;
+      transition: background-color .18s ease, transform .18s ease;
     }
     .stat-box:hover { background: var(--bg2); }
     input:focus, select:focus, textarea:focus {
-      transition: border-color .15s ease, box-shadow .2s ease;
+      transition: border-color .18s ease, box-shadow .24s ease;
       box-shadow: 0 0 0 4px rgba(193,123,42,.16);
       border-color: var(--accent) !important;
     }
     /* entrata a cascata delle card soccide in home */
     .soccide-list .soccida-card {
-      animation: cardIn .28s cubic-bezier(.22,1,.36,1) backwards;
+      animation: cardIn .38s cubic-bezier(.22,1,.36,1) backwards;
     }
-    .soccide-list .soccida-card:nth-child(1) { animation-delay: .02s; }
-    .soccide-list .soccida-card:nth-child(2) { animation-delay: .06s; }
-    .soccide-list .soccida-card:nth-child(3) { animation-delay: .10s; }
-    .soccide-list .soccida-card:nth-child(4) { animation-delay: .14s; }
-    .soccide-list .soccida-card:nth-child(5) { animation-delay: .18s; }
-    .soccide-list .soccida-card:nth-child(n+6) { animation-delay: .20s; }
+    .soccide-list .soccida-card:nth-child(1) { animation-delay: .03s; }
+    .soccide-list .soccida-card:nth-child(2) { animation-delay: .09s; }
+    .soccide-list .soccida-card:nth-child(3) { animation-delay: .15s; }
+    .soccide-list .soccida-card:nth-child(4) { animation-delay: .21s; }
+    .soccide-list .soccida-card:nth-child(5) { animation-delay: .27s; }
+    .soccide-list .soccida-card:nth-child(n+6) { animation-delay: .30s; }
     @keyframes cardIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     /* loading più vivo */
     .loading { animation: loadingPulse 1.3s ease-in-out infinite; }
