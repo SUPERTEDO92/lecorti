@@ -443,24 +443,24 @@
     position: fixed; inset: 0; z-index: 300;
     pointer-events: none;
   }
-  .piglet-herd span {
-    position: absolute; left: -140px;
-    font-size: 64px; transform: scaleX(-1);
-    filter: drop-shadow(0 6px 8px rgba(26,26,24,.25));
+  .piglet-herd img {
+    position: absolute; left: -160px;
+    width: 110px; height: auto; transform: scaleX(-1);
+    filter: drop-shadow(0 6px 8px rgba(26,26,24,.3));
     opacity: 0;
   }
-  .piglet-herd.go span {
+  .piglet-herd.go img {
     animation: herdRun .85s cubic-bezier(.5,0,.5,1) forwards;
   }
-  .piglet-herd span:nth-child(1) { top: 4%;  animation-delay: 0ms; }
-  .piglet-herd span:nth-child(2) { top: 19%; animation-delay: 45ms; }
-  .piglet-herd span:nth-child(3) { top: 34%; animation-delay: 90ms; }
-  .piglet-herd span:nth-child(4) { top: 49%; animation-delay: 135ms; }
-  .piglet-herd span:nth-child(5) { top: 64%; animation-delay: 180ms; }
-  .piglet-herd span:nth-child(6) { top: 79%; animation-delay: 225ms; }
-  .piglet-herd span:nth-child(7) { top: 92%; animation-delay: 270ms; }
+  .piglet-herd img:nth-child(1) { top: 4%;  animation-delay: 0ms; }
+  .piglet-herd img:nth-child(2) { top: 19%; animation-delay: 45ms; }
+  .piglet-herd img:nth-child(3) { top: 34%; animation-delay: 90ms; }
+  .piglet-herd img:nth-child(4) { top: 49%; animation-delay: 135ms; }
+  .piglet-herd img:nth-child(5) { top: 64%; animation-delay: 180ms; }
+  .piglet-herd img:nth-child(6) { top: 79%; animation-delay: 225ms; }
+  .piglet-herd img:nth-child(7) { top: 92%; animation-delay: 270ms; }
   @keyframes herdRun {
-    0%   { left: -140px; opacity: 0; }
+    0%   { left: -160px; opacity: 0; }
     10%  { opacity: 1; }
     90%  { opacity: 1; }
     100% { left: 108vw; opacity: 0; }
@@ -470,7 +470,7 @@
 <body>
 
 <div class="piglet-herd" id="piglet-herd">
-  <span>🐖</span><span>🐖</span><span>🐖</span><span>🐖</span><span>🐖</span><span>🐖</span><span>🐖</span>
+  <img src="img/piglet-running.png" alt=""><img src="img/piglet-running.png" alt=""><img src="img/piglet-running.png" alt=""><img src="img/piglet-running.png" alt=""><img src="img/piglet-running.png" alt=""><img src="img/piglet-running.png" alt=""><img src="img/piglet-running.png" alt="">
 </div>
 
 <div class="topbar">
