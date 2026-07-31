@@ -437,9 +437,36 @@
     .loading { animation: loadingPulse 1.3s ease-in-out infinite; }
     @keyframes loadingPulse { 0%,100% { opacity: .45; } 50% { opacity: 1; } }
   }
+
+  /* ── OVERLAY MAIALINO — transizione veloce all'apertura di una soccida ── */
+  .loading-overlay {
+    position: fixed; inset: 0; z-index: 300;
+    background: rgba(245,243,238,.94);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+    opacity: 0; pointer-events: none;
+    transition: opacity .18s ease;
+  }
+  .loading-overlay.show { opacity: 1; pointer-events: all; }
+  .loading-overlay .pig-load {
+    font-size: 52px;
+    animation: pigLoadBounce .5s ease-in-out infinite;
+  }
+  .loading-overlay .pig-load-text {
+    font-size: 12px; font-family: var(--mono); color: var(--text2);
+    text-transform: uppercase; letter-spacing: .08em;
+  }
+  @keyframes pigLoadBounce {
+    0%, 100% { transform: translateY(0) scaleX(-1); }
+    50% { transform: translateY(-14px) scaleX(-1); }
+  }
 </style>
 </head>
 <body>
+
+<div class="loading-overlay" id="loading-overlay">
+  <div class="pig-load">🐖</div>
+  <div class="pig-load-text">Apro la scheda…</div>
+</div>
 
 <div class="topbar">
   <div class="topbar-title">
@@ -461,11 +488,11 @@
 
 <!-- HOME -->
 <div class="page visible" id="page-home">
-  <div style="margin:-20px -20px 16px; height:230px; position:relative; overflow:hidden;">
-    <img src="img/bg-home-piglets.jpg" alt="" style="width:100%; height:100%; object-fit:cover; object-position:center 32%; display:block;">
-    <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(26,26,24,.08) 0%, rgba(26,26,24,.05) 55%, var(--bg) 96%);"></div>
+  <div style="margin:-20px -20px 0; height:280px; position:relative; overflow:hidden;">
+    <img src="img/bg-home-piglets.jpg" alt="" style="width:100%; height:100%; object-fit:cover; object-position:center 30%; display:block;">
+    <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(26,26,24,.06) 0%, rgba(26,26,24,.04) 62%, var(--bg) 97%);"></div>
   </div>
-  <div id="soccide-list-container">
+  <div id="soccide-list-container" style="position:relative; z-index:1; margin-top:-28px;">
     <div class="loading">Caricamento...</div>
   </div>
 </div>
@@ -1108,6 +1135,15 @@ async function loadAll() {
   renderTrasferimenti();
 }
 
+function apriSoccidaConAnimazione(socId) {
+  const overlay = document.getElementById('loading-overlay');
+  overlay.classList.add('show');
+  setTimeout(() => {
+    showPage('detail', socId);
+    overlay.classList.remove('show');
+  }, 520);
+}
+
 function showPage(name, lottoId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('visible'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -1696,7 +1732,7 @@ function renderSoccidaCard(soc, activeLotti) {
   const metaLotti = lottiAttivi.length > 1 ? `${lottiAttivi.length} lotti · ` : (lotti[0].codice + ' · ');
   const lettere = [...new Set(lotti.map(l => l.lettera_dop).filter(Boolean))].join(', ');
 
-  return `<div class="soccida-card" onclick="showPage('detail',${soc.id})">
+  return `<div class="soccida-card" onclick="apriSoccidaConAnimazione(${soc.id})">
     <div class="dot ${dot}"></div>
     <div class="soc-main">
       <div class="soc-nome">${soc.nome}</div>
