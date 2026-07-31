@@ -40,12 +40,18 @@
   }
 
   .header {
-    background: var(--text) url('img/money-pattern.svg') center/cover no-repeat;
+    background: var(--text) url('img/money-pattern.svg') left center repeat-x;
+    background-size: 320px 100%;
     color: #FFF;
-    padding: 16px 32px 14px;
+    padding: 16px 32px 14px 76px;
     position: sticky;
     top: 0;
     z-index: 10;
+  }
+  .header-mascot {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    width: 52px; height: 52px; z-index: 1;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,.35));
   }
   .header-title { font-size: 18px; font-weight: 500; letter-spacing: .02em; text-shadow: 0 1px 4px rgba(0,0,0,.4); }
   .header-sub { font-size: 13px; color: #AAA; margin-top: 3px; font-family: var(--mono); }
@@ -231,12 +237,40 @@
       box-shadow: 0 0 0 4px rgba(139,69,19,.14);
       border-color: var(--accent) !important;
     }
+    .sum-box {
+      transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .22s ease, background-color .18s ease;
+    }
+    .sum-box:hover {
+      transform: translateY(-2px);
+      background: var(--bg2);
+      box-shadow: var(--shadow-md);
+    }
+  }
+
+  /* ── MAIALINO CHE CORRE — mostrato passando su Trasferimenti ── */
+  .running-piglet {
+    position: fixed; bottom: 18px; left: -60px;
+    font-size: 34px; z-index: 50; pointer-events: none;
+    opacity: 0; transform: scaleX(-1);
+  }
+  .running-piglet.go {
+    animation: pigletRun 3.2s cubic-bezier(.45,0,.55,1) 1;
+  }
+  @keyframes pigletRun {
+    0%   { left: -60px; opacity: 0; }
+    8%   { opacity: 1; }
+    50%  { transform: scaleX(-1) translateY(-6px); }
+    92%  { opacity: 1; }
+    100% { left: 104vw; opacity: 0; }
   }
 </style>
 </head>
 <body>
 
+<div class="running-piglet" id="running-piglet">🐖</div>
+
 <div class="header">
+  <img src="img/piglet-tycoon.svg" alt="" class="header-mascot">
   <div style="display:flex;justify-content:space-between;align-items:center;">
     <div>
       <div class="header-title">Le Corti — Liquidazioni</div>
@@ -330,6 +364,12 @@ function switchPagina(p) {
   document.getElementById('tab-btn-rubrica').classList.toggle('active', p === 'rubrica');
   document.getElementById('totale-annuale').style.display = (p === 'liq' && document.getElementById('ta-val').textContent !== '—') ? 'flex' : 'none';
   if(p === 'rubrica' && !window._rubricaInit) { window._rubricaInit = true; rubRender(allevamenti); }
+  if(p === 'trasf') {
+    const pig = document.getElementById('running-piglet');
+    pig.classList.remove('go');
+    void pig.offsetWidth;
+    pig.classList.add('go');
+  }
 }
 
 // ── RUBRICA (sola lettura, per Ilaria) ──
