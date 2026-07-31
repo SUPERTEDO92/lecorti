@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <g opacity="0.9">
+    <ellipse cx="200" cy="255" rx="105" ry="80" fill="#E8A5C0"/>
+    <ellipse cx="200" cy="230" rx="105" ry="62" fill="#F0B8CE"/>
+    <circle cx="150" cy="215" r="8" fill="#2A2A28"/>
+    <circle cx="250" cy="215" r="8" fill="#2A2A28"/>
+    <ellipse cx="200" cy="255" rx="30" ry="18" fill="#D98CAE"/>
+    <rect x="185" y="165" width="30" height="9" rx="4" fill="#B0507C"/>
+    <ellipse cx="115" cy="225" rx="16" ry="20" fill="#E8A5C0"/>
+    <ellipse cx="285" cy="225" rx="16" ry="20" fill="#E8A5C0"/>
+    <ellipse cx="150" cy="330" rx="14" ry="20" fill="#D98CAE"/>
+    <ellipse cx="250" cy="330" rx="14" ry="20" fill="#D98CAE"/>
+    <ellipse cx="105" cy="255" rx="10" ry="14" fill="#E8A5C0" transform="rotate(-20 105 255)"/>
+    <ellipse cx="295" cy="255" rx="10" ry="14" fill="#E8A5C0" transform="rotate(20 295 255)"/>
+  </g>
+  <g fill="#E8B876" opacity="0.85" font-family="Georgia, serif" font-weight="700">
+    <text x="30" y="90" font-size="38" transform="rotate(-16 45 78)">€</text>
+    <text x="330" y="70" font-size="30" transform="rotate(14 342 60)">€</text>
+    <text x="90" y="40" font-size="26" transform="rotate(10 100 32)">€</text>
+    <text x="290" y="150" font-size="34" transform="rotate(-10 305 140)">€</text>
+    <text x="60" y="150" font-size="24" transform="rotate(12 70 142)">€</text>
+    <text x="330" y="200" font-size="28" transform="rotate(-14 344 190)">€</text>
+  </g>
+  <g fill="none" stroke="#8FBF9F" stroke-width="3" opacity="0.7">
+    <rect x="20" y="130" width="42" height="24" rx="4" transform="rotate(-12 41 142)"/>
+    <rect x="320" y="110" width="40" height="23" rx="4" transform="rotate(9 340 121)"/>
+    <rect x="270" y="30" width="38" height="22" rx="4" transform="rotate(-8 289 41)"/>
+  </g>
+  <circle cx="55" cy="105" r="5" fill="#E8B876" opacity="0.7"/>
+  <circle cx="345" cy="150" r="4" fill="#8FBF9F" opacity="0.7"/>
+  <circle cx="120" cy="60" r="4" fill="#E8B876" opacity="0.6"/>
+</svg>

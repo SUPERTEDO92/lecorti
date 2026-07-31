@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 160">
+  <g fill="none" stroke="#C17B2A" stroke-width="1.5" opacity="0.10">
+    <rect x="15" y="15" width="40" height="23" rx="3" transform="rotate(-13 35 26)"/>
+    <rect x="170" y="90" width="36" height="21" rx="3" transform="rotate(9 188 100)"/>
+  </g>
+  <g fill="#C17B2A" opacity="0.13" font-family="Georgia, serif" font-weight="700">
+    <text x="10" y="70" font-size="30" transform="rotate(-11 20 62)">€</text>
+    <text x="65" y="35" font-size="22" transform="rotate(8 75 28)">€</text>
+    <text x="130" y="75" font-size="26" transform="rotate(-7 142 67)">€</text>
+    <text x="205" y="30" font-size="20" transform="rotate(10 213 24)">€</text>
+    <text x="215" y="130" font-size="24" transform="rotate(-9 226 122)">€</text>
+  </g>
+  <g fill="#2A7A4B" opacity="0.09" font-family="Georgia, serif" font-weight="700">
+    <text x="40" y="130" font-size="20" transform="rotate(9 48 124)">€</text>
+    <text x="105" y="20" font-size="16" transform="rotate(-8 111 15)">€</text>
+  </g>
+</svg>
