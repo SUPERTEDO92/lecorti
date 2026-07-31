@@ -60,6 +60,33 @@
 
   .container { max-width: 680px; margin: 0 auto; padding: 20px 16px; }
 
+  @property --wipe {
+    syntax: '<percentage>';
+    inherits: false;
+    initial-value: -45%;
+  }
+  .tab-pagina { display: none; }
+  .tab-pagina.visible {
+    display: block;
+    --wipe: -45%;
+    animation: pageWipeIn .9s cubic-bezier(.4,0,.2,1) forwards;
+    -webkit-mask-image: linear-gradient(to right, black 0%, black calc(var(--wipe) - 45%), transparent var(--wipe), transparent 100%);
+    mask-image: linear-gradient(to right, black 0%, black calc(var(--wipe) - 45%), transparent var(--wipe), transparent 100%);
+  }
+  @keyframes pageWipeIn {
+    from { --wipe: -45%; }
+    to   { --wipe: 145%; }
+  }
+  .tab-pagina.incoming {
+    position: fixed; inset: 0;
+    overflow-y: auto;
+    background: var(--bg);
+    z-index: 200;
+    max-width: none;
+    margin: 0;
+    padding: 20px 16px 40px;
+  }
+
   /* Filtri mese */
   .chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px; scrollbar-width: none; }
   .chips::-webkit-scrollbar { display: none; }
@@ -252,7 +279,7 @@
   /* ── MAIALINO CHE CORRE — mostrato passando su Trasferimenti ── */
   .running-piglet {
     position: fixed; bottom: 10px; left: -180px;
-    font-size: 130px; z-index: 50; pointer-events: none;
+    font-size: 130px; z-index: 300; pointer-events: none;
     opacity: 0; transform: scaleX(-1);
     filter: drop-shadow(0 8px 10px rgba(26,26,24,.25));
   }
@@ -270,7 +297,7 @@
   /* ── DOLLARO CHE PASSA — mostrato tornando su Liquidazioni ── */
   .flying-dollar {
     position: fixed; top: 90px; left: -140px;
-    font-size: 90px; z-index: 50; pointer-events: none;
+    font-size: 90px; z-index: 300; pointer-events: none;
     opacity: 0; transform: rotate(-12deg);
     filter: drop-shadow(0 6px 8px rgba(26,26,24,.22));
   }
@@ -313,7 +340,7 @@
     <button class="tab-btn" id="tab-btn-rubrica" onclick="switchPagina('rubrica')">📋 Anagrafica</button>
   </div>
 
-  <div id="pagina-liq">
+  <div id="pagina-liq" class="tab-pagina visible">
     <div id="totale-annuale" style="display:none" class="totale-annuale">
       <div>
         <div class="ta-label">Totale liquidato anno in corso</div>
@@ -327,13 +354,13 @@
     <div id="list"><div class="loading">Caricamento…</div></div>
   </div>
 
-  <div id="pagina-trasf" style="display:none;">
+  <div id="pagina-trasf" class="tab-pagina">
     <div class="chips" id="chips-trasf"></div>
     <div class="summary" id="summary-trasf"></div>
     <div id="list-trasf"><div class="loading">Caricamento…</div></div>
   </div>
 
-  <div id="pagina-rubrica" style="display:none;">
+  <div id="pagina-rubrica" class="tab-pagina">
     <input id="rub-cerca" type="text" placeholder="Cerca per nome, indirizzo, codice…" oninput="rubFiltra()"
       style="width:100%;padding:10px 14px;border:0.5px solid var(--border);border-radius:10px;font-size:14px;font-family:var(--font);background:#FFF;color:var(--text);margin-bottom:12px;">
     <div id="rub-lista"></div>
@@ -380,14 +407,15 @@ async function loadAll() {
 
 function switchPagina(p) {
   paginaAttiva = p;
-  document.getElementById('pagina-liq').style.display = p === 'liq' ? 'block' : 'none';
-  document.getElementById('pagina-trasf').style.display = p === 'trasf' ? 'block' : 'none';
-  document.getElementById('pagina-rubrica').style.display = p === 'rubrica' ? 'block' : 'none';
+  const targetId = { liq: 'pagina-liq', trasf: 'pagina-trasf', rubrica: 'pagina-rubrica' }[p];
+  const newPage = document.getElementById(targetId);
+  const oldPages = document.querySelectorAll('.tab-pagina.visible');
   document.getElementById('tab-btn-liq').classList.toggle('active', p === 'liq');
   document.getElementById('tab-btn-trasf').classList.toggle('active', p === 'trasf');
   document.getElementById('tab-btn-rubrica').classList.toggle('active', p === 'rubrica');
   document.getElementById('totale-annuale').style.display = (p === 'liq' && document.getElementById('ta-val').textContent !== '—') ? 'flex' : 'none';
   if(p === 'rubrica' && !window._rubricaInit) { window._rubricaInit = true; rubRender(allevamenti); }
+
   if(p === 'trasf') {
     const pig = document.getElementById('running-piglet');
     pig.classList.remove('go');
@@ -400,6 +428,15 @@ function switchPagina(p) {
     void dollaro.offsetWidth;
     dollaro.classList.add('go');
   }
+
+  newPage.classList.remove('visible');
+  void newPage.offsetWidth;
+  newPage.classList.add('incoming');
+  newPage.classList.add('visible');
+  setTimeout(() => {
+    newPage.classList.remove('incoming');
+    oldPages.forEach(el => { if(el !== newPage) el.classList.remove('visible'); });
+  }, 920);
 }
 
 // ── RUBRICA (sola lettura, per Ilaria) ──
