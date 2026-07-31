@@ -63,7 +63,8 @@
 
   /* LAYOUT */
   .page { display: none; padding: 20px; max-width: 480px; margin: 0 auto; }
-  .page.visible { display: block; }
+  .page.visible { display: block; animation: pageFadeIn .18s ease; }
+  @keyframes pageFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
   /* CARDS SOCCIDE */
   .soccide-list { display: flex; flex-direction: column; gap: 2px; margin-top: 12px; }
@@ -374,6 +375,34 @@
     .print-header { margin-bottom: 5mm; padding-bottom: 3mm; }
     .no-print { display: none !important; }
     .print-sub { font-size: 8px; }
+  }
+
+  /* ── MICRO-ANIMAZIONI — bottoni, hover, transizioni (31/07/2026) ── */
+  @media (prefers-reduced-motion: no-preference) {
+    button,
+    .nav-btn, .chip, .soccida-card, .back-btn, .btn-izs, .btn-print,
+    .btn-ilaria, .ltab, .btn-do-print, .btn-back-print {
+      transition: transform .1s cubic-bezier(.34,1.56,.64,1),
+                  background-color .15s ease, border-color .15s ease,
+                  box-shadow .15s ease, opacity .15s ease;
+    }
+    button:active:not(:disabled),
+    .nav-btn:active, .chip:active, .soccida-card:active, .back-btn:active,
+    .btn-izs:active, .btn-print:active, .btn-ilaria:active, .ltab:active,
+    .btn-do-print:active, .btn-back-print:active {
+      transform: scale(.96);
+    }
+    .soccida-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 10px rgba(26,26,24,.07);
+    }
+    .stat-box, .uscita-row, .storico-row, .trasfrow, .referto-card {
+      transition: background-color .15s ease;
+    }
+    input:focus, select:focus, textarea:focus {
+      transition: border-color .15s ease, box-shadow .15s ease;
+      box-shadow: 0 0 0 3px rgba(193,123,42,.12);
+    }
   }
 </style>
 </head>
