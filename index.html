@@ -1185,7 +1185,6 @@ function apriSoccidaConAnimazione(socId) {
 function showPage(name, lottoId) {
   const newPage = document.getElementById(`page-${name}`);
   document.querySelectorAll('.page').forEach(p => { if(p !== newPage) p.classList.remove('visible'); });
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   currentPage = name;
 
   const curtain = document.getElementById('page-curtain');
@@ -1200,9 +1199,6 @@ function showPage(name, lottoId) {
   newPage.classList.add('visible');
   const navMap = {home:'home',storico:'storico',trasferimenti:'trasferimenti',archivio:'archivio',inserimento:'inserimento',calcolo:'calcolo'};
   const navName = navMap[name] || name;
-  document.querySelectorAll('.nav-btn').forEach(b => {
-    if(b.getAttribute('onclick')?.includes(`'${navName}'`)) b.classList.add('active');
-  });
   if(name === 'detail' && lottoId) { currentLottoId = lottoId; renderDetail(lottoId); }
   if(name === 'inserimento') initInserimento();
   if(name === 'archivio') renderArchivio();
@@ -1216,6 +1212,9 @@ function showPage(name, lottoId) {
     newPage.classList.remove('incoming');
     document.getElementById('topbar-nav').style.display = (name === 'home') ? 'flex' : 'none';
     document.getElementById('global-back-btn').style.display = ['home','detail','inserimento','analisi','stampa'].includes(name) ? 'none' : 'flex';
+    document.querySelectorAll('.nav-btn').forEach(b => {
+      b.classList.toggle('active', b.getAttribute('onclick')?.includes(`'${navName}'`));
+    });
   }, 900);
 }
 
