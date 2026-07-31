@@ -74,7 +74,7 @@
   .page.visible {
     display: block;
     --wipe: -28%;
-    animation: pageWipeIn .8s cubic-bezier(.4,0,.2,1) forwards;
+    animation: pageWipeIn .9s cubic-bezier(.4,0,.2,1) forwards;
     -webkit-mask-image: linear-gradient(to right, black 0%, black calc(var(--wipe) - 28%), transparent var(--wipe), transparent 100%);
     mask-image: linear-gradient(to right, black 0%, black calc(var(--wipe) - 28%), transparent var(--wipe), transparent 100%);
   }
@@ -1173,9 +1173,7 @@ function apriSoccidaConAnimazione(socId) {
   herd.innerHTML = html;
   void herd.offsetWidth;
   herd.classList.add('go');
-  setTimeout(() => {
-    showPage('detail', socId);
-  }, 560);
+  showPage('detail', socId);
   setTimeout(() => {
     herd.classList.remove('go');
     herd.innerHTML = '';
@@ -1208,7 +1206,7 @@ function showPage(name, lottoId) {
   setTimeout(() => {
     newPage.classList.remove('incoming');
     oldPages.forEach(p => p.classList.remove('visible'));
-  }, 820);
+  }, 920);
 }
 
 let macelliAnnoFiltro = 'tutti';
