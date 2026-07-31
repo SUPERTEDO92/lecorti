@@ -66,22 +66,7 @@
 
   /* LAYOUT */
   .page { display: none; padding: 20px; max-width: 480px; margin: 0 auto; background: var(--bg); }
-  @property --wipe {
-    syntax: '<percentage>';
-    inherits: false;
-    initial-value: -35%;
-  }
-  .page.visible {
-    display: block;
-    --wipe: -35%;
-    animation: pageWipeIn .9s cubic-bezier(.4,0,.2,1) forwards;
-    -webkit-mask-image: linear-gradient(to right, black 0%, black calc(var(--wipe) - 35%), transparent var(--wipe), transparent 100%);
-    mask-image: linear-gradient(to right, black 0%, black calc(var(--wipe) - 35%), transparent var(--wipe), transparent 100%);
-  }
-  @keyframes pageWipeIn {
-    from { --wipe: -35%; }
-    to   { --wipe: 135%; }
-  }
+  .page.visible { display: block; }
   .page.incoming {
     position: fixed; inset: 0;
     overflow-y: auto;
@@ -89,6 +74,20 @@
     z-index: 200;
     max-width: none;
     margin: 0;
+  }
+  #page-curtain {
+    position: fixed; inset: 0; z-index: 210;
+    background: linear-gradient(to right, var(--bg) 0%, var(--bg) 78%, rgba(245,243,238,0) 100%);
+    pointer-events: none;
+    transform: translateX(105vw);
+    will-change: transform;
+  }
+  #page-curtain.go {
+    animation: curtainSlide .85s cubic-bezier(.45,0,.15,1) forwards;
+  }
+  @keyframes curtainSlide {
+    from { transform: translateX(0); }
+    to   { transform: translateX(105vw); }
   }
 
   /* CARDS SOCCIDE */
@@ -489,6 +488,7 @@
 <body>
 
 <div class="piglet-herd" id="piglet-herd"></div>
+<div id="page-curtain"></div>
 
 <div class="topbar">
   <div class="topbar-title">
@@ -1184,13 +1184,20 @@ function apriSoccidaConAnimazione(socId) {
 
 function showPage(name, lottoId) {
   const newPage = document.getElementById(`page-${name}`);
-  const oldPages = Array.from(document.querySelectorAll('.page.visible')).filter(p => p !== newPage);
+  document.querySelectorAll('.page').forEach(p => { if(p !== newPage) p.classList.remove('visible'); });
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   currentPage = name;
+
+  const curtain = document.getElementById('page-curtain');
+  curtain.classList.remove('go');
+  curtain.style.transition = 'none';
+  curtain.style.transform = 'translateX(0)';
+  void curtain.offsetWidth;
+  curtain.style.transition = '';
+  curtain.classList.add('go');
+
   newPage.classList.add('incoming');
   newPage.classList.add('visible');
-  document.getElementById('topbar-nav').style.display = (name === 'home') ? 'flex' : 'none';
-  document.getElementById('global-back-btn').style.display = ['home','detail','inserimento','analisi','stampa'].includes(name) ? 'none' : 'flex';
   const navMap = {home:'home',storico:'storico',trasferimenti:'trasferimenti',archivio:'archivio',inserimento:'inserimento',calcolo:'calcolo'};
   const navName = navMap[name] || name;
   document.querySelectorAll('.nav-btn').forEach(b => {
@@ -1207,8 +1214,9 @@ function showPage(name, lottoId) {
   window.scrollTo(0,0);
   setTimeout(() => {
     newPage.classList.remove('incoming');
-    oldPages.forEach(p => p.classList.remove('visible'));
-  }, 920);
+    document.getElementById('topbar-nav').style.display = (name === 'home') ? 'flex' : 'none';
+    document.getElementById('global-back-btn').style.display = ['home','detail','inserimento','analisi','stampa'].includes(name) ? 'none' : 'flex';
+  }, 900);
 }
 
 let macelliAnnoFiltro = 'tutti';
