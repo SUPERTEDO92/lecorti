@@ -106,9 +106,44 @@
   .toast { display: none; padding: 10px 14px; border-radius: var(--radius); margin-bottom: 12px; font-size: 13px; }
   .toast.ok { background: var(--green-bg); color: var(--green); border: 0.5px solid #B8DECA; }
   .toast.err { background: var(--red-bg); color: var(--red); }
+
+  /* ── MANDRIA DI MAIALINI + TENDA — transizione apertura soccida ── */
+  .piglet-herd { position: fixed; inset: 0; z-index: 300; pointer-events: none; }
+  .piglet-herd span {
+    position: absolute; left: -70px; top: 0;
+    transform: translateX(0) scaleX(-1);
+    filter: drop-shadow(0 4px 6px rgba(26,26,24,.3));
+    opacity: 0;
+  }
+  .piglet-herd.go span {
+    animation-name: herdRun; animation-duration: .9s;
+    animation-timing-function: cubic-bezier(.5,0,.5,1); animation-fill-mode: forwards;
+  }
+  @keyframes herdRun {
+    0%   { transform: translateX(0) scaleX(-1); opacity: 0; }
+    8%   { opacity: 1; }
+    88%  { opacity: 1; }
+    100% { transform: translateX(calc(100vw + 140px)) scaleX(-1); opacity: 0; }
+  }
+  @property --wipe2 { syntax: '<percentage>'; inherits: false; initial-value: -45%; }
+  .samuele-curtain {
+    position: fixed; inset: 0; z-index: 200; overflow-y: auto;
+    background: var(--bg);
+    padding: 14px 14px 40px;
+    --wipe2: -45%;
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, transparent calc(var(--wipe2) - 45%), black var(--wipe2), black 100%);
+    mask-image: linear-gradient(to right, transparent 0%, transparent calc(var(--wipe2) - 45%), black var(--wipe2), black 100%);
+    animation: curtainWipe .9s cubic-bezier(.4,0,.2,1) forwards;
+  }
+  @keyframes curtainWipe {
+    from { --wipe2: -45%; }
+    to   { --wipe2: 145%; }
+  }
 </style>
 </head>
 <body>
+
+<div class="piglet-herd" id="piglet-herd"></div>
 
 <img src="img/bg-home-piglets.jpg" alt="" style="position:fixed; inset:0; width:100%; height:100%; object-fit:cover; object-position:center center; opacity:.15; z-index:-2; pointer-events:none;">
 
@@ -197,9 +232,38 @@ function renderLista() {
   document.getElementById('content').innerHTML = html;
 }
 
+function transizioneMandria(azione) {
+  const content = document.getElementById('content');
+  const curtain = document.createElement('div');
+  curtain.className = 'samuele-curtain';
+  curtain.innerHTML = content.innerHTML;
+  document.body.appendChild(curtain);
+
+  const herd = document.getElementById('piglet-herd');
+  const N = 60;
+  let html = '';
+  for(let i = 0; i < N; i++) {
+    const top = (Math.random() * 96).toFixed(1);
+    const delay = Math.round(Math.random() * 380);
+    const size = Math.round(24 + Math.random() * 40);
+    html += `<span style="top:${top}%;font-size:${size}px;animation-delay:${delay}ms;">🐖</span>`;
+  }
+  herd.innerHTML = html;
+  void herd.offsetWidth;
+  herd.classList.add('go');
+
+  azione();
+
+  setTimeout(() => {
+    curtain.remove();
+    herd.classList.remove('go');
+    herd.innerHTML = '';
+  }, 1300);
+}
+
 function apriSoccida(nome) {
   soccidaAttiva = nome;
-  render();
+  transizioneMandria(() => render());
 }
 
 // ── DETTAGLIO SOCCIDA ──
@@ -209,7 +273,7 @@ function render() {
   if(!soc) { renderLista(); return; }
 
   let html = `<div class="detail-sticky-wrap">
-    <button class="back-btn" onclick="renderLista()">← Soccide</button>
+    <button class="back-btn" onclick="transizioneMandria(() => renderLista())">← Soccide</button>
     <div class="soccida-header"><div class="soccida-title">${soc.nome}</div></div>
   </div>`;
 
