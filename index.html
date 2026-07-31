@@ -66,24 +66,21 @@
 
   /* LAYOUT */
   .page { display: none; padding: 20px; max-width: 480px; margin: 0 auto; }
-  .page.visible { display: block; animation: pageWipeIn .7s cubic-bezier(.4,0,.2,1); }
+  @property --wipe {
+    syntax: '<percentage>';
+    inherits: false;
+    initial-value: -10%;
+  }
+  .page.visible {
+    display: block;
+    --wipe: -10%;
+    animation: pageWipeIn .7s cubic-bezier(.4,0,.2,1) forwards;
+    -webkit-mask-image: linear-gradient(to right, black 0%, black calc(var(--wipe) - 10%), transparent var(--wipe), transparent 100%);
+    mask-image: linear-gradient(to right, black 0%, black calc(var(--wipe) - 10%), transparent var(--wipe), transparent 100%);
+  }
   @keyframes pageWipeIn {
-    from { clip-path: inset(0 100% 0 0); }
-    to   { clip-path: inset(0 0 0 0); }
-  }
-  .page.visible::after {
-    content: '';
-    position: fixed; top: 0; bottom: 0; left: 0;
-    width: 140px;
-    background: linear-gradient(to right, transparent, rgba(245,243,238,.85) 45%, rgba(245,243,238,.85) 55%, transparent);
-    filter: blur(14px);
-    pointer-events: none;
-    z-index: 250;
-    animation: wipeGlow .7s cubic-bezier(.4,0,.2,1) forwards;
-  }
-  @keyframes wipeGlow {
-    from { transform: translateX(-140px); opacity: 1; }
-    to   { transform: translateX(100vw); opacity: 0; }
+    from { --wipe: -10%; }
+    to   { --wipe: 110%; }
   }
 
   /* CARDS SOCCIDE */
