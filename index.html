@@ -1120,6 +1120,12 @@ async function importaDocumentoPendente() {
 let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [], allMortalita = [], allSanitario = [], allVenditeDirette = [], allUsciteCategorie = [], allVenditeDiretteCategorie = [], allIngressi = [], allLettereDop = [];
 let storicoFilter = 'tutti';
 let currentPage = 'home';
+
+window.addEventListener('scroll', () => {
+  if(currentPage !== 'home') return;
+  const nav = document.getElementById('topbar-nav');
+  nav.classList.toggle('collapsed', window.scrollY > 40);
+}, { passive: true });
 let currentLottoId = null;
 
 // ── DATI MOCK — sostituire con query Supabase quando pronti ──
