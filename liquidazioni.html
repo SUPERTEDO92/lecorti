@@ -266,6 +266,24 @@
     92%  { opacity: 1; }
     100% { left: 106vw; opacity: 0; }
   }
+
+  /* ── DOLLARO CHE PASSA — mostrato tornando su Liquidazioni ── */
+  .flying-dollar {
+    position: fixed; top: 90px; left: -140px;
+    font-size: 90px; z-index: 50; pointer-events: none;
+    opacity: 0; transform: rotate(-12deg);
+    filter: drop-shadow(0 6px 8px rgba(26,26,24,.22));
+  }
+  .flying-dollar.go {
+    animation: dollarFly 2.6s cubic-bezier(.45,0,.55,1) 1;
+  }
+  @keyframes dollarFly {
+    0%   { left: -140px; top: 90px; opacity: 0; transform: rotate(-12deg); }
+    10%  { opacity: 1; }
+    50%  { top: 140px; transform: rotate(10deg); }
+    90%  { opacity: 1; }
+    100% { left: 106vw; top: 70px; opacity: 0; transform: rotate(-16deg); }
+  }
 </style>
 </head>
 <body>
@@ -273,6 +291,7 @@
 <img src="img/piggybank-cascade.svg" alt="" style="position:fixed; bottom:-40px; right:-60px; width:420px; height:420px; opacity:.10; z-index:-1; pointer-events:none;">
 
 <div class="running-piglet" id="running-piglet">🐖</div>
+<div class="flying-dollar" id="flying-dollar">💵</div>
 
 <div class="header">
   <img src="img/piglet-tycoon.svg" alt="" class="header-mascot">
@@ -374,6 +393,12 @@ function switchPagina(p) {
     pig.classList.remove('go');
     void pig.offsetWidth;
     pig.classList.add('go');
+  }
+  if(p === 'liq') {
+    const dollaro = document.getElementById('flying-dollar');
+    dollaro.classList.remove('go');
+    void dollaro.offsetWidth;
+    dollaro.classList.add('go');
   }
 }
 
