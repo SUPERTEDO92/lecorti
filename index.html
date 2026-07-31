@@ -432,7 +432,10 @@
     .btn-do-print:active, .btn-back-print:active {
       transform: scale(.88);
     }
-    /* hover: sollevamento + ombra su bottoni con sfondo pieno */
+  }
+  /* hover: sollevamento + ombra — SOLO su dispositivi con mouse reale (evita che il tocco su mobile
+     attivi :hover per un istante facendo "saltare" il pulsante appena appare) */
+  @media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
     .nav-btn:hover:not(.active), .back-btn:hover, .btn-izs:hover, .btn-print:hover,
     .btn-ilaria:hover, .btn-do-print:hover, .chip:hover:not(.active) {
       transform: translateY(-2px);
@@ -443,6 +446,8 @@
       box-shadow: var(--shadow-lg);
       border-color: var(--border2);
     }
+  }
+  @media (prefers-reduced-motion: no-preference) {
     .stat-box, .uscita-row, .storico-row, .trasfrow, .referto-card {
       transition: background-color .18s ease, transform .18s ease;
     }
