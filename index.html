@@ -55,6 +55,17 @@
     display: flex; flex-wrap: wrap; gap: 4px;
     padding: 8px 12px 10px;
     border-top: 0.5px solid rgba(255,255,255,.08);
+    overflow: hidden;
+    max-height: 100px;
+    opacity: 1;
+    transition: max-height .35s cubic-bezier(.4,0,.2,1), opacity .28s ease, padding .35s cubic-bezier(.4,0,.2,1), border-color .35s ease;
+  }
+  .topbar-nav.collapsed {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-top-color: transparent;
   }
   .nav-btn {
     flex: 1 1 30%; padding: 8px 4px; border-radius: var(--radius); border: none;
@@ -1191,7 +1202,7 @@ function showPage(name, lottoId) {
       ease: 'power3.inOut',
       onComplete: () => {
         newPage.classList.remove('incoming');
-        document.getElementById('topbar-nav').style.display = (name === 'home') ? 'flex' : 'none';
+        document.getElementById('topbar-nav').classList.toggle('collapsed', name !== 'home');
         document.getElementById('global-back-btn').style.display = ['home','detail','inserimento','analisi','stampa'].includes(name) ? 'none' : 'flex';
         document.querySelectorAll('.nav-btn').forEach(b => {
           b.classList.toggle('active', b.getAttribute('onclick')?.includes(`'${navName}'`));
