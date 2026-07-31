@@ -42,7 +42,7 @@
 
   /* TOPBAR */
   .topbar {
-    position: sticky; top: 0; z-index: 100;
+    position: sticky; top: 0; z-index: 250;
     background: var(--text); color: #F5F3EE;
   }
   .topbar-title {
@@ -65,22 +65,22 @@
   .nav-btn.active { background: rgba(255,255,255,.15); color: #FFF; }
 
   /* LAYOUT */
-  .page { display: none; padding: 20px; max-width: 480px; margin: 0 auto; }
+  .page { display: none; padding: 20px; max-width: 480px; margin: 0 auto; background: var(--bg); }
   @property --wipe {
     syntax: '<percentage>';
     inherits: false;
-    initial-value: -45%;
+    initial-value: -35%;
   }
   .page.visible {
     display: block;
-    --wipe: -45%;
+    --wipe: -35%;
     animation: pageWipeIn .9s cubic-bezier(.4,0,.2,1) forwards;
-    -webkit-mask-image: linear-gradient(to right, black 0%, black calc(var(--wipe) - 45%), transparent var(--wipe), transparent 100%);
-    mask-image: linear-gradient(to right, black 0%, black calc(var(--wipe) - 45%), transparent var(--wipe), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black 0%, black calc(var(--wipe) - 35%), transparent var(--wipe), transparent 100%);
+    mask-image: linear-gradient(to right, black 0%, black calc(var(--wipe) - 35%), transparent var(--wipe), transparent 100%);
   }
   @keyframes pageWipeIn {
-    from { --wipe: -45%; }
-    to   { --wipe: 145%; }
+    from { --wipe: -35%; }
+    to   { --wipe: 135%; }
   }
   .page.incoming {
     position: fixed; inset: 0;
@@ -1162,7 +1162,7 @@ async function loadAll() {
 function apriSoccidaConAnimazione(socId) {
   const herd = document.getElementById('piglet-herd');
   herd.classList.remove('go');
-  const N = 105;
+  const N = 135;
   let html = '';
   for(let i = 0; i < N; i++) {
     const top = (Math.random() * 96).toFixed(1);
@@ -1173,7 +1173,9 @@ function apriSoccidaConAnimazione(socId) {
   herd.innerHTML = html;
   void herd.offsetWidth;
   herd.classList.add('go');
-  showPage('detail', socId);
+  setTimeout(() => {
+    showPage('detail', socId);
+  }, 320);
   setTimeout(() => {
     herd.classList.remove('go');
     herd.innerHTML = '';
