@@ -26,6 +26,9 @@
     --accent: #8B4513;
     --radius: 8px;
     --radius-lg: 12px;
+    --shadow-sm: 0 1px 2px rgba(26,26,24,.05), 0 1px 1px rgba(26,26,24,.03);
+    --shadow-md: 0 3px 10px rgba(26,26,24,.07), 0 1px 3px rgba(26,26,24,.05);
+    --shadow-lg: 0 10px 28px rgba(26,26,24,.12), 0 3px 8px rgba(26,26,24,.06);
   }
 
   body {
@@ -79,6 +82,7 @@
     border-radius: var(--radius);
     padding: 8px 10px;
     text-align: center;
+    box-shadow: var(--shadow-sm);
   }
   .sum-label { font-size: 11px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--text2); }
   .sum-val { font-size: 18px; font-weight: 500; font-family: var(--mono); margin-top: 2px; }
@@ -96,7 +100,7 @@
     border-radius: var(--radius-lg);
     padding: 16px 18px;
     margin-bottom: 16px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: var(--shadow-md);
   }
   .liq-top {
     display: flex;
@@ -155,6 +159,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    box-shadow: var(--shadow-md);
   }
   .ta-label { font-size: 14px; color: #AAA; font-family: var(--mono); }
   .ta-val { font-size: 32px; font-weight: 500; font-family: var(--mono); color: #FFF; }
@@ -176,7 +181,7 @@
   .tab-btn.active { background: var(--text); color: #FFF; border-color: var(--text); }
 
   /* Trasferimenti */
-  .trasf-row { break-inside: avoid; background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 14px 16px; margin-bottom: 6px; }
+  .trasf-row { break-inside: avoid; background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 14px 16px; margin-bottom: 6px; box-shadow: var(--shadow-sm); }
   .trasf-top2 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
   .trasf-route { font-size: 15px; font-weight: 500; }
   .trasf-route .arrow { color: var(--text2); font-weight: 400; font-size: 13px; }
@@ -186,6 +191,47 @@
   .tg-label { font-size: 10px; font-family: var(--mono); text-transform: uppercase; color: var(--text3); letter-spacing: .06em; }
   .tg-val { font-size: 15px; font-family: var(--mono); font-weight: 500; margin-top: 2px; }
   .tg-val.green { color: var(--green); }
+
+  /* ── MICRO-ANIMAZIONI — bottoni, hover, transizioni (31/07/2026, intensificate) ── */
+  @media (prefers-reduced-motion: no-preference) {
+    button, .chip, .tab-btn, .liq-row, .trasf-row {
+      transition: transform .16s cubic-bezier(.34,1.56,.64,1),
+                  background-color .15s ease, border-color .15s ease,
+                  box-shadow .2s ease, opacity .15s ease;
+    }
+    button:active:not(:disabled), .chip:active, .tab-btn:active {
+      transform: scale(.91);
+    }
+    .chip:hover:not(.active), .tab-btn:hover:not(.active) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(26,26,24,.14);
+    }
+    .liq-row:hover {
+      transform: translateY(-3px) scale(1.005);
+      box-shadow: var(--shadow-lg);
+    }
+    .trasf-row:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    .liq-row, .trasf-row {
+      animation: rowIn .28s cubic-bezier(.22,1,.36,1) backwards;
+    }
+    .list-wrap .liq-row:nth-child(1), #list .liq-row:nth-child(1) { animation-delay: .02s; }
+    #list .liq-row:nth-child(2) { animation-delay: .05s; }
+    #list .liq-row:nth-child(3) { animation-delay: .08s; }
+    #list .liq-row:nth-child(4) { animation-delay: .11s; }
+    #list .liq-row:nth-child(5) { animation-delay: .14s; }
+    #list .liq-row:nth-child(n+6) { animation-delay: .16s; }
+    @keyframes rowIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .loading { animation: loadingPulse 1.3s ease-in-out infinite; }
+    @keyframes loadingPulse { 0%,100% { opacity: .45; } 50% { opacity: 1; } }
+    input:focus {
+      transition: border-color .15s ease, box-shadow .2s ease;
+      box-shadow: 0 0 0 4px rgba(139,69,19,.14);
+      border-color: var(--accent) !important;
+    }
+  }
 </style>
 </head>
 <body>
