@@ -66,7 +66,7 @@
 
   /* LAYOUT */
   .page { display: none; padding: 20px; max-width: 480px; margin: 0 auto; }
-  .page.visible { display: block; animation: pageFadeIn .18s ease; }
+  .page.visible { display: block; animation: pageFadeIn .45s ease; }
   @keyframes pageFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
   /* CARDS SOCCIDE */
@@ -443,35 +443,29 @@
     position: fixed; inset: 0; z-index: 300;
     pointer-events: none;
   }
-  .piglet-herd img {
-    position: absolute; left: -160px;
-    width: 110px; height: auto; transform: scaleX(-1);
-    filter: drop-shadow(0 6px 8px rgba(26,26,24,.3));
+  .piglet-herd span {
+    position: absolute; left: -80px; top: 0;
+    transform: scaleX(-1);
+    filter: drop-shadow(0 4px 6px rgba(26,26,24,.3));
     opacity: 0;
   }
-  .piglet-herd.go img {
-    animation: herdRun .85s cubic-bezier(.5,0,.5,1) forwards;
+  .piglet-herd.go span {
+    animation-name: herdRun;
+    animation-duration: .9s;
+    animation-timing-function: cubic-bezier(.5,0,.5,1);
+    animation-fill-mode: forwards;
   }
-  .piglet-herd img:nth-child(1) { top: 4%;  animation-delay: 0ms; }
-  .piglet-herd img:nth-child(2) { top: 19%; animation-delay: 45ms; }
-  .piglet-herd img:nth-child(3) { top: 34%; animation-delay: 90ms; }
-  .piglet-herd img:nth-child(4) { top: 49%; animation-delay: 135ms; }
-  .piglet-herd img:nth-child(5) { top: 64%; animation-delay: 180ms; }
-  .piglet-herd img:nth-child(6) { top: 79%; animation-delay: 225ms; }
-  .piglet-herd img:nth-child(7) { top: 92%; animation-delay: 270ms; }
   @keyframes herdRun {
-    0%   { left: -160px; opacity: 0; }
-    10%  { opacity: 1; }
-    90%  { opacity: 1; }
+    0%   { opacity: 0; }
+    8%   { opacity: 1; }
+    88%  { opacity: 1; }
     100% { left: 108vw; opacity: 0; }
   }
 </style>
 </head>
 <body>
 
-<div class="piglet-herd" id="piglet-herd">
-  <img src="img/piglet-running.png" alt=""><img src="img/piglet-running.png" alt=""><img src="img/piglet-running.png" alt=""><img src="img/piglet-running.png" alt=""><img src="img/piglet-running.png" alt=""><img src="img/piglet-running.png" alt=""><img src="img/piglet-running.png" alt="">
-</div>
+<div class="piglet-herd" id="piglet-herd"></div>
 
 <div class="topbar">
   <div class="topbar-title">
@@ -1145,14 +1139,24 @@ async function loadAll() {
 function apriSoccidaConAnimazione(socId) {
   const herd = document.getElementById('piglet-herd');
   herd.classList.remove('go');
+  const N = 55;
+  let html = '';
+  for(let i = 0; i < N; i++) {
+    const top = (Math.random() * 96).toFixed(1);
+    const delay = Math.round(Math.random() * 420);
+    const size = Math.round(26 + Math.random() * 46);
+    html += `<span style="top:${top}%;font-size:${size}px;animation-delay:${delay}ms;">🐖</span>`;
+  }
+  herd.innerHTML = html;
   void herd.offsetWidth;
   herd.classList.add('go');
   setTimeout(() => {
     showPage('detail', socId);
-  }, 500);
+  }, 560);
   setTimeout(() => {
     herd.classList.remove('go');
-  }, 1150);
+    herd.innerHTML = '';
+  }, 1400);
 }
 
 function showPage(name, lottoId) {
