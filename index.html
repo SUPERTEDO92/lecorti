@@ -1192,9 +1192,11 @@ function apriSoccidaConAnimazione(socId) {
     const N = 135;
     let html = '';
     for(let i = 0; i < N; i++) {
-      const top = (Math.random() * 96).toFixed(1);
-      const delay = Math.round(Math.random() * 420);
-      const size = Math.round(26 + Math.random() * 46);
+      const base = (i / N) * 98;
+      const jitter = (Math.random() * 1.6 - 0.8);
+      const top = Math.max(0, Math.min(98, base + jitter)).toFixed(1);
+      const delay = Math.round(Math.random() * 220);
+      const size = Math.round(30 + Math.random() * 40);
       html += `<span style="top:${top}%;font-size:${size}px;animation-delay:${delay}ms;">🐖</span>`;
     }
     herd.innerHTML = html;
