@@ -1985,20 +1985,14 @@ function renderDetail(socId) {
     // Sanitario del lotto
     const sanLotto = allSanitario ? allSanitario.filter(s => s.lotto_id === lotto.id).sort((a,b) => a.data_referto.localeCompare(b.data_referto)) : [];
 
-    // Tab bar per lotto
-    html += `<div style="display:flex;gap:4px;margin-bottom:10px;">
-      <button onclick="switchLottoTab(${lotto.id},'uscite',this)" class="ltab ltab-active" data-lotto="${lotto.id}" data-tab="uscite"
-        style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--accent);background:var(--accent);color:#FFF;font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
-        Uscite${uscite.length ? ' ('+uscite.length+')' : ''}
-      </button>
-      <button onclick="switchLottoTab(${lotto.id},'mortalita',this)" class="ltab" data-lotto="${lotto.id}" data-tab="mortalita"
-        style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg2);color:var(--text2);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
-        Mortalità${mortLotto.length ? ' ('+mortLotto.length+')' : ''}
-      </button>
-      <button onclick="switchLottoTab(${lotto.id},'izs',this)" class="ltab" data-lotto="${lotto.id}" data-tab="izs"
-        style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg2);color:var(--text2);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
-        Referti${sanLotto.length ? ' ('+sanLotto.length+')' : ''}
-      </button>
+    // Tab bar per lotto — tendina unica al posto dei 3 bottoni
+    html += `<div style="margin-bottom:10px;">
+      <select onchange="switchLottoTab(${lotto.id}, this.value)" data-lotto="${lotto.id}"
+        style="width:100%;padding:8px 10px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:12px;font-family:var(--font);font-weight:500;">
+        <option value="uscite">Uscite${uscite.length ? ' ('+uscite.length+')' : ''}</option>
+        <option value="mortalita">Mortalità${mortLotto.length ? ' ('+mortLotto.length+')' : ''}</option>
+        <option value="izs">Referti${sanLotto.length ? ' ('+sanLotto.length+')' : ''}</option>
+      </select>
     </div>`;
 
     // --- TAB USCITE ---
@@ -2027,8 +2021,6 @@ function renderDetail(socId) {
           <span class="tot-val">${fmt(totaleLiquidato)} €</span>
         </div>`;
       }
-    } else if(!trasfLotto.length) {
-      html += `<div class="empty">Nessuna uscita registrata.</div>`;
     }
     // Trasferimenti in uscita dal lotto
     if(trasfLotto.length) {
