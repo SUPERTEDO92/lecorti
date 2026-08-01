@@ -38,7 +38,7 @@
     --shadow-lg: 0 10px 28px rgba(26,26,24,.12), 0 3px 8px rgba(26,26,24,.06);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; overflow-anchor: none; }
 
   /* TOPBAR */
   html { overflow-anchor: none; }
@@ -87,17 +87,9 @@
   .nav-btn.active { background: rgba(255,255,255,.15); color: #FFF; }
 
   /* LAYOUT */
-  .page { display: none; padding: 20px; max-width: 480px; margin: 0 auto; }
+  .page { display: none; padding: 20px; max-width: 480px; margin: 0 auto; overflow-anchor: none; }
   .page.visible { display: block; animation: pageFadeSoft 2.2s ease; }
   @keyframes pageFadeSoft { from { opacity: 0; } to { opacity: 1; } }
-  .page.incoming {
-    position: fixed; left: 0; right: 0; bottom: 0;
-    overflow-y: auto;
-    background: var(--bg);
-    z-index: 200;
-    max-width: none;
-    margin: 0;
-  }
 
   /* CARDS SOCCIDE */
   .soccide-list { display: flex; flex-direction: column; gap: 2px; margin-top: 2px; }
@@ -1227,19 +1219,7 @@ function showPage(name, lottoId) {
     b.classList.toggle('active', b.getAttribute('onclick')?.includes(`'${navName}'`));
   });
 
-  // la nav-row e' aperta/chiusa solo dall'utente (pulsante Menu): misuro l'altezza reale del topbar
-  // in questo momento e ci allineo la pagina in arrivo, qualunque sia lo stato della nav
-  const topbarH = document.querySelector('.topbar').offsetHeight;
-  newPage.style.top = topbarH + 'px';
-
-  newPage.classList.add('incoming');
   newPage.classList.add('visible');
-  newPage.scrollTop = 0;
-  setTimeout(() => {
-    newPage.classList.remove('incoming');
-    newPage.style.top = '';
-    newPage.scrollTop = 0;
-  }, 2300);
   if(name === 'detail' && lottoId) { currentLottoId = lottoId; renderDetail(lottoId); }
   if(name === 'inserimento') initInserimento();
   if(name === 'archivio') renderArchivio();
@@ -1249,7 +1229,6 @@ function showPage(name, lottoId) {
   if(name === 'analisi' && !lottoId && currentLottoId) renderAnalisi(currentLottoId);
   if(name === 'stampa' && lottoId) { currentLottoId = lottoId; renderStampa(lottoId); }
   window.scrollTo(0,0);
-  newPage.scrollTop = 0;
 }
 
 let macelliAnnoFiltro = 'tutti';
