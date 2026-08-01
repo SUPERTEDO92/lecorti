@@ -1985,14 +1985,20 @@ function renderDetail(socId) {
     // Sanitario del lotto
     const sanLotto = allSanitario ? allSanitario.filter(s => s.lotto_id === lotto.id).sort((a,b) => a.data_referto.localeCompare(b.data_referto)) : [];
 
-    // Tab bar per lotto — tendina unica al posto dei 3 bottoni
-    html += `<div style="margin-bottom:10px;">
-      <select onchange="switchLottoTab(${lotto.id}, this.value)" data-lotto="${lotto.id}"
-        style="width:100%;padding:8px 10px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:12px;font-family:var(--font);font-weight:500;">
-        <option value="uscite">Uscite${uscite.length ? ' ('+uscite.length+')' : ''}</option>
-        <option value="mortalita">Mortalità${mortLotto.length ? ' ('+mortLotto.length+')' : ''}</option>
-        <option value="izs">Referti${sanLotto.length ? ' ('+sanLotto.length+')' : ''}</option>
-      </select>
+    // Tab bar per lotto
+    html += `<div style="display:flex;gap:4px;margin-bottom:10px;">
+      <button onclick="switchLottoTab(${lotto.id},'uscite',this)" class="ltab ltab-active" data-lotto="${lotto.id}" data-tab="uscite"
+        style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--accent);background:var(--accent);color:#FFF;font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
+        Uscite${uscite.length ? ' ('+uscite.length+')' : ''}
+      </button>
+      <button onclick="switchLottoTab(${lotto.id},'mortalita',this)" class="ltab" data-lotto="${lotto.id}" data-tab="mortalita"
+        style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg2);color:var(--text2);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
+        Mortalità${mortLotto.length ? ' ('+mortLotto.length+')' : ''}
+      </button>
+      <button onclick="switchLottoTab(${lotto.id},'izs',this)" class="ltab" data-lotto="${lotto.id}" data-tab="izs"
+        style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg2);color:var(--text2);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
+        Referti${sanLotto.length ? ' ('+sanLotto.length+')' : ''}
+      </button>
     </div>`;
 
     // --- TAB USCITE ---
@@ -2043,9 +2049,13 @@ function renderDetail(socId) {
       });
       html += `</div>`;
     }
-    html += `<button onclick="showPage('stampa',${lotto.id})" style="width:100%;padding:8px;background:var(--bg2);color:var(--text2);border:0.5px solid var(--border);border-radius:var(--radius);font-size:11px;font-family:var(--font);cursor:pointer;margin-top:4px;">🖨 Stampa PDF lotto ${lotto.codice}</button>`;
-    html += `<button onclick="apriModificaLotto(${lotto.id})" style="width:100%;padding:8px;background:var(--amber-bg);color:var(--amber);border:0.5px solid #F0DC8A;border-radius:var(--radius);font-size:11px;font-family:var(--font);cursor:pointer;margin-top:4px;">✎ Modifica dati ingresso lotto ${lotto.codice}</button>`;
-    html += `<button onclick="archiviaLotto(${lotto.id},'${lotto.codice}')" style="width:100%;padding:8px;background:#FFF;color:var(--text3);border:0.5px solid var(--border);border-radius:var(--radius);font-size:11px;font-family:var(--font);cursor:pointer;margin-top:4px;">📦 Archivia lotto ${lotto.codice} (concludi)</button>`;
+    html += `<select onchange="if(this.value==='stampa') showPage('stampa',${lotto.id}); else if(this.value==='modifica') apriModificaLotto(${lotto.id}); else if(this.value==='archivia') archiviaLotto(${lotto.id},'${lotto.codice}'); this.value='';"
+      style="width:100%;padding:8px 10px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg2);color:var(--text2);font-size:11px;font-family:var(--font);cursor:pointer;margin-top:4px;">
+      <option value="" selected>⚙ Azioni lotto ${lotto.codice}</option>
+      <option value="stampa">🖨 Stampa PDF lotto ${lotto.codice}</option>
+      <option value="modifica">✎ Modifica dati ingresso lotto ${lotto.codice}</option>
+      <option value="archivia">📦 Archivia lotto ${lotto.codice} (concludi)</option>
+    </select>`;
     html += `</div>`;
 
     // --- TAB MORTALITA ---
