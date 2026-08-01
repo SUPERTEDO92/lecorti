@@ -1253,16 +1253,7 @@ function showPage(name, lottoId) {
   if(name === 'analisi' && !lottoId && currentLottoId) renderAnalisi(currentLottoId);
   if(name === 'stampa' && lottoId) { currentLottoId = lottoId; renderStampa(lottoId); }
   if(name === 'home') {
-    const target = homeScrollY;
-    const enforce = () => window.scrollTo(0, target);
-    requestAnimationFrame(() => requestAnimationFrame(enforce));
-    setTimeout(enforce, 60);
-    setTimeout(enforce, 200);
-    setTimeout(enforce, 500);
-    setTimeout(enforce, 900);
-    const guardTouch = () => { enforce(); };
-    document.addEventListener('touchstart', guardTouch, { once: true, passive: true });
-    setTimeout(() => document.removeEventListener('touchstart', guardTouch), 1500);
+    requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0, homeScrollY)));
   } else {
     window.scrollTo(0,0);
   }
