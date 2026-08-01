@@ -77,7 +77,8 @@
 
   /* LAYOUT */
   .page { display: none; padding: 20px; max-width: 480px; margin: 0 auto; }
-  .page.visible { display: block; }
+  .page.visible { display: block; animation: pageFadeSoft .6s ease; }
+  @keyframes pageFadeSoft { from { opacity: 0; } to { opacity: 1; } }
   .page.incoming {
     position: fixed; left: 0; right: 0; bottom: 0;
     overflow-y: auto;
@@ -1181,13 +1182,13 @@ function apriSoccidaConAnimazione(socId) {
   setTimeout(() => {
     const herd = document.getElementById('piglet-herd');
     herd.classList.remove('go');
-    const N = 135;
+    const N = 170;
     let html = '';
     for(let i = 0; i < N; i++) {
-      const base = (i / N) * 98;
-      const jitter = (Math.random() * 1.6 - 0.8);
-      const top = Math.max(0, Math.min(98, base + jitter)).toFixed(1);
-      const delay = Math.round(Math.random() * 220);
+      const base = (i / N) * 99;
+      const jitter = (Math.random() * 1.0 - 0.5);
+      const top = Math.max(0, Math.min(99, base + jitter)).toFixed(1);
+      const delay = Math.round(Math.random() * 150);
       const size = Math.round(30 + Math.random() * 40);
       html += `<span style="top:${top}%;font-size:${size}px;animation-delay:${delay}ms;">🐖</span>`;
     }
