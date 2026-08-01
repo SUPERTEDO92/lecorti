@@ -1234,9 +1234,11 @@ function showPage(name, lottoId) {
 
   newPage.classList.add('incoming');
   newPage.classList.add('visible');
+  newPage.scrollTop = 0;
   setTimeout(() => {
     newPage.classList.remove('incoming');
     newPage.style.top = '';
+    newPage.scrollTop = 0;
   }, 2300);
   if(name === 'detail' && lottoId) { currentLottoId = lottoId; renderDetail(lottoId); }
   if(name === 'inserimento') initInserimento();
@@ -1247,6 +1249,7 @@ function showPage(name, lottoId) {
   if(name === 'analisi' && !lottoId && currentLottoId) renderAnalisi(currentLottoId);
   if(name === 'stampa' && lottoId) { currentLottoId = lottoId; renderStampa(lottoId); }
   window.scrollTo(0,0);
+  newPage.scrollTop = 0;
 }
 
 let macelliAnnoFiltro = 'tutti';
