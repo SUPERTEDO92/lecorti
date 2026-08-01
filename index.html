@@ -175,7 +175,7 @@
     margin-bottom: 12px;
     box-shadow: var(--shadow-sm);
   }
-  .tot-label { font-size: 11px; color: var(--text2); }
+  .tot-label { font-size: 15px; font-weight: 500; color: var(--green); }
   .tot-val { font-size: 15px; font-weight: 500; color: var(--green); font-family: var(--mono); }
 
   /* PRESENTI BAR */
@@ -1992,7 +1992,7 @@ function renderDetail(socId) {
         Uscite${uscite.length ? ' ('+uscite.length+')' : ''}
       </button>
       <button onclick="switchLottoTab(${lotto.id},'mortalita',this)" class="ltab" data-lotto="${lotto.id}" data-tab="mortalita"
-        style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg2);color:var(--text2);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
+        style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--red);background:var(--red-bg);color:var(--red);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
         Mortalità${mortLotto.length ? ' ('+mortLotto.length+')' : ''}
       </button>
       <button onclick="switchLottoTab(${lotto.id},'izs',this)" class="ltab" data-lotto="${lotto.id}" data-tab="izs"
@@ -2050,7 +2050,7 @@ function renderDetail(socId) {
       html += `</div>`;
     }
     html += `<select onchange="if(this.value==='stampa') showPage('stampa',${lotto.id}); else if(this.value==='modifica') apriModificaLotto(${lotto.id}); else if(this.value==='archivia') archiviaLotto(${lotto.id},'${lotto.codice}'); this.value='';"
-      style="width:100%;padding:8px 10px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg2);color:var(--text2);font-size:11px;font-family:var(--font);cursor:pointer;margin-top:4px;">
+      style="width:100%;padding:8px 10px;border-radius:var(--radius);border:0.5px solid var(--accent);background:var(--amber-bg);color:var(--amber);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:4px;">
       <option value="" selected>⚙ Azioni lotto ${lotto.codice}</option>
       <option value="stampa">🖨 Stampa PDF lotto ${lotto.codice}</option>
       <option value="modifica">✎ Modifica dati ingresso lotto ${lotto.codice}</option>
@@ -2109,7 +2109,7 @@ function renderDetail(socId) {
     html += `</div>`;
 
     // Separatore tra lotti
-    html += `<div style="border-top:1px solid var(--border);margin:16px 0"></div>`;
+    html += `<div style="border-top:3px solid var(--text3);margin:22px 0"></div>`;
   });
 
   document.getElementById('detail-content').innerHTML = html;
@@ -2901,9 +2901,15 @@ function switchLottoTab(lottoId, tab, btn) {
   });
   document.querySelectorAll(`.ltab[data-lotto="${lottoId}"]`).forEach(b => {
     const isActive = b.dataset.tab === tab;
-    b.style.background = isActive ? 'var(--accent)' : 'var(--bg2)';
-    b.style.color = isActive ? '#FFF' : 'var(--text2)';
-    b.style.borderColor = isActive ? 'var(--accent)' : 'var(--border)';
+    if(b.dataset.tab === 'mortalita') {
+      b.style.background = isActive ? 'var(--red)' : 'var(--red-bg)';
+      b.style.color = isActive ? '#FFF' : 'var(--red)';
+      b.style.borderColor = 'var(--red)';
+    } else {
+      b.style.background = isActive ? 'var(--accent)' : 'var(--bg2)';
+      b.style.color = isActive ? '#FFF' : 'var(--text2)';
+      b.style.borderColor = isActive ? 'var(--accent)' : 'var(--border)';
+    }
   });
 }
 
