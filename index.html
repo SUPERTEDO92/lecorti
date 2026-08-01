@@ -2002,6 +2002,12 @@ function renderDetail(socId) {
         <button onclick="apriCostoAcquisto(${trasfAcq.id})" style="padding:5px 12px;background:var(--amber);color:#FFF;border:none;border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">+ Inserisci</button>
       </div>`;
     }
+    if(trasfAcq && (trasfAcq.calcolo_documento_id || trasfAcq.fattura_documento_id)) {
+      html += `<div style="display:flex;gap:6px;margin-bottom:8px;">
+        ${trasfAcq.calcolo_documento_id ? `<button onclick="apriDocumento(${trasfAcq.calcolo_documento_id})" style="flex:1;background:#FDF3E7;border:0.5px solid #EAD2A8;border-radius:var(--radius);padding:6px 10px;font-size:11px;font-weight:600;color:var(--accent);cursor:pointer;font-family:var(--font);">📄 Conteggio</button>` : ''}
+        ${trasfAcq.fattura_documento_id ? `<button onclick="apriDocumento(${trasfAcq.fattura_documento_id})" style="flex:1;background:#FDF3E7;border:0.5px solid #EAD2A8;border-radius:var(--radius);padding:6px 10px;font-size:11px;font-weight:600;color:var(--accent);cursor:pointer;font-family:var(--font);">📄 Fattura</button>` : ''}
+      </div>`;
+    }
 
     // Stat grid lotto
     html += `<div class="stat-grid" style="margin-bottom:10px;grid-template-columns:repeat(3,1fr);">
