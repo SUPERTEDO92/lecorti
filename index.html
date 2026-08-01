@@ -49,10 +49,18 @@
   }
   .topbar-title {
     padding: 12px 20px 8px;
-    display: flex; align-items: baseline; justify-content: space-between;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
   }
   .topbar-logo { font-family: var(--mono); font-size: 15px; font-weight: 500; letter-spacing: .1em; }
   .topbar-date { font-size: 11px; color: #888; font-family: var(--mono); }
+  .topbar-menu-btn {
+    background: rgba(255,255,255,.08); border: 0.5px solid rgba(255,255,255,.18);
+    color: #F5F3EE; font-family: var(--mono); font-size: 12px;
+    padding: 5px 12px; border-radius: 20px; cursor: pointer;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .topbar-menu-btn .chev { display:inline-block; transition: transform .25s ease; font-size: 9px; }
+  .topbar-menu-btn.open .chev { transform: rotate(180deg); }
   .topbar-nav {
     display: flex; flex-wrap: wrap; gap: 4px;
     padding: 6px 12px 8px;
@@ -500,9 +508,10 @@
 <div class="topbar">
   <div class="topbar-title">
     <span class="topbar-logo">LE CORTI</span>
+    <button class="topbar-menu-btn" id="topbar-menu-btn" onclick="toggleTopbarNav()">Menu <span class="chev">▾</span></button>
     <span class="topbar-date" id="today-date"></span>
   </div>
-  <div class="topbar-nav" id="topbar-nav">
+  <div class="topbar-nav collapsed" id="topbar-nav">
     <button class="nav-btn active" onclick="showPage('home')">Soccide</button>
     <button class="nav-btn" onclick="showPage('storico')">Storico</button>
     <button class="nav-btn" onclick="showPage('trasferimenti')">Trasferimenti</button>
@@ -1125,13 +1134,13 @@ async function importaDocumentoPendente() {
 let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [], allMortalita = [], allSanitario = [], allVenditeDirette = [], allUsciteCategorie = [], allVenditeDiretteCategorie = [], allIngressi = [], allLettereDop = [];
 let storicoFilter = 'tutti';
 let currentPage = 'home';
-let homeScrollY = 0;
 
-window.addEventListener('scroll', () => {
-  if(currentPage !== 'home') return;
+function toggleTopbarNav() {
   const nav = document.getElementById('topbar-nav');
-  nav.classList.toggle('collapsed', window.scrollY > 40);
-}, { passive: true });
+  const btn = document.getElementById('topbar-menu-btn');
+  const open = nav.classList.toggle('collapsed') === false;
+  btn.classList.toggle('open', open);
+}
 let currentLottoId = null;
 
 // ── DATI MOCK — sostituire con query Supabase quando pronti ──
@@ -1182,50 +1191,34 @@ async function loadAll() {
 }
 
 function apriSoccidaConAnimazione(socId) {
-  if(currentPage === 'home') homeScrollY = window.scrollY;
-  document.getElementById('topbar-nav').classList.add('collapsed');
+  const herd = document.getElementById('piglet-herd');
+  herd.classList.remove('go');
+  const N = 170;
+  let html = '';
+  for(let i = 0; i < N; i++) {
+    const base = (i / N) * 99;
+    const jitter = (Math.random() * 1.0 - 0.5);
+    const top = Math.max(0, Math.min(99, base + jitter)).toFixed(1);
+    const delay = Math.round(Math.random() * 150);
+    const size = Math.round(30 + Math.random() * 40);
+    html += `<span style="top:${top}%;font-size:${size}px;animation-delay:${delay}ms;">🐖</span>`;
+  }
+  herd.innerHTML = html;
+  void herd.offsetWidth;
+  herd.classList.add('go');
   setTimeout(() => {
-    const herd = document.getElementById('piglet-herd');
+    showPage('detail', socId);
+  }, 320);
+  setTimeout(() => {
     herd.classList.remove('go');
-    const N = 170;
-    let html = '';
-    for(let i = 0; i < N; i++) {
-      const base = (i / N) * 99;
-      const jitter = (Math.random() * 1.0 - 0.5);
-      const top = Math.max(0, Math.min(99, base + jitter)).toFixed(1);
-      const delay = Math.round(Math.random() * 150);
-      const size = Math.round(30 + Math.random() * 40);
-      html += `<span style="top:${top}%;font-size:${size}px;animation-delay:${delay}ms;">🐖</span>`;
-    }
-    herd.innerHTML = html;
-    void herd.offsetWidth;
-    herd.classList.add('go');
-    setTimeout(() => {
-      showPage('detail', socId);
-    }, 320);
-    setTimeout(() => {
-      herd.classList.remove('go');
-      herd.innerHTML = '';
-    }, 1400);
-  }, 480);
+    herd.innerHTML = '';
+  }, 1400);
 }
 
 function showPage(name, lottoId) {
-  if(currentPage === 'home' && name !== 'home') {
-    homeScrollY = window.scrollY;
-  }
   const newPage = document.getElementById(`page-${name}`);
   document.querySelectorAll('.page').forEach(p => { if(p !== newPage) p.classList.remove('visible'); });
   currentPage = name;
-
-  // assesto SUBITO lo stato finale del topbar (senza transizione, per poterne misurare l'altezza reale)
-  const navRow = document.getElementById('topbar-nav');
-  const shouldCollapse = name !== 'home';
-  const prevTransition = navRow.style.transition;
-  navRow.style.transition = 'none';
-  navRow.classList.toggle('collapsed', shouldCollapse);
-  void navRow.offsetWidth;
-  navRow.style.transition = prevTransition;
 
   document.getElementById('global-back-btn').style.display = ['home','detail','inserimento','analisi','stampa'].includes(name) ? 'none' : 'flex';
   const navMap = {home:'home',storico:'storico',trasferimenti:'trasferimenti',archivio:'archivio',inserimento:'inserimento',calcolo:'calcolo'};
@@ -1234,7 +1227,8 @@ function showPage(name, lottoId) {
     b.classList.toggle('active', b.getAttribute('onclick')?.includes(`'${navName}'`));
   });
 
-  // ora che il topbar e' nel suo stato finale, misuro la sua altezza vera e ci allineo la pagina in arrivo
+  // la nav-row e' aperta/chiusa solo dall'utente (pulsante Menu): misuro l'altezza reale del topbar
+  // in questo momento e ci allineo la pagina in arrivo, qualunque sia lo stato della nav
   const topbarH = document.querySelector('.topbar').offsetHeight;
   newPage.style.top = topbarH + 'px';
 
@@ -1252,11 +1246,7 @@ function showPage(name, lottoId) {
   if(name === 'analisi' && lottoId) { currentLottoId = lottoId; renderAnalisi(lottoId); }
   if(name === 'analisi' && !lottoId && currentLottoId) renderAnalisi(currentLottoId);
   if(name === 'stampa' && lottoId) { currentLottoId = lottoId; renderStampa(lottoId); }
-  if(name === 'home') {
-    requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0, homeScrollY)));
-  } else {
-    window.scrollTo(0,0);
-  }
+  window.scrollTo(0,0);
 }
 
 let macelliAnnoFiltro = 'tutti';
