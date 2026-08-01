@@ -2993,6 +2993,21 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('modal-incr').style.display = 'none';
   });
 
+  // Pre-warming animazione maialini (herdRun): la prima esecuzione andava a scatti
+  // perché il browser rasterizza il glifo 🐖 e crea il layer GPU (will-change) solo
+  // al primo utilizzo reale. Renderizzando qui uno span nascosto e invisibile subito
+  // dopo il caricamento pagina, quel costo si paga in anticipo invece che al primo
+  // click dell'utente — le esecuzioni successive erano già fluide per lo stesso motivo.
+  const herdWarm = document.getElementById('piglet-herd');
+  if(herdWarm) {
+    const warmSpan = document.createElement('span');
+    warmSpan.textContent = '🐖';
+    warmSpan.style.cssText = 'top:0;font-size:36px;opacity:0.01;';
+    herdWarm.appendChild(warmSpan);
+    void herdWarm.offsetWidth; // forza layout/paint del glifo e del layer GPU
+    setTimeout(() => { warmSpan.remove(); }, 150);
+  }
+
 });
 
 
