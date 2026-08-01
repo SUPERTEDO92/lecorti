@@ -41,9 +41,11 @@
   body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
 
   /* TOPBAR */
+  html { overflow-anchor: none; }
   .topbar {
     position: sticky; top: 0; z-index: 250;
     background: var(--text); color: #F5F3EE;
+    overflow-anchor: none;
   }
   .topbar-title {
     padding: 12px 20px 8px;
@@ -56,6 +58,7 @@
     padding: 6px 12px 8px;
     border-top: 0.5px solid rgba(255,255,255,.08);
     overflow: hidden;
+    overflow-anchor: none;
     max-height: 130px;
     opacity: 1;
     transition: max-height .55s cubic-bezier(.4,0,.2,1), opacity .45s ease, padding .55s cubic-bezier(.4,0,.2,1), border-color .55s ease;
@@ -1179,6 +1182,7 @@ async function loadAll() {
 }
 
 function apriSoccidaConAnimazione(socId) {
+  if(currentPage === 'home') homeScrollY = window.scrollY;
   document.getElementById('topbar-nav').classList.add('collapsed');
   setTimeout(() => {
     const herd = document.getElementById('piglet-herd');
