@@ -2003,6 +2003,7 @@ function renderDetail(socId) {
 
     // --- TAB USCITE ---
     html += `<div id="ltab-uscite-${lotto.id}">`;
+    const trasfLotto = (allTrasferimenti||[]).filter(t => t.lotto_id === lotto.id && t.tipo !== 'ACQUISTO').sort((a,b) => a.data_trasferimento.localeCompare(b.data_trasferimento));
     if(uscite.length) {
       html += `<div class="uscite-container" style="margin-bottom:8px">
         <div class="uscite-header"><span class="uscite-header-text">Uscite lotto ${lotto.codice}</span></div>`;
@@ -2026,11 +2027,10 @@ function renderDetail(socId) {
           <span class="tot-val">${fmt(totaleLiquidato)} €</span>
         </div>`;
       }
-    } else {
+    } else if(!trasfLotto.length) {
       html += `<div class="empty">Nessuna uscita registrata.</div>`;
     }
     // Trasferimenti in uscita dal lotto
-    const trasfLotto = (allTrasferimenti||[]).filter(t => t.lotto_id === lotto.id && t.tipo !== 'ACQUISTO').sort((a,b) => a.data_trasferimento.localeCompare(b.data_trasferimento));
     if(trasfLotto.length) {
       html += `<div class="uscite-container" style="margin-bottom:8px;">
         <div class="uscite-header"><span class="uscite-header-text">Trasferimenti in uscita</span></div>`;
