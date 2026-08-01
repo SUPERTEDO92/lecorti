@@ -86,13 +86,6 @@
     max-width: none;
     margin: 0;
   }
-  #page-curtain {
-    position: fixed; inset: 0; z-index: 210;
-    background: linear-gradient(to right, var(--bg) 0%, var(--bg) 78%, rgba(245,243,238,0) 100%);
-    pointer-events: none;
-    transform: translateX(105vw);
-    will-change: transform;
-  }
 
   /* CARDS SOCCIDE */
   .soccide-list { display: flex; flex-direction: column; gap: 2px; margin-top: 2px; }
@@ -499,7 +492,6 @@
 <body>
 
 <div class="piglet-herd" id="piglet-herd"></div>
-<div id="page-curtain"></div>
 
 <div class="topbar">
   <div class="topbar-title">
@@ -1237,23 +1229,12 @@ function showPage(name, lottoId) {
   const topbarH = document.querySelector('.topbar').offsetHeight;
   newPage.style.top = topbarH + 'px';
 
-  const curtain = document.getElementById('page-curtain');
-  gsap.killTweensOf(curtain);
-  gsap.fromTo(curtain,
-    { x: '0vw' },
-    {
-      x: '105vw',
-      duration: 0.85,
-      ease: 'power3.inOut',
-      onComplete: () => {
-        newPage.classList.remove('incoming');
-        newPage.style.top = '';
-      }
-    }
-  );
-
   newPage.classList.add('incoming');
   newPage.classList.add('visible');
+  setTimeout(() => {
+    newPage.classList.remove('incoming');
+    newPage.style.top = '';
+  }, 950);
   if(name === 'detail' && lottoId) { currentLottoId = lottoId; renderDetail(lottoId); }
   if(name === 'inserimento') initInserimento();
   if(name === 'archivio') renderArchivio();
