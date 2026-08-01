@@ -2977,11 +2977,20 @@ function apriInserisciMortalita(lottoId) {
     `${soc?.nome || '—'} · Lotto ${lotto?.codice || '—'}${lotto?.lettera_dop ? ' · ' + lotto.lettera_dop : ''}`;
   ['mort-capi','mort-note','mort-trattamento'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('mort-data').value = new Date().toISOString().split('T')[0];
-  document.getElementById('modal-mort').style.display = 'flex';
+  const overlay = document.getElementById('modal-mort');
+  const panel = document.getElementById('modal-mort-panel');
+  overlay.style.display = 'flex';
+  gsap.set(overlay, { opacity: 0 });
+  gsap.set(panel, { yPercent: 100 });
+  gsap.to(overlay, { opacity: 1, duration: 0.25, ease: 'power1.out' });
+  gsap.to(panel, { yPercent: 0, duration: 0.42, ease: 'power3.out' });
 }
 
 function chiudiMortalita() {
-  document.getElementById('modal-mort').style.display = 'none';
+  const overlay = document.getElementById('modal-mort');
+  const panel = document.getElementById('modal-mort-panel');
+  gsap.to(panel, { yPercent: 100, duration: 0.32, ease: 'power2.in' });
+  gsap.to(overlay, { opacity: 0, duration: 0.32, ease: 'power1.in', onComplete: () => { overlay.style.display = 'none'; } });
   _mortLottoId = null;
 }
 
@@ -4174,7 +4183,8 @@ loadAll();
 
 <!-- MODALE MORTALITÀ -->
 <div id="modal-mort" class="modal-overlay">
-  <div style="background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;">
+  <div id="modal-mort-panel" style="position:relative;overflow:visible;background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;">
+    <div style="position:absolute;top:-38px;left:50%;transform:translateX(-50%);font-size:42px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.3));pointer-events:none;">💀</div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
       <div style="font-size:14px;font-weight:500;font-family:var(--mono);">Registra mortalità</div>
       <button onclick="chiudiMortalita()" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
