@@ -277,21 +277,21 @@
   }
 
   /* ── MAIALINO CHE CORRE — mostrato passando su Trasferimenti ── */
-  .running-piglet {
-    position: fixed; bottom: 10px; left: -180px;
-    font-size: 130px; z-index: 300; pointer-events: none;
-    opacity: 0; transform: scaleX(-1);
-    filter: drop-shadow(0 8px 10px rgba(26,26,24,.25));
+  .running-truck {
+    position: fixed; bottom: 14px; left: -200px;
+    width: 190px; height: auto; z-index: 300; pointer-events: none;
+    opacity: 0;
+    filter: drop-shadow(0 10px 12px rgba(26,26,24,.3));
   }
-  .running-piglet.go {
-    animation: pigletRun 3.4s cubic-bezier(.45,0,.55,1) 1;
+  .running-truck.go {
+    animation: truckRun 3.4s cubic-bezier(.45,0,.55,1) 1;
   }
-  @keyframes pigletRun {
-    0%   { left: -180px; opacity: 0; }
+  @keyframes truckRun {
+    0%   { transform: translateX(0); opacity: 0; }
     8%   { opacity: 1; }
-    50%  { transform: scaleX(-1) translateY(-18px); }
+    50%  { transform: translateX(calc(53vw + 100px)) translateY(-10px); }
     92%  { opacity: 1; }
-    100% { left: 106vw; opacity: 0; }
+    100% { transform: translateX(calc(106vw + 200px)); opacity: 0; }
   }
 
   /* ── DOLLARO CHE PASSA — mostrato tornando su Liquidazioni ── */
@@ -317,7 +317,7 @@
 
 <img src="img/piggybank-cascade.svg" alt="" style="position:fixed; bottom:-40px; right:-60px; width:420px; height:420px; opacity:.10; z-index:-1; pointer-events:none;">
 
-<div class="running-piglet" id="running-piglet">🐖</div>
+<img class="running-truck" id="running-truck" src="img/truck-transfer.png" alt="">
 <div class="flying-dollar" id="flying-dollar">💵</div>
 
 <div class="header">
@@ -417,10 +417,10 @@ function switchPagina(p) {
   if(p === 'rubrica' && !window._rubricaInit) { window._rubricaInit = true; rubRender(allevamenti); }
 
   if(p === 'trasf') {
-    const pig = document.getElementById('running-piglet');
-    pig.classList.remove('go');
-    void pig.offsetWidth;
-    pig.classList.add('go');
+    const truck = document.getElementById('running-truck');
+    truck.classList.remove('go');
+    void truck.offsetWidth;
+    truck.classList.add('go');
   }
   if(p === 'liq') {
     const dollaro = document.getElementById('flying-dollar');
