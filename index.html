@@ -1277,6 +1277,7 @@ function showPage(name, lottoId) {
   if(name === 'inserimento') initInserimento();
   if(name === 'archivio') renderArchivio();
   if(name === 'macelli') renderMacelli();
+  if(name === 'trasferimenti') renderTrasferimenti();
   if(name === 'rubrica' && !window._rubricaInit) { window._rubricaInit = true; rubRender(allevamenti); }
   if(name === 'analisi' && lottoId) { currentLottoId = lottoId; renderAnalisi(lottoId); }
   if(name === 'analisi' && !lottoId && currentLottoId) renderAnalisi(currentLottoId);
@@ -4190,37 +4191,39 @@ loadAll();
 <!-- MODALE MORTALITÀ -->
 <div id="modal-mort" class="modal-overlay">
   <div id="modal-mort-panel" style="position:relative;overflow:visible;background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;">
-    <div style="position:absolute;top:-38px;left:50%;transform:translateX(-50%);font-size:42px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.3));pointer-events:none;">💀</div>
+    <div style="position:absolute;top:-96px;left:50%;transform:translateX(-50%);font-size:126px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.3));pointer-events:none;">💀</div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-      <div style="font-size:42px;font-weight:600;font-family:var(--mono);">Registra mortalità</div>
-      <button onclick="chiudiMortalita()" style="background:none;border:none;font-size:32px;color:var(--text2);cursor:pointer;">×</button>
+      <div style="font-size:14px;font-weight:500;font-family:var(--mono);">Registra mortalità</div>
+      <button onclick="chiudiMortalita()" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
     </div>
-    <div id="modal-mort-info" style="font-size:22px;color:var(--text2);background:var(--bg2);padding:10px 12px;border-radius:var(--radius);margin-bottom:14px;font-family:var(--mono);"></div>
+    <div id="modal-mort-info" style="font-size:11px;color:var(--text2);background:var(--bg2);padding:8px 10px;border-radius:var(--radius);margin-bottom:14px;font-family:var(--mono);"></div>
     <div style="display:flex;flex-direction:column;gap:10px;">
       <div class="grid-2">
         <div>
-          <div class="field-label" style="font-size:16px;">DATA</div>
-          <input type="date" id="mort-data" class="input-std" style="font-size:20px;padding:12px 10px;">
+          <div class="field-label">DATA</div>
+          <input type="date" id="mort-data" class="input-std">
         </div>
         <div>
-          <div class="field-label" style="font-size:16px;">N° CAPI MORTI</div>
-          <input type="number" id="mort-capi" placeholder="es. 2" min="0" class="input-std" style="font-size:20px;padding:12px 10px;">
+          <div class="field-label">N° CAPI MORTI</div>
+          <input type="number" id="mort-capi" placeholder="es. 2" min="0" class="input-std">
         </div>
       </div>
       <div>
-        <div class="field-label" style="font-size:16px;">TRATTAMENTO (opzionale)</div>
-        <input type="text" id="mort-trattamento" placeholder="es. AMO, STR, FLO..." class="input-std" style="font-size:20px;padding:12px 10px;">
+        <div class="field-label">TRATTAMENTO (opzionale)</div>
+        <input type="text" id="mort-trattamento" placeholder="es. AMO, STR, FLO..." class="input-std">
       </div>
       <div>
-        <div class="field-label" style="font-size:16px;">NOTE (opzionale)</div>
-        <input type="text" id="mort-note" placeholder="es. 15 scarti arrivo" class="input-std" style="font-size:20px;padding:12px 10px;">
+        <div class="field-label">NOTE (opzionale)</div>
+        <input type="text" id="mort-note" placeholder="es. 15 scarti arrivo" class="input-std">
       </div>
     </div>
-    <button onclick="salvaMortalita()" style="width:100%;padding:15px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:20px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:16px;">
+    <button onclick="salvaMortalita()" style="width:100%;padding:13px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:16px;">
       ✓ Salva
     </button>
   </div>
 </div>
+
+
 
 <!-- MODALE LIQUIDAZIONE -->
 <div id="modal-liq" class="modal-overlay">
