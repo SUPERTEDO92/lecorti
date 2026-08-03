@@ -1287,27 +1287,32 @@ function apriSoccidaConAnimazione(socId) {
     }
 
     gsap.killTweensOf(herd.querySelectorAll('span'));
-    const N = 55;
+    // 03/08/2026: pochi maialini "protagonisti" invece di una folla di 55 — un capobranco
+    // grande davanti + due più piccoli dietro, con galoppo (rimbalzo) per dare vita.
+    // Pochissimi elementi animati = fluidità garantita anche su telefoni meno potenti.
+    const CONFIG = [
+      { top: 40, size: 128 },
+      { top: 56, size: 92 },
+      { top: 63, size: 80 },
+    ];
     let html = '';
-    for(let i = 0; i < N; i++) {
-      const base = (i / N) * 99;
-      const jitter = (Math.random() * 1.0 - 0.5);
-      const top = Math.max(0, Math.min(99, base + jitter)).toFixed(1);
-      const size = Math.round(48 + Math.random() * 30);
-      html += `<span style="top:${top}%;width:${size}px;height:${Math.round(size*0.7)}px;">${PIG_SVG}</span>`;
-    }
+    CONFIG.forEach(c => {
+      html += `<span style="top:${c.top}%;width:${c.size}px;height:${Math.round(c.size*0.7)}px;">${PIG_SVG}</span>`;
+    });
     herd.innerHTML = html;
     const piglets = Array.from(herd.querySelectorAll('span'));
-    const runX = window.innerWidth + 160;
+    const runX = window.innerWidth + 200;
     let maxEnd = 0;
 
     piglets.forEach((p, i) => {
-      const delay = i * 0.009;
-      const dur = 0.75 + Math.random() * 0.3;
-      gsap.set(p, { x: 0, scaleX: -1, opacity: 0 });
-      gsap.to(p, { opacity: 1, duration: 0.12, delay: delay, ease: 'power1.out' });
-      gsap.to(p, { x: runX, duration: dur, delay: delay, ease: 'power1.inOut' });
-      gsap.to(p, { opacity: 0, duration: 0.15, delay: delay + dur - 0.13, ease: 'power1.in' });
+      const delay = i * 0.13;
+      const dur = 1.05 + i * 0.18;
+      gsap.set(p, { x: 0, y: 0, scaleX: -1, opacity: 0 });
+      const tl = gsap.timeline({ delay });
+      tl.to(p, { opacity: 1, duration: 0.15, ease: 'power1.out' }, 0)
+        .to(p, { x: runX, duration: dur, ease: 'power1.inOut' }, 0)
+        .to(p, { y: -16, duration: dur / 9, ease: 'sine.inOut', yoyo: true, repeat: 8 }, 0)
+        .to(p, { opacity: 0, duration: 0.15, ease: 'power1.in' }, dur - 0.15);
       maxEnd = Math.max(maxEnd, delay + dur);
     });
 
