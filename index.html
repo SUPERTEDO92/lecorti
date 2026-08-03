@@ -1273,6 +1273,10 @@ async function loadAll() {
 
 // --- Mandria di maialini che attraversa lo schermo (03/08/2026: portata su GSAP,
 // un tween per maialino — stessa tecnica robusta già usata per camion/banconota/sfoglio) ---
+// SVG maialino disegnato da zero (nessuna licenza esterna) — 03/08/2026: sostituisce
+// l'emoji 🐖, sospettata di un bug di rendering su Firefox Android quando flippata+animata.
+const PIG_SVG = '<svg viewBox="0 0 100 70" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;"><ellipse cx="52" cy="40" rx="34" ry="24" fill="#F2A6A0"/><ellipse cx="20" cy="24" rx="10" ry="9" fill="#F2A6A0"/><ellipse cx="17" cy="21" rx="4.5" ry="4" fill="#D97D78"/><circle cx="34" cy="30" r="3" fill="#2A2622"/><ellipse cx="14" cy="42" rx="15" ry="13" fill="#EF9791"/><ellipse cx="9" cy="40" rx="3" ry="4" fill="#2A2622"/><ellipse cx="9" cy="46" rx="3" ry="4" fill="#2A2622"/><path d="M84 30 Q94 24 90 34 Q96 38 86 38" fill="none" stroke="#EF9791" stroke-width="4" stroke-linecap="round"/><ellipse cx="46" cy="60" rx="6" ry="4" fill="#D97D78"/><ellipse cx="66" cy="60" rx="6" ry="4" fill="#D97D78"/></svg>';
+
 function apriSoccidaConAnimazione(socId) {
   try {
     const herd = document.getElementById('piglet-herd');
@@ -1290,7 +1294,7 @@ function apriSoccidaConAnimazione(socId) {
       const jitter = (Math.random() * 1.0 - 0.5);
       const top = Math.max(0, Math.min(99, base + jitter)).toFixed(1);
       const size = Math.round(48 + Math.random() * 30);
-      html += `<span style="top:${top}%;font-size:${size}px;">🐖</span>`;
+      html += `<span style="top:${top}%;width:${size}px;height:${Math.round(size*0.7)}px;">${PIG_SVG}</span>`;
     }
     herd.innerHTML = html;
     const piglets = Array.from(herd.querySelectorAll('span'));
@@ -1318,7 +1322,7 @@ function apriSoccidaConAnimazione(socId) {
     piglets.forEach((p, i) => {
       const delay = i * 0.009;
       const dur = 0.75 + Math.random() * 0.3;
-      gsap.set(p, { x: 0, opacity: 0 });
+      gsap.set(p, { x: 0, scaleX: -1, opacity: 0 });
       gsap.to(p, { opacity: 1, duration: 0.12, delay: delay, ease: 'power1.out' });
       gsap.to(p, { x: runX, duration: dur, delay: delay, ease: 'power1.inOut' });
       gsap.to(p, { opacity: 0, duration: 0.15, delay: delay + dur - 0.13, ease: 'power1.in' });
