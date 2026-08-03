@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Samuele">
 <meta name="theme-color" content="#1A1A18">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <style>
   :root {
     --bg: #F5F3EE; --bg2: #EDEAE3; --bg3: #E3DFD6;
@@ -107,23 +108,12 @@
   .toast.ok { background: var(--green-bg); color: var(--green); border: 0.5px solid #B8DECA; }
   .toast.err { background: var(--red-bg); color: var(--red); }
 
-  /* ── MANDRIA DI MAIALINI + TENDA — transizione apertura soccida ── */
+  /* ── MANDRIA DI MAIALINI + TENDA — transizione apertura soccida (03/08/2026: portata su GSAP,
+     un tween per maialino, come index.html — dimensioni allineate dopo il bug "invisibili") ── */
   .piglet-herd { position: fixed; inset: 0; z-index: 300; pointer-events: none; }
   .piglet-herd span {
-    position: absolute; left: -70px; top: 0;
-    transform: translateX(0) scaleX(-1);
-    filter: drop-shadow(0 4px 6px rgba(26,26,24,.3));
-    opacity: 0;
-  }
-  .piglet-herd.go span {
-    animation-name: herdRun; animation-duration: .9s;
-    animation-timing-function: cubic-bezier(.5,0,.5,1); animation-fill-mode: forwards;
-  }
-  @keyframes herdRun {
-    0%   { transform: translateX(0) scaleX(-1); opacity: 0; }
-    8%   { opacity: 1; }
-    88%  { opacity: 1; }
-    100% { transform: translateX(calc(100vw + 140px)) scaleX(-1); opacity: 0; }
+    position: absolute; left: -80px; top: 0;
+    will-change: transform, opacity;
   }
   @property --wipe2 { syntax: '<percentage>'; inherits: false; initial-value: -45%; }
   .samuele-curtain {
@@ -240,25 +230,41 @@ function transizioneMandria(azione) {
   document.body.appendChild(curtain);
 
   const herd = document.getElementById('piglet-herd');
-  const N = 60;
+  if(!herd || typeof gsap === 'undefined') {
+    azione();
+    setTimeout(() => { curtain.remove(); }, 900);
+    return;
+  }
+
+  gsap.killTweensOf(herd.querySelectorAll('span'));
+  const N = 55;
   let html = '';
   for(let i = 0; i < N; i++) {
-    const top = (Math.random() * 96).toFixed(1);
-    const delay = Math.round(Math.random() * 380);
-    const size = Math.round(24 + Math.random() * 40);
-    html += `<span style="top:${top}%;font-size:${size}px;animation-delay:${delay}ms;">🐖</span>`;
+    const base = (i / N) * 99;
+    const jitter = (Math.random() * 1.0 - 0.5);
+    const top = Math.max(0, Math.min(99, base + jitter)).toFixed(1);
+    const size = Math.round(48 + Math.random() * 30);
+    html += `<span style="top:${top}%;font-size:${size}px;">🐖</span>`;
   }
   herd.innerHTML = html;
-  void herd.offsetWidth;
-  herd.classList.add('go');
+  const piglets = Array.from(herd.querySelectorAll('span'));
+  const runX = window.innerWidth + 160;
+  let maxEnd = 0;
+
+  piglets.forEach((p, i) => {
+    const delay = i * 0.009;
+    const dur = 0.75 + Math.random() * 0.3;
+    gsap.set(p, { x: 0, scaleX: -1, opacity: 0 });
+    gsap.to(p, { opacity: 1, duration: 0.12, delay: delay, ease: 'power1.out' });
+    gsap.to(p, { x: runX, duration: dur, delay: delay, ease: 'power1.inOut' });
+    gsap.to(p, { opacity: 0, duration: 0.15, delay: delay + dur - 0.13, ease: 'power1.in' });
+    maxEnd = Math.max(maxEnd, delay + dur);
+  });
 
   azione();
 
-  setTimeout(() => {
-    curtain.remove();
-    herd.classList.remove('go');
-    herd.innerHTML = '';
-  }, 1300);
+  setTimeout(() => { curtain.remove(); }, 900);
+  setTimeout(() => { herd.innerHTML = ''; }, (maxEnd + 0.25) * 1000);
 }
 
 function apriSoccida(nome) {
