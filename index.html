@@ -2463,6 +2463,7 @@ function renderStoricoList() {
           <span>DDT ${first.numero_ddt || '—'}</span>
           ${first.ddt_documento_id ? `<button onclick="apriDocumento(${first.ddt_documento_id})" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:1px 8px;font-size:10px;color:var(--text2);cursor:pointer;font-family:var(--font);">📄 DDT</button>` : ''}
           ${first.liquidazione_documento_id ? `<button onclick="apriDocumento(${first.liquidazione_documento_id})" style="background:var(--green-bg);border:0.5px solid #B8DECA;border-radius:10px;padding:1px 8px;font-size:10px;color:var(--green);cursor:pointer;font-family:var(--font);">📄 Liquidazione</button>` : ''}
+          ${first.fattura_documento_id ? `<button onclick="apriDocumento(${first.fattura_documento_id})" style="background:#FDF3E7;border:0.5px solid #EAD2A8;border-radius:10px;padding:1px 8px;font-size:10px;color:var(--accent);font-weight:600;cursor:pointer;font-family:var(--font);">📄 Fattura</button>` : ''}
         </div>
         <div style="font-size:11px;color:${first.cessionario ? 'var(--accent)' : 'var(--text3)'};font-weight:500;margin-bottom:4px;">📄 Fatturare a: ${first.cessionario || '—'}</div>
         <div class="storico-line">
