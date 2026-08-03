@@ -1281,7 +1281,6 @@ function apriSoccidaConAnimazione(socId) {
       showPage('detail', socId);
       return;
     }
-    mostraDebugOk('CODICE AGGIORNATO v4 — N=55 size=48-78 no-shadow — funzione partita');
 
     gsap.killTweensOf(herd.querySelectorAll('span'));
     const N = 55;
@@ -1297,6 +1296,24 @@ function apriSoccidaConAnimazione(socId) {
     const piglets = Array.from(herd.querySelectorAll('span'));
     const runX = window.innerWidth + 160;
     let maxEnd = 0;
+
+    // Diagnostica reale (03/08/2026): leggo cosa vede DAVVERO il browser sul primo maialino,
+    // subito dopo la creazione, prima che gsap tocchi niente.
+    if(piglets[0]) {
+      const cs = getComputedStyle(piglets[0]);
+      const rect = piglets[0].getBoundingClientRect();
+      mostraDebugOk(
+        'v5 herdChildren=' + herd.children.length +
+        ' rect=' + Math.round(rect.width) + 'x' + Math.round(rect.height) +
+        '@' + Math.round(rect.left) + ',' + Math.round(rect.top) +
+        ' display=' + cs.display + ' visibility=' + cs.visibility +
+        ' opacity=' + cs.opacity + ' fontSize=' + cs.fontSize +
+        ' herdDisplay=' + getComputedStyle(herd).display +
+        ' herdW=' + herd.offsetWidth + 'x' + herd.offsetHeight
+      );
+    } else {
+      mostraDebugOk('v5 NESSUN maialino creato nel DOM (piglets.length=0)');
+    }
 
     piglets.forEach((p, i) => {
       const delay = i * 0.009;
@@ -1343,7 +1360,7 @@ function mostraDebugOk(msg) {
   bar.textContent = '✅ ' + msg;
   bar.style.display = 'block';
   clearTimeout(window._debugOkTimeout);
-  window._debugOkTimeout = setTimeout(() => { bar.style.display = 'none'; }, 2500);
+  window._debugOkTimeout = setTimeout(() => { bar.style.display = 'none'; }, 8000);
 }
 
 
