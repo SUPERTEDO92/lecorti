@@ -1325,6 +1325,18 @@ function apriSoccidaConAnimazione(socId) {
       maxEnd = Math.max(maxEnd, delay + dur);
     });
 
+    // Seconda lettura diagnostica: 150ms dopo, GSAP dovrebbe aver gia' mosso il primo maialino
+    setTimeout(() => {
+      if(piglets[0]) {
+        const cs2 = getComputedStyle(piglets[0]);
+        mostraDebugOk(
+          'v5b @150ms: opacity=' + cs2.opacity + ' transform=' + cs2.transform +
+          ' gsapVersion=' + (gsap.version || '?') +
+          ' ticker.frame=' + (gsap.ticker ? gsap.ticker.frame : '?')
+        );
+      }
+    }, 150);
+
     setTimeout(() => { showPage('detail', socId); }, 320);
     setTimeout(() => { herd.innerHTML = ''; }, (maxEnd + 0.25) * 1000);
   } catch(err) {
@@ -1354,13 +1366,16 @@ function mostraDebugOk(msg) {
   if(!bar) {
     bar = document.createElement('div');
     bar.id = 'debug-ok-bar';
-    bar.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:99998;background:#2A7A4A;color:#fff;padding:10px 14px;font-size:12px;font-family:monospace;word-break:break-all;box-shadow:0 2px 8px rgba(0,0,0,.4);';
+    bar.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:99998;background:#2A7A4A;color:#fff;padding:10px 14px;font-size:11px;font-family:monospace;word-break:break-all;box-shadow:0 2px 8px rgba(0,0,0,.4);max-height:60vh;overflow-y:auto;';
     document.body.appendChild(bar);
   }
-  bar.textContent = '✅ ' + msg;
+  const line = document.createElement('div');
+  line.style.cssText = 'border-top:1px solid rgba(255,255,255,.25);padding-top:4px;margin-top:4px;';
+  line.textContent = '✅ ' + msg;
+  bar.appendChild(line);
   bar.style.display = 'block';
   clearTimeout(window._debugOkTimeout);
-  window._debugOkTimeout = setTimeout(() => { bar.style.display = 'none'; }, 8000);
+  window._debugOkTimeout = setTimeout(() => { bar.style.display = 'none'; bar.innerHTML = ''; }, 10000);
 }
 
 
