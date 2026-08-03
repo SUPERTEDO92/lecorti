@@ -249,65 +249,9 @@ function render() {
   document.getElementById('content').innerHTML = html;
 }
 
-function apriModal(lottoId) {
-  _mortLottoId = lottoId;
-  const lotto = allLotti.find(l => l.id === lottoId);
-  document.getElementById('modal-info').textContent =
-    `${NOME_SOCCIDA} · Lotto ${lotto?.codice || '—'}${lotto?.lettera_dop ? ' · ' + lotto.lettera_dop : ''}`;
-  ['m-tratt','m-note','m-capi'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('m-data').value = new Date().toISOString().split('T')[0];
-  document.getElementById('modal-mort').style.display = 'flex';
-}
-
-function chiudiModal() {
-  document.getElementById('modal-mort').style.display = 'none';
-  _mortLottoId = null;
-}
-
 document.getElementById('modal-mort').addEventListener('click', function(e) {
   if(e.target === this) chiudiModal();
 });
-
-async function salvaMortalita() {
-  const data = document.getElementById('m-data').value;
-  const capi = parseInt(document.getElementById('m-capi').value) || 0;
-  const tratt = document.getElementById('m-tratt').value || null;
-  const note = document.getElementById('m-note').value || null;
-  if(!data) { alert('Inserisci la data'); return; }
-
-  const lotto = allLotti.find(l => l.id === _mortLottoId);
-
-  try {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/mortalita`, {
-      method: 'POST', headers: SB_H,
-      body: JSON.stringify({
-        lotto_id: _mortLottoId,
-        soccida: NOME_SOCCIDA,
-        data_evento: data,
-        lettera_dop: lotto?.lettera_dop || null,
-        capi_morti: capi,
-        trattamento: tratt,
-        note
-      })
-    });
-    if(!r.ok) throw new Error(await r.text());
-    const nuova = await r.json();
-    if(Array.isArray(nuova)) allMortalita.push(...nuova); else allMortalita.push(nuova);
-    chiudiModal();
-    showToast(`✓ Mortalità registrata — ${capi} capi il ${fmtDate(data)}`, true);
-    render();
-  } catch(e) {
-    showToast('Errore: ' + e.message, false);
-  }
-}
-
-function showToast(msg, ok) {
-  const t = document.getElementById('toast');
-  t.className = 'toast ' + (ok ? 'ok' : 'err');
-  t.textContent = msg;
-  t.style.display = 'block';
-  if(ok) setTimeout(() => t.style.display = 'none', 4000);
-}
 
 loadAll();
 </script>

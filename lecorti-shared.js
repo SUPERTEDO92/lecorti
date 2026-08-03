@@ -45,6 +45,66 @@ async function sb(table, query = '') {
 // Apre un documento (DDT/liquidazione/referto/fattura) collegato a un record.
 // Legge storage_path e apre il file da Supabase Storage; fallback su decodifica
 // bytea per eventuali documenti vecchi non ancora migrati a Storage.
+// Toast di conferma/errore — usa un elemento #toast presente nella pagina
+function showToast(msg, ok) {
+  const t = document.getElementById('toast');
+  t.className = 'toast ' + (ok ? 'ok' : 'err');
+  t.textContent = msg;
+  t.style.display = 'block';
+  if (ok) setTimeout(() => t.style.display = 'none', 4000);
+}
+
+// Modale mortalità — versione condivisa (campobello/scaratti/vezzoli).
+// FIORENZUOLA ha una propria versione locale (gestisce anche il capannone),
+// caricata dopo questo script: la sovrascrive intenzionalmente per quella pagina.
+function apriModal(lottoId) {
+  _mortLottoId = lottoId;
+  const lotto = allLotti.find(l => l.id === lottoId);
+  document.getElementById('modal-info').textContent =
+    `${NOME_SOCCIDA} · Lotto ${lotto?.codice || '—'}${lotto?.lettera_dop ? ' · ' + lotto.lettera_dop : ''}`;
+  ['m-tratt', 'm-note', 'm-capi'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('m-data').value = new Date().toISOString().split('T')[0];
+  document.getElementById('modal-mort').style.display = 'flex';
+}
+
+function chiudiModal() {
+  document.getElementById('modal-mort').style.display = 'none';
+  _mortLottoId = null;
+}
+
+async function salvaMortalita() {
+  const data = document.getElementById('m-data').value;
+  const capi = parseInt(document.getElementById('m-capi').value) || 0;
+  const tratt = document.getElementById('m-tratt').value || null;
+  const note = document.getElementById('m-note').value || null;
+  if (!data) { alert('Inserisci la data'); return; }
+
+  const lotto = allLotti.find(l => l.id === _mortLottoId);
+
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/mortalita`, {
+      method: 'POST', headers: SB_H,
+      body: JSON.stringify({
+        lotto_id: _mortLottoId,
+        soccida: NOME_SOCCIDA,
+        data_evento: data,
+        lettera_dop: lotto?.lettera_dop || null,
+        capi_morti: capi,
+        trattamento: tratt,
+        note
+      })
+    });
+    if (!r.ok) throw new Error(await r.text());
+    const nuova = await r.json();
+    if (Array.isArray(nuova)) allMortalita.push(...nuova); else allMortalita.push(nuova);
+    chiudiModal();
+    showToast(`✓ Mortalità registrata — ${capi} capi il ${fmtDate(data)}`, true);
+    render();
+  } catch (e) {
+    showToast('Errore: ' + e.message, false);
+  }
+}
+
 async function apriDocumento(docId) {
   try {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/documenti?id=eq.${docId}&select=nome_file,content_type,contenuto,storage_path`, {

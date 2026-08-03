@@ -521,14 +521,6 @@ async function salvaIncremento(lottoId) {
   }
 }
 
-function showToast(msg, ok) {
-  const t = document.getElementById('toast');
-  t.className = 'toast ' + (ok ? 'ok' : 'err');
-  t.textContent = msg;
-  t.style.display = 'block';
-  if(ok) setTimeout(() => t.style.display = 'none', 4000);
-}
-
 loadAll();
 </script>
 </body>
