@@ -1273,9 +1273,11 @@ async function loadAll() {
 }
 
 // --- Mandria di maialini che attraversa lo schermo (03/08/2026: portata su GSAP,
-// stesso tema/velocità di prima ma timeline controllata invece di CSS + setTimeout fissi) ---
+// un tween per maialino — stessa tecnica robusta già usata per camion/banconota/sfoglio) ---
 function apriSoccidaConAnimazione(socId) {
   const herd = document.getElementById('piglet-herd');
+  if(!herd || typeof gsap === 'undefined') { showPage('detail', socId); return; }
+
   gsap.killTweensOf(herd.querySelectorAll('span'));
   const N = 170;
   let html = '';
@@ -1287,22 +1289,22 @@ function apriSoccidaConAnimazione(socId) {
     html += `<span style="top:${top}%;font-size:${size}px;">🐖</span>`;
   }
   herd.innerHTML = html;
-  const piglets = herd.querySelectorAll('span');
+  const piglets = Array.from(herd.querySelectorAll('span'));
+  const runX = window.innerWidth + 160;
+  let maxEnd = 0;
 
-  gsap.set(piglets, { x: 0, scaleX: -1, opacity: 0 });
-
-  const tl = gsap.timeline({
-    onComplete: () => { herd.innerHTML = ''; }
+  piglets.forEach((p, i) => {
+    const delay = i * 0.0035;
+    const dur = 0.75 + Math.random() * 0.3;
+    gsap.set(p, { x: 0, scaleX: -1, opacity: 0 });
+    gsap.to(p, { opacity: 1, duration: 0.12, delay: delay, ease: 'power1.out' });
+    gsap.to(p, { x: runX, duration: dur, delay: delay, ease: 'power1.inOut' });
+    gsap.to(p, { opacity: 0, duration: 0.15, delay: delay + dur - 0.13, ease: 'power1.in' });
+    maxEnd = Math.max(maxEnd, delay + dur);
   });
-  tl.to(piglets, { opacity: 1, duration: 0.12, stagger: 0.0035 }, 0)
-    .to(piglets, {
-        x: () => window.innerWidth + 160,
-        duration: () => 0.75 + Math.random() * 0.3,
-        ease: 'power1.inOut',
-        stagger: 0.0035
-      }, 0)
-    .to(piglets, { opacity: 0, duration: 0.15, stagger: 0.0035 }, '-=0.25')
-    .call(() => { showPage('detail', socId); }, null, 0.32);
+
+  setTimeout(() => { showPage('detail', socId); }, 320);
+  setTimeout(() => { herd.innerHTML = ''; }, (maxEnd + 0.25) * 1000);
 }
 
 
