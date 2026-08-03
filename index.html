@@ -1275,36 +1275,59 @@ async function loadAll() {
 // --- Mandria di maialini che attraversa lo schermo (03/08/2026: portata su GSAP,
 // un tween per maialino — stessa tecnica robusta già usata per camion/banconota/sfoglio) ---
 function apriSoccidaConAnimazione(socId) {
-  const herd = document.getElementById('piglet-herd');
-  if(!herd || typeof gsap === 'undefined') { showPage('detail', socId); return; }
+  try {
+    const herd = document.getElementById('piglet-herd');
+    if(!herd || typeof gsap === 'undefined') {
+      mostraErroreDebug('herd o gsap mancanti: herd=' + !!herd + ' gsap=' + (typeof gsap));
+      showPage('detail', socId);
+      return;
+    }
 
-  gsap.killTweensOf(herd.querySelectorAll('span'));
-  const N = 170;
-  let html = '';
-  for(let i = 0; i < N; i++) {
-    const base = (i / N) * 99;
-    const jitter = (Math.random() * 1.0 - 0.5);
-    const top = Math.max(0, Math.min(99, base + jitter)).toFixed(1);
-    const size = Math.round(30 + Math.random() * 40);
-    html += `<span style="top:${top}%;font-size:${size}px;">🐖</span>`;
+    gsap.killTweensOf(herd.querySelectorAll('span'));
+    const N = 170;
+    let html = '';
+    for(let i = 0; i < N; i++) {
+      const base = (i / N) * 99;
+      const jitter = (Math.random() * 1.0 - 0.5);
+      const top = Math.max(0, Math.min(99, base + jitter)).toFixed(1);
+      const size = Math.round(30 + Math.random() * 40);
+      html += `<span style="top:${top}%;font-size:${size}px;">🐖</span>`;
+    }
+    herd.innerHTML = html;
+    const piglets = Array.from(herd.querySelectorAll('span'));
+    const runX = window.innerWidth + 160;
+    let maxEnd = 0;
+
+    piglets.forEach((p, i) => {
+      const delay = i * 0.0035;
+      const dur = 0.75 + Math.random() * 0.3;
+      gsap.set(p, { x: 0, scaleX: -1, opacity: 0 });
+      gsap.to(p, { opacity: 1, duration: 0.12, delay: delay, ease: 'power1.out' });
+      gsap.to(p, { x: runX, duration: dur, delay: delay, ease: 'power1.inOut' });
+      gsap.to(p, { opacity: 0, duration: 0.15, delay: delay + dur - 0.13, ease: 'power1.in' });
+      maxEnd = Math.max(maxEnd, delay + dur);
+    });
+
+    setTimeout(() => { showPage('detail', socId); }, 320);
+    setTimeout(() => { herd.innerHTML = ''; }, (maxEnd + 0.25) * 1000);
+  } catch(err) {
+    mostraErroreDebug(err.message + ' | ' + (err.stack || '').split('\n').slice(0,3).join(' » '));
+    showPage('detail', socId);
   }
-  herd.innerHTML = html;
-  const piglets = Array.from(herd.querySelectorAll('span'));
-  const runX = window.innerWidth + 160;
-  let maxEnd = 0;
+}
 
-  piglets.forEach((p, i) => {
-    const delay = i * 0.0035;
-    const dur = 0.75 + Math.random() * 0.3;
-    gsap.set(p, { x: 0, scaleX: -1, opacity: 0 });
-    gsap.to(p, { opacity: 1, duration: 0.12, delay: delay, ease: 'power1.out' });
-    gsap.to(p, { x: runX, duration: dur, delay: delay, ease: 'power1.inOut' });
-    gsap.to(p, { opacity: 0, duration: 0.15, delay: delay + dur - 0.13, ease: 'power1.in' });
-    maxEnd = Math.max(maxEnd, delay + dur);
-  });
-
-  setTimeout(() => { showPage('detail', socId); }, 320);
-  setTimeout(() => { herd.innerHTML = ''; }, (maxEnd + 0.25) * 1000);
+// --- Fascia rossa di debug temporanea: mostra a schermo l'errore esatto senza bisogno
+// di devtools (utile su mobile). Da rimuovere una volta risolto il problema maialini. ---
+function mostraErroreDebug(msg) {
+  let bar = document.getElementById('debug-error-bar');
+  if(!bar) {
+    bar = document.createElement('div');
+    bar.id = 'debug-error-bar';
+    bar.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:99999;background:#A03030;color:#fff;padding:10px 14px;font-size:12px;font-family:monospace;word-break:break-all;box-shadow:0 2px 8px rgba(0,0,0,.4);';
+    bar.onclick = () => bar.remove();
+    document.body.appendChild(bar);
+  }
+  bar.textContent = '⚠️ ' + msg + '  (tocca per chiudere)';
 }
 
 
@@ -1374,6 +1397,15 @@ function transizioneSfoglio(originEl, callback) {
     .set(overlay, { display: 'none' })
     .set(strips, { rotateY: 90 });
 }
+
+// --- Listener globale errori non catturati (debug temporaneo, 03/08/2026) ---
+// Utile finché non troviamo la causa del bug maialini: mostra a schermo anche
+// errori che avvengono fuori dal try/catch sincrono (es. dentro i tick di GSAP).
+window.addEventListener('error', (e) => {
+  if(typeof mostraErroreDebug === 'function') {
+    mostraErroreDebug('window.onerror: ' + e.message + ' @ ' + (e.filename || '').split('/').pop() + ':' + e.lineno);
+  }
+});
 
 function showPage(name, lottoId) {
   const newPage = document.getElementById(`page-${name}`);
