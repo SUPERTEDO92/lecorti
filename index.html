@@ -1281,6 +1281,7 @@ function apriSoccidaConAnimazione(socId) {
       showPage('detail', socId);
       return;
     }
+    mostraDebugOk('CODICE AGGIORNATO v4 — N=55 size=48-78 no-shadow — funzione partita');
 
     gsap.killTweensOf(herd.querySelectorAll('span'));
     const N = 55;
@@ -1327,6 +1328,22 @@ function mostraErroreDebug(msg) {
     document.body.appendChild(bar);
   }
   bar.textContent = '⚠️ ' + msg + '  (tocca per chiudere)';
+}
+
+// --- Banda verde di conferma (temporanea): mostra SEMPRE che il codice aggiornato è
+// stato eseguito, per distinguere cache del browser da bug reale nell'animazione ---
+function mostraDebugOk(msg) {
+  let bar = document.getElementById('debug-ok-bar');
+  if(!bar) {
+    bar = document.createElement('div');
+    bar.id = 'debug-ok-bar';
+    bar.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:99998;background:#2A7A4A;color:#fff;padding:10px 14px;font-size:12px;font-family:monospace;word-break:break-all;box-shadow:0 2px 8px rgba(0,0,0,.4);';
+    document.body.appendChild(bar);
+  }
+  bar.textContent = '✅ ' + msg;
+  bar.style.display = 'block';
+  clearTimeout(window._debugOkTimeout);
+  window._debugOkTimeout = setTimeout(() => { bar.style.display = 'none'; }, 2500);
 }
 
 
