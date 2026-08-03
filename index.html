@@ -466,29 +466,15 @@
     @keyframes loadingPulse { 0%,100% { opacity: .45; } 50% { opacity: 1; } }
   }
 
-  /* ── MANDRIA DI MAIALINI — attraversano lo schermo all'apertura di una soccida ── */
+  /* ── MANDRIA DI MAIALINI — attraversano lo schermo all'apertura di una soccida (03/08/2026: animata via GSAP) ── */
   .piglet-herd {
     position: fixed; inset: 0; z-index: 300;
     pointer-events: none;
   }
   .piglet-herd span {
     position: absolute; left: -80px; top: 0;
-    transform: translateX(0) scaleX(-1);
     filter: drop-shadow(0 4px 6px rgba(26,26,24,.3));
-    opacity: 0;
     will-change: transform, opacity;
-  }
-  .piglet-herd.go span {
-    animation-name: herdRun;
-    animation-duration: .9s;
-    animation-timing-function: cubic-bezier(.5,0,.5,1);
-    animation-fill-mode: forwards;
-  }
-  @keyframes herdRun {
-    0%   { transform: translateX(0) scaleX(-1); opacity: 0; }
-    8%   { opacity: 1; }
-    88%  { opacity: 1; }
-    100% { transform: translateX(calc(100vw + 160px)) scaleX(-1); opacity: 0; }
   }
 
   /* --- Classi comuni estratte da stili inline ripetuti (pulizia 01/08/2026) --- */
@@ -1286,29 +1272,37 @@ async function loadAll() {
   renderTrasferimenti();
 }
 
+// --- Mandria di maialini che attraversa lo schermo (03/08/2026: portata su GSAP,
+// stesso tema/velocità di prima ma timeline controllata invece di CSS + setTimeout fissi) ---
 function apriSoccidaConAnimazione(socId) {
   const herd = document.getElementById('piglet-herd');
-  herd.classList.remove('go');
+  gsap.killTweensOf(herd.querySelectorAll('span'));
   const N = 170;
   let html = '';
   for(let i = 0; i < N; i++) {
     const base = (i / N) * 99;
     const jitter = (Math.random() * 1.0 - 0.5);
     const top = Math.max(0, Math.min(99, base + jitter)).toFixed(1);
-    const delay = Math.round(Math.random() * 150);
     const size = Math.round(30 + Math.random() * 40);
-    html += `<span style="top:${top}%;font-size:${size}px;animation-delay:${delay}ms;">🐖</span>`;
+    html += `<span style="top:${top}%;font-size:${size}px;">🐖</span>`;
   }
   herd.innerHTML = html;
-  void herd.offsetWidth;
-  herd.classList.add('go');
-  setTimeout(() => {
-    showPage('detail', socId);
-  }, 320);
-  setTimeout(() => {
-    herd.classList.remove('go');
-    herd.innerHTML = '';
-  }, 1400);
+  const piglets = herd.querySelectorAll('span');
+
+  gsap.set(piglets, { x: 0, scaleX: -1, opacity: 0 });
+
+  const tl = gsap.timeline({
+    onComplete: () => { herd.innerHTML = ''; }
+  });
+  tl.to(piglets, { opacity: 1, duration: 0.12, stagger: 0.0035 }, 0)
+    .to(piglets, {
+        x: () => window.innerWidth + 160,
+        duration: () => 0.75 + Math.random() * 0.3,
+        ease: 'power1.inOut',
+        stagger: 0.0035
+      }, 0)
+    .to(piglets, { opacity: 0, duration: 0.15, stagger: 0.0035 }, '-=0.25')
+    .call(() => { showPage('detail', socId); }, null, 0.32);
 }
 
 
@@ -3168,11 +3162,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('modal-incr').style.display = 'none';
   });
 
-  // Pre-warming animazione maialini (herdRun): la prima esecuzione andava a scatti
+  // Pre-warming animazione maialini: la prima esecuzione andava a scatti
   // perché il browser rasterizza il glifo 🐖 e crea il layer GPU (will-change) solo
   // al primo utilizzo reale. Renderizzando qui uno span nascosto e invisibile subito
   // dopo il caricamento pagina, quel costo si paga in anticipo invece che al primo
   // click dell'utente — le esecuzioni successive erano già fluide per lo stesso motivo.
+  // Valido anche ora che l'animazione è guidata da GSAP invece che da CSS keyframes.
   const herdWarm = document.getElementById('piglet-herd');
   if(herdWarm) {
     const warmSpan = document.createElement('span');
