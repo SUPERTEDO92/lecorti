@@ -1284,13 +1284,13 @@ function apriSoccidaConAnimazione(socId) {
     }
 
     gsap.killTweensOf(herd.querySelectorAll('span'));
-    const N = 170;
+    const N = 90;
     let html = '';
     for(let i = 0; i < N; i++) {
       const base = (i / N) * 99;
       const jitter = (Math.random() * 1.0 - 0.5);
       const top = Math.max(0, Math.min(99, base + jitter)).toFixed(1);
-      const size = Math.round(30 + Math.random() * 40);
+      const size = Math.round(58 + Math.random() * 46);
       html += `<span style="top:${top}%;font-size:${size}px;">🐖</span>`;
     }
     herd.innerHTML = html;
@@ -1299,7 +1299,7 @@ function apriSoccidaConAnimazione(socId) {
     let maxEnd = 0;
 
     piglets.forEach((p, i) => {
-      const delay = i * 0.0035;
+      const delay = i * 0.0065;
       const dur = 0.75 + Math.random() * 0.3;
       gsap.set(p, { x: 0, scaleX: -1, opacity: 0 });
       gsap.to(p, { opacity: 1, duration: 0.12, delay: delay, ease: 'power1.out' });
