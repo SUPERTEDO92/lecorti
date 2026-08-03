@@ -543,27 +543,36 @@
   #rub-flip-overlay { position: fixed; inset: 0; z-index: 960; pointer-events: none; perspective: 1400px; display: none; }
   .rub-strip {
     position: absolute; top: 0; bottom: 0; width: 16.6668%;
-    background: linear-gradient(90deg, #F7F5F0 0%, #EDEAE3 78%, #DCD7CB 100%);
-    box-shadow: inset -7px 0 12px -7px rgba(26,26,24,.28);
+    background-image:
+      radial-gradient(ellipse at 25% 15%, rgba(255,255,255,.10), transparent 55%),
+      repeating-linear-gradient(118deg, rgba(0,0,0,.06) 0 2px, transparent 2px 6px),
+      linear-gradient(160deg, #4a2f1c 0%, #2b1a0d 55%, #1a0f06 100%);
+    background-attachment: fixed;
+    background-size: 100vw 100vh;
+    background-position: 0 0;
+    border-top: 6px solid var(--accent2);
+    border-bottom: 6px solid var(--accent2);
+    box-shadow: inset -7px 0 14px -7px rgba(0,0,0,.55), inset 0 0 46px rgba(0,0,0,.4);
     transform-origin: left center; transform: rotateY(90deg);
     backface-visibility: hidden;
   }
-  .rub-strip:nth-child(1) { left: 0%; }
+  .rub-strip:nth-child(1) { left: 0%; border-left: 6px solid var(--accent2); }
   .rub-strip:nth-child(2) { left: 16.6668%; }
-  .rub-strip:nth-child(3) { left: 33.3336%; }
-  .rub-strip:nth-child(4) { left: 50.0004%; }
+  .rub-strip:nth-child(3) { left: 33.3336%; border-right: 2px solid rgba(0,0,0,.45); }
+  .rub-strip:nth-child(4) { left: 50.0004%; border-left: 2px solid rgba(255,255,255,.06); }
   .rub-strip:nth-child(5) { left: 66.6672%; }
-  .rub-strip:nth-child(6) { left: 83.334%; }
+  .rub-strip:nth-child(6) { left: 83.334%; border-right: 6px solid var(--accent2); }
   #rub-cover-card {
     position: fixed; left: 50%; top: 50%; z-index: 970; width: 216px;
     margin-left: -108px; margin-top: -84px; padding: 28px 20px 22px;
     background: linear-gradient(160deg, #1A1A18 0%, #2A2A26 100%);
-    border-radius: 12px; box-shadow: 0 18px 40px rgba(0,0,0,.35);
+    border: 2px solid var(--accent2); border-radius: 4px;
+    box-shadow: 0 18px 40px rgba(0,0,0,.45), inset 0 0 0 1px rgba(232,168,74,.15);
     text-align: center; opacity: 0; transform: scale(0.7) rotate(-4deg); pointer-events: none;
   }
   #rub-cover-card .rub-cover-icon { font-size: 32px; margin-bottom: 9px; }
-  #rub-cover-card .rub-cover-title { font-family: var(--mono); color: #F5F3EE; font-size: 15px; letter-spacing: .14em; font-weight: 600; }
-  #rub-cover-card .rub-cover-sub { font-family: var(--font); color: #9C9C96; font-size: 10.5px; margin-top: 5px; letter-spacing: .02em; }
+  #rub-cover-card .rub-cover-title { font-family: var(--mono); color: var(--accent2); font-size: 15px; letter-spacing: .14em; font-weight: 600; }
+  #rub-cover-card .rub-cover-sub { font-family: var(--font); color: #B8AFA0; font-size: 10.5px; margin-top: 5px; letter-spacing: .02em; }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 </head>
