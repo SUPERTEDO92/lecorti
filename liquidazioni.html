@@ -447,6 +447,25 @@ function switchPagina(p) {
   document.getElementById('totale-annuale').style.display = (p === 'liq' && document.getElementById('ta-val').textContent !== '—') ? 'flex' : 'none';
   if(p === 'rubrica' && !window._rubricaInit) { window._rubricaInit = true; rubRender(allevamenti); }
 
+  if(p === 'liq') {
+    const cover = document.getElementById('banc-cover');
+    const bill = document.getElementById('banc-bill');
+    if(cover && bill) {
+      const cx = window.innerWidth / 2, cy = 40;
+      const maxDim = Math.max(window.innerWidth, window.innerHeight) * 2.4;
+      gsap.killTweensOf([cover, bill]);
+      gsap.set(cover, { left: cx, top: cy, width: 20, height: 20, scale: 0, opacity: 1 });
+      gsap.set(bill, { left: cx, top: cy, opacity: 0, scale: 0.3, rotate: -8 });
+      const tlb = gsap.timeline();
+      tlb.to(bill, { opacity: 1, scale: 0.75, rotate: -2, duration: 0.18, ease: 'power1.out' })
+        .to(cover, { scale: maxDim / 20, duration: 0.55, ease: 'power2.inOut' }, 0.05)
+        .to(bill, { scale: 1.15, rotate: 0, duration: 0.5, ease: 'power2.inOut' }, 0.05)
+        .to([cover, bill], { opacity: 0, duration: 0.3, ease: 'power2.out' }, '+=0.15')
+        .set(cover, { opacity: 1, scale: 0 })
+        .set(bill, { opacity: 0, scale: 0.3 });
+    }
+  }
+
   if(p === 'trasf') {
     const truck = document.getElementById('running-truck');
     const doorL = document.getElementById('trasf-door-left');
