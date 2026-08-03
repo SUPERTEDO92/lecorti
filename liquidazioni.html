@@ -105,6 +105,26 @@
   }
   .chip.active { background: var(--text); color: #FFF; border-color: var(--text); }
 
+  /* Filtri secondari: soccida + da fatturare */
+  .filtri-sec { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; }
+  .sel-soccida {
+    flex: 1; padding: 8px 10px; border-radius: 8px; border: 0.5px solid var(--border);
+    background: #FFF; font-size: 13px; font-family: var(--font); color: var(--text);
+  }
+  .toggle-fatt {
+    flex-shrink: 0; display: flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 8px; border: 0.5px solid var(--border);
+    background: #FFF; font-size: 12.5px; font-family: var(--font); font-weight: 500;
+    color: var(--text2); cursor: pointer; white-space: nowrap; user-select: none;
+  }
+  .toggle-fatt .box {
+    width: 14px; height: 14px; border-radius: 4px; border: 1.2px solid var(--border);
+    display: flex; align-items: center; justify-content: center; background: #FFF;
+  }
+  .toggle-fatt.active { background: #FDF3E7; border-color: #EAD2A8; color: #C17B2A; }
+  .toggle-fatt.active .box { background: #C17B2A; border-color: #C17B2A; }
+  .toggle-fatt.active .box::after { content: '✓'; color: #FFF; font-size: 10px; font-weight: 700; }
+
   /* Summary */
   .summary {
     display: grid;
@@ -356,6 +376,14 @@
     </div>
 
     <div class="chips" id="chips"></div>
+    <div class="filtri-sec">
+      <select id="sel-soccida" class="sel-soccida" onchange="setFiltroSoccida(this.value)">
+        <option value="tutte">Tutte le soccide</option>
+      </select>
+      <div class="toggle-fatt" id="toggle-fatt" onclick="toggleDaFatturare()">
+        <span class="box"></span> Da fatturare
+      </div>
+    </div>
     <div class="summary" id="summary"></div>
     <div id="list"><div class="loading">Caricamento…</div></div>
   </div>
@@ -404,6 +432,9 @@ function transizioneBanconota(originEl, callback) {
 let allUscite = [], allLotti = [], allSoccide = [], allTrasferimenti = [], allIngressi = [];
 let filtroMese = 'tutti';
 let filtroMeseTrasf = 'tutti';
+let filtroSoccida = 'tutte';
+let filtroDaFatturare = false;
+const DA_FATTURARE_DA = '2026-07-01';
 let paginaAttiva = 'liq';
 
 const nomiMese = ['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
@@ -431,6 +462,7 @@ async function loadAll() {
   }
 
   buildChips();
+  buildSoccidaSelect();
   render();
   buildChipsTrasf();
   renderTrasf();
@@ -576,6 +608,25 @@ function rubFiltra() {
   ));
 }
 
+function buildSoccidaSelect() {
+  const nomi = [...new Set(allSoccide.map(s => s.nome).filter(Boolean))].sort();
+  const sel = document.getElementById('sel-soccida');
+  sel.innerHTML = `<option value="tutte">Tutte le soccide</option>` +
+    nomi.map(n => `<option value="${n}">${n}</option>`).join('');
+  sel.value = filtroSoccida;
+}
+
+function setFiltroSoccida(val) {
+  filtroSoccida = val;
+  render();
+}
+
+function toggleDaFatturare() {
+  filtroDaFatturare = !filtroDaFatturare;
+  document.getElementById('toggle-fatt').classList.toggle('active', filtroDaFatturare);
+  render();
+}
+
 function buildChips() {
   const mesi = [...new Set(allUscite.map(u => u.data_uscita?.substring(0,7)).filter(Boolean))].sort().reverse();
   let html = `<div class="chip active" onclick="setFiltro('tutti',this)">Tutti</div>`;
@@ -593,9 +644,18 @@ function setFiltro(val, el) {
   render();
 }
 
+function getSoccidaNome(u) {
+  if (u.soccida_nome) return u.soccida_nome;
+  const lotto = allLotti.find(l => l.id === u.lotto_id);
+  const soc = allSoccide.find(s => s.id === lotto?.soccida_id);
+  return soc?.nome || null;
+}
+
 function render() {
   let rows = allUscite.filter(u => u.data_uscita);
   if(filtroMese !== 'tutti') rows = rows.filter(u => u.data_uscita?.startsWith(filtroMese));
+  if(filtroSoccida !== 'tutte') rows = rows.filter(u => getSoccidaNome(u) === filtroSoccida);
+  if(filtroDaFatturare) rows = rows.filter(u => !u.fattura_documento_id && u.data_uscita >= DA_FATTURARE_DA);
   rows = [...rows].sort((a,b) => b.data_uscita.localeCompare(a.data_uscita));
 
   // Summary
