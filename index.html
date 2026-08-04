@@ -600,7 +600,6 @@
     <button class="nav-btn" onclick="showPage('macelli')">Macelli</button>
     <button class="nav-btn" onclick="showPage('calcolo')">🧮 Calcolo prezzo</button>
     <button class="nav-btn" onclick="transizioneSfoglio(this, () => showPage('rubrica'))">📋 Rubrica</button>
-    <button class="nav-btn" onclick="showPage('girolucrezia')">🐷 Giro Lucrezia</button>
   </div>
 </div>
 
@@ -1951,6 +1950,17 @@ function renderHome() {
   const svezzamento = socWithLotti.filter(s => s.tipo === 'svezzamento');
 
   let html = '';
+
+  html += `<div class="section-sep">Scrofaia</div><div class="soccide-list">
+    <div class="soccida-card" onclick="showPage('girolucrezia')">
+      <div class="dot dot-green"></div>
+      <div class="soc-main">
+        <div class="soc-nome">🐷 Giro Lucrezia</div>
+        <div class="soc-meta">Bande tri-settimanali · svezzamento → ingrasso</div>
+      </div>
+      <span class="soc-arrow">&#8250;</span>
+    </div>
+  </div>`;
 
   if(ingrasso.length) {
     html += `<div class="section-sep">In ingrasso</div><div class="soccide-list">`;
