@@ -2057,16 +2057,20 @@ function glSuggerisciSito(dataRif) {
   return GL_SVEZZAMENTO; // entrambi i siti pieni: da verificare manualmente
 }
 
-// Ultima banda creata (per numero progressivo LUC-NN) — prima fase = data di ingresso a svezzamento
+// Ultima banda creata — quella la cui prima fase (ingresso a svezzamento) è più recente,
+// indipendentemente dal prefisso del codice_banda (robusto anche per bande di test)
 function glUltimaBandaInfo() {
-  let maxNum = 0, maxCodice = null;
-  allLotti.forEach(l => {
-    const m = (l.codice_banda||'').match(/^LUC-(\d+)$/);
-    if(m) { const n = parseInt(m[1]); if(n > maxNum) { maxNum = n; maxCodice = l.codice_banda; } }
+  const gruppi = glGruppiBande();
+  const codici = Object.keys(gruppi);
+  if(!codici.length) return null;
+  let migliore = null;
+  codici.forEach(codice => {
+    const primaFase = gruppi[codice][0]; // già ordinato per data_ingresso asc
+    if(!migliore || primaFase.data_ingresso > migliore.dataIngresso) {
+      migliore = { codice, dataIngresso: primaFase.data_ingresso };
+    }
   });
-  if(!maxCodice) return null;
-  const fasi = allLotti.filter(l => l.codice_banda === maxCodice).sort((a,b) => a.data_ingresso.localeCompare(b.data_ingresso));
-  return { codice: maxCodice, dataIngresso: fasi[0].data_ingresso };
+  return migliore;
 }
 
 function renderGiroLucrezia() {
@@ -2163,7 +2167,8 @@ function renderGiroLucreziaSlot(nomeSito) {
   }
 
   const oggi = new Date();
-  bande.forEach(lotto => {
+  bande.forEach((lotto, idx) => {
+    if(idx > 0) html += `<div style="border-top:3px solid var(--text3);margin:18px 0;"></div>`;
     const gg = Math.max(0, Math.floor((oggi - new Date(lotto.data_ingresso)) / 86400000));
     const presenti = glCapiPresenti(lotto);
     const pesoStimato = (lotto.media_ingresso != null && lotto.incremento_giornaliero)
