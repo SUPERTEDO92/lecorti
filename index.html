@@ -1956,7 +1956,7 @@ function renderHome() {
   let html = '';
 
   html += `<div class="section-sep">Scrofaia</div><div class="soccide-list">
-    <div class="soccida-card" onclick="showPage('girolucrezia')">
+    <div class="soccida-card" onclick="apriGiroLucreziaConAnimazione()">
       <div class="dot dot-green"></div>
       <div class="soc-main">
         <div class="soc-nome">🐷 Giro Lucrezia</div>
@@ -2151,6 +2151,10 @@ function renderGiroLucrezia() {
   }
 
   container.innerHTML = html;
+}
+
+function apriGiroLucreziaConAnimazione() {
+  animazionePigletti(() => { showPage('girolucrezia'); }, () => { showPage('girolucrezia'); });
 }
 
 function glApriSlot(nomeSito) {
