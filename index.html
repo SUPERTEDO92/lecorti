@@ -2089,9 +2089,9 @@ function renderGiroLucrezia() {
     const oggi = new Date(); oggi.setHours(0,0,0,0);
     const scaduta = prox <= oggi;
     reminderHtml = `<div style="background:${scaduta ? 'var(--red-bg)' : 'var(--amber-bg)'};border:0.5px solid ${scaduta ? 'var(--red)' : 'var(--accent)'};border-radius:12px;padding:18px;margin-bottom:16px;">
-      <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;color:${scaduta ? 'var(--red)' : 'var(--amber)'};margin-bottom:8px;">📅 Prossima banda da spostare (scrofaia → svezzamento)</div>
-      <div style="font-size:22px;font-weight:600;margin-bottom:4px;">${fmtDate(proxStr)}</div>
-      <div style="font-size:19px;font-weight:600;color:${scaduta ? 'var(--red)' : 'var(--amber)'};">→ ${sitoLabel}</div>
+      <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;color:${scaduta ? 'var(--red)' : 'var(--amber)'};margin-bottom:8px;">📅 Prossima banda</div>
+      <div style="font-size:25px;font-weight:600;margin-bottom:5px;">${fmtDate(proxStr)}</div>
+      <div style="font-size:21px;font-weight:600;color:${scaduta ? 'var(--red)' : 'var(--amber)'};">→ ${sitoLabel}</div>
     </div>`;
   } else {
     reminderHtml = `<div class="empty" style="margin-bottom:16px;">Nessuna banda ancora registrata — nessun promemoria disponibile.</div>`;
@@ -2190,7 +2190,10 @@ function renderGiroLucreziaSlot(nomeSito) {
     // Header standard, identico a quello dei lotti nelle altre soccide
     html += `<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
       <div>
-        <div style="font-size:17px;font-weight:600;font-family:var(--mono);">${lotto.codice_banda} · lotto ${lotto.codice}</div>
+        <div style="font-size:17px;font-weight:600;font-family:var(--mono);display:flex;align-items:center;gap:8px;">
+          <span>${lotto.codice_banda} · lotto ${lotto.codice}</span>
+          ${lotto.ddt_ingresso_documento_id ? `<button onclick="apriDocumento(${lotto.ddt_ingresso_documento_id})" style="background:var(--green-bg);border:0.5px solid #B8DECA;border-radius:10px;padding:2px 9px;font-size:11px;font-weight:600;color:var(--green);cursor:pointer;font-family:var(--font);">📄 DDT</button>` : ''}
+        </div>
         <div style="font-size:13px;color:var(--text2);margin-top:4px">${lotto.provenienza || ''}</div>
       </div>
       <div style="text-align:right;">
