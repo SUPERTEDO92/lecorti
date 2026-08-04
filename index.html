@@ -674,7 +674,6 @@
 <div class="page" id="page-girolucrezia">
   <img src="img/bg-home-piglets.jpg" alt="" class="bg-hero">
   <div style="padding:14px;">
-    <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:14px;">Scrofaia Lucrezia → svezzamento (interno / Acquanegra) → ingrasso — bande tri-settimanali</div>
     <div id="girolucrezia-content"><div class="loading">Caricamento...</div></div>
   </div>
 </div>
@@ -2016,6 +2015,7 @@ function renderSoccidaCard(soc, activeLotti) {
 // Inserimento bande gestito da Claude via Supabase (nessun bottone di creazione in UI, su richiesta di Ruben).
 const GL_SVEZZAMENTO = 'LUCREZIA SVEZZAMENTO';
 const GL_ACQUANEGRA = 'ACQUANEGRA';
+const GL_INGRASSO = 'LUCREZIA INGRASSO';
 const GL_GG_SVEZZAMENTO = 60;   // permanenza indicativa in svezzamento prima dell'ingrasso
 const GL_GG_LAVAGGIO = 6;       // vuoto/lavaggio sito prima della banda successiva
 const GL_GG_CICLO_BANDA = 21;   // intervallo tra una banda e la successiva
@@ -2088,9 +2088,10 @@ function renderGiroLucrezia() {
     const sitoLabel = sito === GL_SVEZZAMENTO ? 'Lucrezia (interno)' : 'Acquanegra';
     const oggi = new Date(); oggi.setHours(0,0,0,0);
     const scaduta = prox <= oggi;
-    reminderHtml = `<div style="background:${scaduta ? 'var(--red-bg)' : 'var(--amber-bg)'};border:0.5px solid ${scaduta ? 'var(--red)' : 'var(--accent)'};border-radius:12px;padding:14px;margin-bottom:16px;">
-      <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;color:${scaduta ? 'var(--red)' : 'var(--amber)'};margin-bottom:4px;">📅 Prossima banda da spostare (scrofaia → svezzamento)</div>
-      <div style="font-size:19px;font-weight:600;">${fmtDate(proxStr)} <span style="font-size:13px;font-weight:400;color:var(--text2);">→ ${sitoLabel}</span></div>
+    reminderHtml = `<div style="background:${scaduta ? 'var(--red-bg)' : 'var(--amber-bg)'};border:0.5px solid ${scaduta ? 'var(--red)' : 'var(--accent)'};border-radius:12px;padding:18px;margin-bottom:16px;">
+      <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;color:${scaduta ? 'var(--red)' : 'var(--amber)'};margin-bottom:8px;">📅 Prossima banda da spostare (scrofaia → svezzamento)</div>
+      <div style="font-size:22px;font-weight:600;margin-bottom:4px;">${fmtDate(proxStr)}</div>
+      <div style="font-size:19px;font-weight:600;color:${scaduta ? 'var(--red)' : 'var(--amber)'};">→ ${sitoLabel}</div>
     </div>`;
   } else {
     reminderHtml = `<div class="empty" style="margin-bottom:16px;">Nessuna banda ancora registrata — nessun promemoria disponibile.</div>`;
@@ -2099,8 +2100,10 @@ function renderGiroLucrezia() {
   // Slot fissi
   const socLuc = allSoccide.find(s => s.nome === GL_SVEZZAMENTO);
   const socAcq = allSoccide.find(s => s.nome === GL_ACQUANEGRA);
+  const socIng = allSoccide.find(s => s.nome === GL_INGRASSO);
   const bandeLuc = socLuc ? allLotti.filter(l => l.soccida_id === socLuc.id && l.attivo && l.codice_banda) : [];
   const bandeAcq = socAcq ? allLotti.filter(l => l.soccida_id === socAcq.id && l.attivo && l.codice_banda) : [];
+  const bandeIng = socIng ? allLotti.filter(l => l.soccida_id === socIng.id && l.attivo && l.codice_banda) : [];
 
   const slotCard = (titolo, bande, nomeSito) => {
     const occ = bande.length > 0;
@@ -2119,6 +2122,9 @@ function renderGiroLucrezia() {
   html += `<div class="section-sep">Slot svezzamento</div><div class="soccide-list">`;
   html += slotCard('Lucrezia (interno)', bandeLuc, GL_SVEZZAMENTO);
   html += slotCard('Acquanegra (max 2 bande)', bandeAcq, GL_ACQUANEGRA);
+  html += `</div>`;
+  html += `<div class="section-sep">Slot ingrasso</div><div class="soccide-list">`;
+  html += slotCard('Lucrezia (ingrasso)', bandeIng, GL_INGRASSO);
   html += `</div>`;
 
   // Storico bande concluse (tutte le fasi già passate all'ingrasso)
@@ -2154,11 +2160,12 @@ function glChiudiSlot() {
 function renderGiroLucreziaSlot(nomeSito) {
   const container = document.getElementById('girolucrezia-content');
   const soc = allSoccide.find(s => s.nome === nomeSito);
-  const label = nomeSito === GL_SVEZZAMENTO ? 'Lucrezia (interno)' : 'Acquanegra';
+  const label = nomeSito === GL_SVEZZAMENTO ? 'Lucrezia (interno)' : nomeSito === GL_INGRASSO ? 'Lucrezia (ingrasso)' : 'Acquanegra';
   const bande = soc ? allLotti.filter(l => l.soccida_id === soc.id && l.attivo && l.codice_banda).sort((a,b) => a.data_ingresso.localeCompare(b.data_ingresso)) : [];
 
   let html = `<button onclick="glChiudiSlot()" class="back-btn" style="display:flex;margin:0 0 12px;">← Giro Lucrezia</button>`;
   html += `<div style="font-size:15px;font-weight:600;margin-bottom:12px;">${label}</div>`;
+  const labelGg = nomeSito === GL_INGRASSO ? 'Gg in ingrasso' : 'Gg in svezzamento';
 
   if(!bande.length) {
     html += `<div class="empty">Slot libero, nessuna banda presente.</div>`;
@@ -2183,7 +2190,7 @@ function renderGiroLucreziaSlot(nomeSito) {
       <div style="font-size:14px;font-weight:600;margin-bottom:10px;">${lotto.codice_banda} · lotto ${lotto.codice}</div>
       <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:10px;">
         <div class="stat-box hl"><div class="stat-label">Presenti</div><div class="stat-val green" style="font-size:17px">${fmt(presenti)} <span class="stat-unit">capi</span></div></div>
-        <div class="stat-box"><div class="stat-label">Gg in svezzamento</div><div class="stat-val" style="font-size:17px">${gg} <span class="stat-unit">gg</span></div></div>
+        <div class="stat-box"><div class="stat-label">${labelGg}</div><div class="stat-val" style="font-size:17px">${gg} <span class="stat-unit">gg</span></div></div>
         <div class="stat-box" onclick="apriModaleIncr(${lotto.id}, ${lotto.incremento_giornaliero||'null'})" style="cursor:pointer;">
           <div class="stat-label">Incr. giornaliero (tocca)</div><div class="stat-val" style="font-size:17px">${lotto.incremento_giornaliero ? fmt(lotto.incremento_giornaliero,3) : '—'} <span class="stat-unit">kg/gg</span></div>
         </div>
