@@ -2164,7 +2164,7 @@ function renderGiroLucreziaSlot(nomeSito) {
   const bande = soc ? allLotti.filter(l => l.soccida_id === soc.id && l.attivo && l.codice_banda).sort((a,b) => a.data_ingresso.localeCompare(b.data_ingresso)) : [];
 
   let html = `<button onclick="glChiudiSlot()" class="back-btn" style="display:flex;margin:0 0 12px;">← Giro Lucrezia</button>`;
-  html += `<div style="font-size:15px;font-weight:600;margin-bottom:12px;">${label}</div>`;
+  html += `<div class="detail-header" style="margin-bottom:12px;"><div class="detail-title">${label}</div></div>`;
   const labelGg = nomeSito === GL_INGRASSO ? 'Gg in ingrasso' : 'Gg in svezzamento';
 
   if(!bande.length) {
@@ -2195,6 +2195,7 @@ function renderGiroLucreziaSlot(nomeSito) {
       </div>
       <div style="text-align:right;">
         <div style="font-size:15px;font-weight:600;font-family:var(--mono);">${fmtDateFull(lotto.data_ingresso)}</div>
+        ${lotto.lettera_dop ? `<div style="font-size:13px;font-weight:700;color:var(--text);margin-top:2px;">LETTERA: ${lotto.lettera_dop}</div>` : ''}
       </div>
     </div>`;
 
