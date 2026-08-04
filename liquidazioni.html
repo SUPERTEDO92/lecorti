@@ -764,7 +764,9 @@ function render() {
         ${valoreCapo ? `<div style="text-align:right;margin-top:4px;font-size:13px;font-family:var(--mono);color:var(--green);font-weight:500;">valore/capo: ${fmt(valoreCapo,0)} €</div>` : ''}
 
         ${dettaglioLiq}
-        ${noteRighe.length ? `<div style="margin-top:6px;font-size:11px;color:var(--text2);background:var(--bg2);border-radius:var(--radius);padding:6px 10px;">ℹ️ ${noteRighe.join(' · ')}</div>` : ''}`;
+        `;
+        // Nota: box informativo (trasportatore/destinatario/logistica) nascosto di default dal 04/08/2026.
+        // Il testo resta salvato in uscite.note — va mostrato solo su richiesta esplicita di Ruben per una riga specifica.
 
       if(multi) {
         out += `<div style="margin-top:8px;padding-top:8px;border-top:0.5px dashed var(--border);">
