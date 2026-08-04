@@ -1948,7 +1948,11 @@ function fmtDateFull(d) {
 function renderHome() {
   const container = document.getElementById('soccide-list-container');
   const activeLotti = allLotti.filter(l => l.attivo);
-  const socWithLotti = allSoccide.filter(s => activeLotti.some(l => l.soccida_id === s.id));
+  // Le soccide del Giro Lucrezia (svezzamento interno, Acquanegra, ingrasso Lucrezia) sono
+  // già raggiungibili dalla card "🐷 Giro Lucrezia" qui sopra: escluse dal listato soccide
+  // normale per evitare il doppione (richiesto da Ruben il 04/08/2026).
+  const GL_NOMI = [GL_SVEZZAMENTO, GL_ACQUANEGRA, GL_INGRASSO];
+  const socWithLotti = allSoccide.filter(s => !GL_NOMI.includes(s.nome) && activeLotti.some(l => l.soccida_id === s.id));
 
   const ingrasso = socWithLotti.filter(s => s.tipo === 'ingrasso' || s.tipo === 'mista');
   const svezzamento = socWithLotti.filter(s => s.tipo === 'svezzamento');
