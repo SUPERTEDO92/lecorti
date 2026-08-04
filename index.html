@@ -600,6 +600,7 @@
     <button class="nav-btn" onclick="showPage('macelli')">Macelli</button>
     <button class="nav-btn" onclick="showPage('calcolo')">🧮 Calcolo prezzo</button>
     <button class="nav-btn" onclick="transizioneSfoglio(this, () => showPage('rubrica'))">📋 Rubrica</button>
+    <button class="nav-btn" onclick="showPage('girolucrezia')">🐷 Giro Lucrezia</button>
   </div>
 </div>
 
@@ -667,6 +668,18 @@
         </button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- GIRO LUCREZIA -->
+<div class="page" id="page-girolucrezia">
+  <img src="img/bg-home-piglets.jpg" alt="" class="bg-hero">
+  <div style="padding:14px;">
+    <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:10px;">Scrofaia Lucrezia → svezzamento (interno / Acquanegra) → ingrasso — bande tri-settimanali</div>
+    <button onclick="apriNuovaBanda()" style="width:100%;padding:11px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-bottom:14px;">
+      + Nuova banda (spostamento a svezzamento)
+    </button>
+    <div id="girolucrezia-content"><div class="loading">Caricamento...</div></div>
   </div>
 </div>
 
@@ -1396,7 +1409,7 @@ function showPage(name, lottoId) {
   currentPage = name;
 
   document.getElementById('global-back-btn').style.display = ['home','detail','inserimento','analisi','stampa'].includes(name) ? 'none' : 'flex';
-  const navMap = {home:'home',storico:'storico',trasferimenti:'trasferimenti',archivio:'archivio',inserimento:'inserimento',calcolo:'calcolo'};
+  const navMap = {home:'home',storico:'storico',trasferimenti:'trasferimenti',archivio:'archivio',inserimento:'inserimento',calcolo:'calcolo',girolucrezia:'girolucrezia'};
   const navName = navMap[name] || name;
   document.querySelectorAll('.nav-btn').forEach(b => {
     b.classList.toggle('active', b.getAttribute('onclick')?.includes(`'${navName}'`));
@@ -1409,6 +1422,7 @@ function showPage(name, lottoId) {
   if(name === 'macelli') renderMacelli();
   if(name === 'trasferimenti') renderTrasferimenti();
   if(name === 'rubrica' && !window._rubricaInit) { window._rubricaInit = true; rubRender(allevamenti); }
+  if(name === 'girolucrezia') renderGiroLucrezia();
   if(name === 'analisi' && lottoId) { currentLottoId = lottoId; renderAnalisi(lottoId); }
   if(name === 'analisi' && !lottoId && currentLottoId) renderAnalisi(currentLottoId);
   if(name === 'stampa' && lottoId) { currentLottoId = lottoId; renderStampa(lottoId); }
@@ -1989,6 +2003,215 @@ function renderSoccidaCard(soc, activeLotti) {
     <span class="soc-badge ${badge}">${badgeText}</span>
     <span class="soc-arrow">&#8250;</span>
   </div>`;
+}
+
+// ── GIRO LUCREZIA — bande tri-settimanali (scrofaia Lucrezia -> svezzamento -> ingrasso) ──
+const GL_SVEZZAMENTO = 'LUCREZIA SVEZZAMENTO';
+const GL_ACQUANEGRA = 'ACQUANEGRA';
+const GL_GG_SVEZZAMENTO = 60;   // permanenza indicativa in svezzamento prima dell'ingrasso
+const GL_GG_LAVAGGIO = 6;       // vuoto/lavaggio sito prima della banda successiva
+const GL_GG_CICLO_BANDA = 21;   // intervallo tra una banda e la successiva
+
+function glCapiPresenti(lotto) {
+  const capiUsciti = allUscite.filter(u => u.lotto_id === lotto.id).reduce((s,u) => s+(u.capi||0), 0);
+  const capiMorti = allMortalita.filter(m => m.lotto_id === lotto.id).reduce((s,m) => s+(m.capi_morti||0), 0);
+  const capiTrasf = allTrasferimenti.filter(t => t.lotto_id === lotto.id && t.tipo !== 'ACQUISTO').reduce((s,t) => s+(t.capi||0), 0);
+  return (lotto.capi_entrati||0) - capiUsciti - capiMorti - capiTrasf;
+}
+
+function glProssimoCodice() {
+  const numeri = allLotti.map(l => (l.codice_banda||'').match(/^LUC-(\d+)$/)).filter(Boolean).map(m => parseInt(m[1]));
+  const max = numeri.length ? Math.max(...numeri) : 0;
+  return 'LUC-' + String(max+1).padStart(2,'0');
+}
+
+// Un sito è "occupato" se ha una banda entrata da meno di (permanenza + lavaggio) giorni
+function glSitoOccupato(nomeSito, dataRif) {
+  const soc = allSoccide.find(s => s.nome === nomeSito);
+  if(!soc) return { occupato:false, count:0, lotti:[] };
+  const rif = dataRif ? new Date(dataRif) : new Date();
+  const attivi = allLotti.filter(l => l.soccida_id === soc.id && l.attivo && l.codice_banda).filter(l => {
+    const ggPermanenza = Math.floor((rif - new Date(l.data_ingresso)) / 86400000);
+    return ggPermanenza < (GL_GG_SVEZZAMENTO + GL_GG_LAVAGGIO);
+  });
+  return { occupato: attivi.length > 0, count: attivi.length, lotti: attivi };
+}
+
+function glSuggerisciSito(dataSpostamento) {
+  const luc = glSitoOccupato(GL_SVEZZAMENTO, dataSpostamento);
+  if(!luc.occupato) return GL_SVEZZAMENTO;
+  const acq = glSitoOccupato(GL_ACQUANEGRA, dataSpostamento);
+  if(acq.count < 2) return GL_ACQUANEGRA;
+  return GL_SVEZZAMENTO; // entrambi i siti pieni: da verificare manualmente
+}
+
+function glGruppiBande() {
+  const gruppi = {};
+  allLotti.filter(l => l.codice_banda).forEach(l => {
+    if(!gruppi[l.codice_banda]) gruppi[l.codice_banda] = [];
+    gruppi[l.codice_banda].push(l);
+  });
+  Object.values(gruppi).forEach(arr => arr.sort((a,b) => a.data_ingresso.localeCompare(b.data_ingresso)));
+  return gruppi;
+}
+
+function renderGiroLucrezia() {
+  const container = document.getElementById('girolucrezia-content');
+  const gruppi = glGruppiBande();
+  const codici = Object.keys(gruppi).sort().reverse();
+
+  if(!codici.length) {
+    container.innerHTML = `<div class="empty">Nessuna banda registrata. Usa "+ Nuova banda" per iniziare il primo giro.</div>`;
+    return;
+  }
+
+  const oggi = new Date();
+  let attiveHtml = '';
+  let storicoHtml = '';
+
+  codici.forEach(codice => {
+    const fasi = gruppi[codice];
+    const faseAttuale = fasi.find(l => l.attivo) || fasi[fasi.length-1];
+    const conclusa = !fasi.some(l => l.attivo);
+    const soc = allSoccide.find(s => s.id === faseAttuale.soccida_id);
+    const presenti = glCapiPresenti(faseAttuale);
+    const ggFase = Math.max(0, Math.floor((oggi - new Date(faseAttuale.data_ingresso)) / 86400000));
+    const primaFase = fasi[0];
+    const ggTotali = Math.max(0, Math.floor((oggi - new Date(primaFase.data_ingresso)) / 86400000));
+    const pesoStimato = (faseAttuale.media_ingresso != null && faseAttuale.incremento_giornaliero)
+      ? (parseFloat(faseAttuale.media_ingresso) + faseAttuale.incremento_giornaliero * ggFase) : null;
+
+    const mortBanda = allMortalita.filter(m => fasi.some(f => f.id === m.lotto_id)).sort((a,b) => a.data_evento.localeCompare(b.data_evento));
+    const sanBanda = allSanitario.filter(s => fasi.some(f => f.id === s.lotto_id)).sort((a,b) => a.data_referto.localeCompare(b.data_referto));
+    const totMorti = mortBanda.reduce((s,m) => s+(m.capi_morti||0), 0);
+
+    const dataProx = new Date(primaFase.data_ingresso);
+    dataProx.setDate(dataProx.getDate() + GL_GG_SVEZZAMENTO);
+    const dataProxStr = dataProx.toISOString().slice(0,10);
+
+    let card = `<div style="background:#FFF;border:0.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div style="font-size:14px;font-weight:600;">${codice} — ${soc?.nome || '—'}</div>
+        <span class="soc-badge ${conclusa ? 'badge-gray' : 'badge-green'}">${conclusa ? 'conclusa' : 'in corso'}</span>
+      </div>`;
+
+    if(!conclusa) {
+      card += `<div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:10px;">
+        <div class="stat-box hl"><div class="stat-label">Presenti</div><div class="stat-val green" style="font-size:17px">${fmt(presenti)} <span class="stat-unit">capi</span></div></div>
+        <div class="stat-box"><div class="stat-label">Gg in questa fase</div><div class="stat-val" style="font-size:17px">${ggFase} <span class="stat-unit">gg</span></div></div>
+        <div class="stat-box"><div class="stat-label">Età totale banda</div><div class="stat-val" style="font-size:17px">${ggTotali} <span class="stat-unit">gg</span></div></div>
+        <div class="stat-box" onclick="apriModaleIncr(${faseAttuale.id}, ${faseAttuale.incremento_giornaliero||'null'})" style="cursor:pointer;">
+          <div class="stat-label">Incr. giornaliero (tocca)</div><div class="stat-val" style="font-size:17px">${faseAttuale.incremento_giornaliero ? fmt(faseAttuale.incremento_giornaliero,3) : '—'} <span class="stat-unit">kg/gg</span></div>
+        </div>
+        <div class="stat-box"><div class="stat-label">Peso stimato oggi</div><div class="stat-val" style="font-size:17px">${pesoStimato ? fmt(pesoStimato,1) : '—'} <span class="stat-unit">kg</span></div></div>
+        <div class="stat-box"><div class="stat-label">Prossimo spost. previsto</div><div class="stat-val" style="font-size:14px">${fmtDate(dataProxStr)}</div></div>
+      </div>`;
+    }
+
+    card += `<div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;">Percorso banda</div>
+      <div style="margin-bottom:10px;">`;
+    fasi.forEach(f => {
+      const s = allSoccide.find(x => x.id === f.soccida_id);
+      card += `<div style="display:flex;justify-content:space-between;padding:6px 8px;background:var(--bg2);border-radius:var(--radius);margin-bottom:3px;font-size:11px;">
+        <span>${fmtDate(f.data_ingresso)} → ${s?.nome || '—'} (lotto ${f.codice})</span>
+        <span style="font-family:var(--mono);color:var(--text2);">${fmt(f.capi_entrati)} capi</span>
+      </div>`;
+    });
+    card += `</div>`;
+
+    card += `<div style="display:flex;gap:4px;margin-bottom:8px;">
+      <button onclick="apriInserisciMortalita(${faseAttuale.id})" style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--red);background:var(--red-bg);color:var(--red);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
+        + Mortalità${mortBanda.length ? ' ('+mortBanda.length+')' : ''}
+      </button>
+      <button onclick="showPage('analisi',${faseAttuale.id})" style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg2);color:var(--text2);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
+        Referti${sanBanda.length ? ' ('+sanBanda.length+')' : ''}
+      </button>
+    </div>`;
+
+    if(mortBanda.length) {
+      card += `<div style="font-size:11px;color:var(--text2);font-family:var(--mono);">Mortalità totale banda: <span style="color:var(--red);font-weight:500;">${totMorti} capi</span></div>`;
+    }
+
+    card += `</div>`;
+
+    if(conclusa) storicoHtml += card; else attiveHtml += card;
+  });
+
+  let html = '';
+  if(attiveHtml) html += `<div class="section-sep">Bande attive</div>` + attiveHtml;
+  if(storicoHtml) html += `<div class="section-sep">Storico bande concluse</div>` + storicoHtml;
+  container.innerHTML = html;
+}
+
+function apriNuovaBanda() {
+  const oggiStr = new Date().toISOString().slice(0,10);
+  const codice = glProssimoCodice();
+  const sitoSugg = glSuggerisciSito(oggiStr);
+  document.getElementById('modal-banda-info').textContent = `Prossimo codice banda: ${codice} · sito suggerito: ${sitoSugg === GL_SVEZZAMENTO ? 'Lucrezia interno' : 'Acquanegra'}`;
+  document.getElementById('banda-data').value = oggiStr;
+  document.getElementById('banda-sito').value = sitoSugg;
+  document.getElementById('banda-capi').value = '';
+  document.getElementById('banda-kg').value = '';
+  document.getElementById('banda-lettera').value = '';
+  document.getElementById('banda-note').value = '';
+  document.getElementById('modal-banda').style.display = 'flex';
+}
+function chiudiNuovaBanda() {
+  document.getElementById('modal-banda').style.display = 'none';
+}
+
+async function salvaNuovaBanda() {
+  const data = document.getElementById('banda-data').value;
+  const sitoNome = document.getElementById('banda-sito').value;
+  const capi = parseInt(document.getElementById('banda-capi').value) || 0;
+  const kg = parseFloat(document.getElementById('banda-kg').value) || 0;
+  const lettera = document.getElementById('banda-lettera').value || null;
+  const note = document.getElementById('banda-note').value || null;
+  if(!data || !capi || !kg) { alert('Inserisci data, capi e kg totali'); return; }
+
+  const soc = allSoccide.find(s => s.nome === sitoNome);
+  if(!soc) { alert('Soccida sito non trovata: ' + sitoNome); return; }
+
+  const anno = data.slice(2,4);
+  const progressivoAnno = allLotti.filter(l => l.soccida_id === soc.id && l.codice && l.codice.endsWith('/'+anno)).length + 1;
+  const codiceLotto = String(progressivoAnno).padStart(2,'0') + '/' + anno;
+  const codiceBanda = glProssimoCodice();
+  const media = kg / capi;
+
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/lotti`, {
+      method: 'POST', headers: SB_H,
+      body: JSON.stringify({
+        soccida_id: soc.id,
+        codice: codiceLotto,
+        provenienza: 'LUCREZIA',
+        data_ingresso: data,
+        capi_entrati: capi,
+        kg_totali_ingresso: kg,
+        media_ingresso: media,
+        lettera_dop: lettera,
+        attivo: true,
+        note,
+        codice_banda: codiceBanda
+      })
+    });
+    if(!r.ok) throw new Error(await r.text());
+    const nuovo = await r.json();
+    const riga = Array.isArray(nuovo) ? nuovo[0] : nuovo;
+
+    // Verifica di scrittura (regola prioritaria: mai dire "fatto" senza SELECT di conferma)
+    const verifica = await sb('lotti', `?id=eq.${riga.id}&select=*`);
+    if(!verifica.length || verifica[0].codice_banda !== codiceBanda) {
+      throw new Error('Verifica fallita: la riga non risulta salvata correttamente');
+    }
+    allLotti.unshift(verifica[0]);
+
+    chiudiNuovaBanda();
+    renderGiroLucrezia();
+    renderHome();
+  } catch(e) {
+    alert('Errore: ' + e.message);
+  }
 }
 
 // DETAIL — riceve socId, mostra tutti i lotti della soccida in sequenza
@@ -3161,6 +3384,7 @@ async function salvaMortalita() {
     chiudiMortalita();
     if(currentLottoId) renderDetail(currentLottoId);
     if(typeof _archivioSocId !== 'undefined' && _archivioSocId) renderArchivioSoccida(_archivioSocId);
+    if(currentPage === 'girolucrezia') renderGiroLucrezia();
   } catch(e) {
     alert('Errore: ' + e.message);
   }
@@ -3908,6 +4132,7 @@ async function salvaIncr() {
     if(l) l.incremento_giornaliero = val;
     document.getElementById('modal-incr').style.display = 'none';
     if(currentLottoId) renderDetail(currentLottoId);
+    if(currentPage === 'girolucrezia') renderGiroLucrezia();
   } catch(e) {
     alert('Errore: ' + e.message);
   }
@@ -4356,6 +4581,53 @@ loadAll();
 </div>
 
 
+
+<!-- MODALE NUOVA BANDA (Giro Lucrezia) -->
+<div id="modal-banda" class="modal-overlay">
+  <div id="modal-banda-panel" style="position:relative;overflow:visible;background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-size:14px;font-weight:500;font-family:var(--mono);">Nuova banda — spostamento a svezzamento</div>
+      <button onclick="chiudiNuovaBanda()" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
+    </div>
+    <div id="modal-banda-info" style="font-size:11px;color:var(--text2);background:var(--bg2);padding:8px 10px;border-radius:var(--radius);margin-bottom:14px;font-family:var(--mono);"></div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div class="grid-2">
+        <div>
+          <div class="field-label">DATA SPOSTAMENTO</div>
+          <input type="date" id="banda-data" class="input-std">
+        </div>
+        <div>
+          <div class="field-label">SITO SVEZZAMENTO</div>
+          <select id="banda-sito" class="input-std">
+            <option value="LUCREZIA SVEZZAMENTO">Lucrezia (interno)</option>
+            <option value="ACQUANEGRA">Acquanegra</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div>
+          <div class="field-label">N° CAPI</div>
+          <input type="number" id="banda-capi" placeholder="es. 800" min="0" class="input-std">
+        </div>
+        <div>
+          <div class="field-label">KG TOTALI</div>
+          <input type="number" id="banda-kg" placeholder="es. 5600" min="0" step="0.1" class="input-std">
+        </div>
+      </div>
+      <div>
+        <div class="field-label">LETTERA DOP (opzionale)</div>
+        <input type="text" id="banda-lettera" placeholder="es. H" class="input-std">
+      </div>
+      <div>
+        <div class="field-label">NOTE (opzionale)</div>
+        <input type="text" id="banda-note" placeholder="es. DDT n. ..." class="input-std">
+      </div>
+    </div>
+    <button onclick="salvaNuovaBanda()" style="width:100%;padding:13px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:16px;">
+      ✓ Crea banda
+    </button>
+  </div>
+</div>
 
 <!-- MODALE LIQUIDAZIONE -->
 <div id="modal-liq" class="modal-overlay">
