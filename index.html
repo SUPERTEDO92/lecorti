@@ -2175,41 +2175,87 @@ function renderGiroLucreziaSlot(nomeSito) {
 
   const oggi = new Date();
   bande.forEach((lotto, idx) => {
-    if(idx > 0) html += `<div style="border-top:3px solid var(--text3);margin:18px 0;"></div>`;
+    if(idx > 0) html += `<div style="border-top:3px solid var(--text3);margin:22px 0;"></div>`;
     const gg = Math.max(0, Math.floor((oggi - new Date(lotto.data_ingresso)) / 86400000));
     const presenti = glCapiPresenti(lotto);
     const pesoStimato = (lotto.media_ingresso != null && lotto.incremento_giornaliero)
-      ? (parseFloat(lotto.media_ingresso) + lotto.incremento_giornaliero * gg) : null;
-    const mortLotto = allMortalita.filter(m => m.lotto_id === lotto.id);
+      ? Math.round(parseFloat(lotto.media_ingresso) + lotto.incremento_giornaliero * gg) : null;
+    const mortLotto = allMortalita.filter(m => m.lotto_id === lotto.id).sort((a,b) => a.data_evento.localeCompare(b.data_evento));
     const sanLotto = allSanitario.filter(s => s.lotto_id === lotto.id);
     const totMorti = mortLotto.reduce((s,m) => s+(m.capi_morti||0), 0);
-    const trasf = allTrasferimenti.find(t => t.lotto_id === lotto.id && t.tipo === 'ACQUISTO');
-    const valore = trasf ? trasf.costo_acquisto : null;
+    const trasfAcq = allTrasferimenti.find(t => t.lotto_id === lotto.id && t.tipo === 'ACQUISTO');
+    const costoAcq = trasfAcq?.costo_acquisto || null;
+    const costoPerCapo = costoAcq && lotto.capi_entrati ? (costoAcq / lotto.capi_entrati).toFixed(2) : null;
 
-    html += `<div style="background:#FFF;border:0.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;">
-      <div style="font-size:14px;font-weight:600;margin-bottom:10px;">${lotto.codice_banda} · lotto ${lotto.codice}</div>
-      <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:10px;">
-        <div class="stat-box hl"><div class="stat-label">Presenti</div><div class="stat-val green" style="font-size:18px">${fmt(presenti)} <span class="stat-unit">capi</span></div></div>
-        <div class="stat-box"><div class="stat-label">${labelGg}</div><div class="stat-val" style="font-size:18px">${gg} <span class="stat-unit">gg</span></div></div>
-        <div class="stat-box"><div class="stat-label">Peso stimato</div><div class="stat-val" style="font-size:18px">${pesoStimato ? fmt(pesoStimato,1) : '—'} <span class="stat-unit">kg</span></div></div>
+    // Header standard, identico a quello dei lotti nelle altre soccide
+    html += `<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:17px;font-weight:600;font-family:var(--mono);">${lotto.codice_banda} · lotto ${lotto.codice}</div>
+        <div style="font-size:13px;color:var(--text2);margin-top:4px">${lotto.provenienza || ''}</div>
       </div>
-      <div class="trasf-line" style="margin-bottom:4px;">
-        <div class="tc" onclick="apriModaleIncr(${lotto.id}, ${lotto.incremento_giornaliero||'null'})" style="cursor:pointer;"><div class="tc-label">incr. giornaliero</div><div class="tc-val">${lotto.incremento_giornaliero ? fmt(lotto.incremento_giornaliero,3)+' kg/gg' : '—'}</div></div>
-        <div class="tc"><div class="tc-label">mortalità</div><div class="tc-val" style="color:${totMorti>0?'var(--red)':'inherit'}">${totMorti} capi</div></div>
+      <div style="text-align:right;">
+        <div style="font-size:15px;font-weight:600;font-family:var(--mono);">${fmtDateFull(lotto.data_ingresso)}</div>
       </div>
-      <div class="trasf-line" style="margin-bottom:6px;">
-        <div class="tc"><div class="tc-label">valore banda</div><div class="tc-val ${valore != null ? 'green' : ''}">${valore != null ? fmt(valore)+' €' : '—'}</div></div>
-        <div class="tc"><div class="tc-label">€/capo</div><div class="tc-val ${valore != null ? 'green' : ''}">${valore != null && lotto.capi_entrati ? fmt(valore/lotto.capi_entrati,0)+' €' : '—'}</div></div>
+    </div>`;
+
+    // Banner incremento — identico a quello usato su tutte le altre soccide
+    html += `<button onclick="apriModaleIncr(${lotto.id},${lotto.incremento_giornaliero||0})" type="button" style="width:100%;margin-bottom:8px;padding:8px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius);font-size:12px;font-family:var(--mono);font-weight:500;cursor:pointer;text-align:left;display:block;">
+      Incremento: +${lotto.incremento_giornaliero ? lotto.incremento_giornaliero.toFixed(3) : '—'} kg/gg &nbsp;✎ modifica
+    </button>`;
+
+    // Valore banda — stesso box "costo acquisto" già usato sugli altri lotti
+    if(costoAcq) {
+      html += `<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:8px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:11px;color:var(--text2);">💰 Valore banda</div>
+        <div style="text-align:right;">
+          <div style="font-size:15px;font-weight:600;font-family:var(--mono);color:var(--accent);">${fmt(costoAcq)} €</div>
+          <div style="font-size:10px;color:var(--text2);font-family:var(--mono);">${costoPerCapo} €/capo</div>
+        </div>
+      </div>`;
+    } else if(trasfAcq) {
+      html += `<div style="background:var(--amber-bg);border:0.5px solid #F0DC8A;border-radius:var(--radius);padding:8px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:11px;color:var(--amber);">💰 Valore banda — da inserire</div>
+        <button onclick="apriCostoAcquisto(${trasfAcq.id})" style="padding:5px 12px;background:var(--amber);color:#FFF;border:none;border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">+ Inserisci</button>
+      </div>`;
+    }
+
+    // Stat grid — stessa identica struttura 3x2 usata su tutte le altre soccide
+    html += `<div class="stat-grid" style="margin-bottom:10px;grid-template-columns:repeat(3,1fr);">
+      <div class="stat-box">
+        <div class="stat-label">Capi entrati</div>
+        <div class="stat-val" style="font-size:18px">${fmt(lotto.capi_entrati)} <span class="stat-unit">capi</span></div>
       </div>
-      ${trasf ? `<button onclick="apriCostoAcquisto(${trasf.id},'costo_acquisto')" style="width:100%;padding:7px;background:${valore != null ? 'var(--bg2)' : 'var(--amber-bg)'};color:${valore != null ? 'var(--text2)' : 'var(--amber)'};border:0.5px solid ${valore != null ? 'var(--border)' : '#F0DC8A'};border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;margin-bottom:10px;">${valore != null ? '✎ Modifica valore' : '+ Inserisci valore'}</button>` : ''}
-      <div style="display:flex;gap:4px;">
-        <button onclick="apriInserisciMortalita(${lotto.id})" style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--red);background:var(--red-bg);color:var(--red);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
-          + Mortalità${mortLotto.length ? ' ('+mortLotto.length+')' : ''}
-        </button>
-        <button onclick="showPage('analisi',${lotto.id})" style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg2);color:var(--text2);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
-          Referti${sanLotto.length ? ' ('+sanLotto.length+')' : ''}
-        </button>
+      <div class="stat-box hl">
+        <div class="stat-label">Presenti</div>
+        <div class="stat-val green" style="font-size:18px">${fmt(presenti)} <span class="stat-unit">capi</span></div>
       </div>
+      <div class="stat-box">
+        <div class="stat-label">${labelGg}</div>
+        <div class="stat-val" style="font-size:18px">${gg} <span class="stat-unit">gg</span></div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Peso arrivo</div>
+        <div class="stat-val" style="font-size:18px">${lotto.media_ingresso ? fmt(lotto.media_ingresso,1) : '—'} <span class="stat-unit">kg/capo</span></div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Peso stimato oggi</div>
+        <div class="stat-val" style="font-size:18px">${pesoStimato ? pesoStimato : '—'} <span class="stat-unit">kg</span></div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Mortalità</div>
+        <div class="stat-val" style="font-size:18px;color:${totMorti > 0 ? 'var(--red)' : 'inherit'}">${totMorti} <span class="stat-unit">capi</span></div>
+        ${lotto.capi_entrati ? `<div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:1px;">${fmt(totMorti/lotto.capi_entrati*100,2)}%</div>` : ''}
+      </div>
+    </div>`;
+
+    // Bottoni azione — identici a quelli usati sulle altre soccide
+    html += `<div style="display:flex;gap:4px;">
+      <button onclick="apriInserisciMortalita(${lotto.id})" style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--red);background:var(--red-bg);color:var(--red);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
+        + Mortalità${mortLotto.length ? ' ('+mortLotto.length+')' : ''}
+      </button>
+      <button onclick="showPage('analisi',${lotto.id})" style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg2);color:var(--text2);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
+        Referti${sanLotto.length ? ' ('+sanLotto.length+')' : ''}
+      </button>
     </div>`;
   });
 
