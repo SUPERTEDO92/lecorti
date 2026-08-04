@@ -1418,7 +1418,7 @@ function showPage(name, lottoId) {
   if(name === 'macelli') renderMacelli();
   if(name === 'trasferimenti') renderTrasferimenti();
   if(name === 'rubrica' && !window._rubricaInit) { window._rubricaInit = true; rubRender(allevamenti); }
-  if(name === 'girolucrezia') renderGiroLucrezia();
+  if(name === 'girolucrezia') { _glSlot = null; renderGiroLucrezia(); }
   if(name === 'analisi' && lottoId) { currentLottoId = lottoId; renderAnalisi(lottoId); }
   if(name === 'analisi' && !lottoId && currentLottoId) renderAnalisi(currentLottoId);
   if(name === 'stampa' && lottoId) { currentLottoId = lottoId; renderStampa(lottoId); }
@@ -2014,7 +2014,12 @@ function renderSoccidaCard(soc, activeLotti) {
 
 // ── GIRO LUCREZIA — bande tri-settimanali (scrofaia Lucrezia -> svezzamento -> ingrasso) ──
 // Inserimento bande gestito da Claude via Supabase (nessun bottone di creazione in UI, su richiesta di Ruben).
+const GL_SVEZZAMENTO = 'LUCREZIA SVEZZAMENTO';
+const GL_ACQUANEGRA = 'ACQUANEGRA';
 const GL_GG_SVEZZAMENTO = 60;   // permanenza indicativa in svezzamento prima dell'ingrasso
+const GL_GG_LAVAGGIO = 6;       // vuoto/lavaggio sito prima della banda successiva
+const GL_GG_CICLO_BANDA = 21;   // intervallo tra una banda e la successiva
+let _glSlot = null;             // sito aperto (null = vista d'insieme)
 
 function glCapiPresenti(lotto) {
   const capiUsciti = allUscite.filter(u => u.lotto_id === lotto.id).reduce((s,u) => s+(u.capi||0), 0);
@@ -2033,91 +2038,167 @@ function glGruppiBande() {
   return gruppi;
 }
 
-function renderGiroLucrezia() {
-  const container = document.getElementById('girolucrezia-content');
-  const gruppi = glGruppiBande();
-  const codici = Object.keys(gruppi).sort().reverse();
+// Un sito è "occupato" se ha una banda entrata da meno di (permanenza + lavaggio) giorni — solo per il promemoria, sola lettura
+function glSitoOccupato(nomeSito, dataRif) {
+  const soc = allSoccide.find(s => s.nome === nomeSito);
+  if(!soc) return { occupato:false, count:0 };
+  const rif = dataRif ? new Date(dataRif) : new Date();
+  const attivi = allLotti.filter(l => l.soccida_id === soc.id && l.attivo && l.codice_banda).filter(l => {
+    const ggPermanenza = Math.floor((rif - new Date(l.data_ingresso)) / 86400000);
+    return ggPermanenza < (GL_GG_SVEZZAMENTO + GL_GG_LAVAGGIO);
+  });
+  return { occupato: attivi.length > 0, count: attivi.length };
+}
+function glSuggerisciSito(dataRif) {
+  const luc = glSitoOccupato(GL_SVEZZAMENTO, dataRif);
+  if(!luc.occupato) return GL_SVEZZAMENTO;
+  const acq = glSitoOccupato(GL_ACQUANEGRA, dataRif);
+  if(acq.count < 2) return GL_ACQUANEGRA;
+  return GL_SVEZZAMENTO; // entrambi i siti pieni: da verificare manualmente
+}
 
-  if(!codici.length) {
-    container.innerHTML = `<div class="empty">Nessuna banda registrata ancora.</div>`;
+// Ultima banda creata (per numero progressivo LUC-NN) — prima fase = data di ingresso a svezzamento
+function glUltimaBandaInfo() {
+  let maxNum = 0, maxCodice = null;
+  allLotti.forEach(l => {
+    const m = (l.codice_banda||'').match(/^LUC-(\d+)$/);
+    if(m) { const n = parseInt(m[1]); if(n > maxNum) { maxNum = n; maxCodice = l.codice_banda; } }
+  });
+  if(!maxCodice) return null;
+  const fasi = allLotti.filter(l => l.codice_banda === maxCodice).sort((a,b) => a.data_ingresso.localeCompare(b.data_ingresso));
+  return { codice: maxCodice, dataIngresso: fasi[0].data_ingresso };
+}
+
+function renderGiroLucrezia() {
+  if(_glSlot) { renderGiroLucreziaSlot(_glSlot); return; }
+  const container = document.getElementById('girolucrezia-content');
+
+  // Riquadro promemoria: prossima banda da spostare dalla scrofaia allo svezzamento
+  const ultima = glUltimaBandaInfo();
+  let reminderHtml;
+  if(ultima) {
+    const prox = new Date(ultima.dataIngresso);
+    prox.setDate(prox.getDate() + GL_GG_CICLO_BANDA);
+    const proxStr = prox.toISOString().slice(0,10);
+    const sito = glSuggerisciSito(proxStr);
+    const sitoLabel = sito === GL_SVEZZAMENTO ? 'Lucrezia (interno)' : 'Acquanegra';
+    const oggi = new Date(); oggi.setHours(0,0,0,0);
+    const scaduta = prox <= oggi;
+    reminderHtml = `<div style="background:${scaduta ? 'var(--red-bg)' : 'var(--amber-bg)'};border:0.5px solid ${scaduta ? 'var(--red)' : 'var(--accent)'};border-radius:12px;padding:14px;margin-bottom:16px;">
+      <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;color:${scaduta ? 'var(--red)' : 'var(--amber)'};margin-bottom:4px;">📅 Prossima banda da spostare (scrofaia → svezzamento)</div>
+      <div style="font-size:19px;font-weight:600;">${fmtDate(proxStr)} <span style="font-size:13px;font-weight:400;color:var(--text2);">→ ${sitoLabel}</span></div>
+    </div>`;
+  } else {
+    reminderHtml = `<div class="empty" style="margin-bottom:16px;">Nessuna banda ancora registrata — nessun promemoria disponibile.</div>`;
+  }
+
+  // Slot fissi
+  const socLuc = allSoccide.find(s => s.nome === GL_SVEZZAMENTO);
+  const socAcq = allSoccide.find(s => s.nome === GL_ACQUANEGRA);
+  const bandeLuc = socLuc ? allLotti.filter(l => l.soccida_id === socLuc.id && l.attivo && l.codice_banda) : [];
+  const bandeAcq = socAcq ? allLotti.filter(l => l.soccida_id === socAcq.id && l.attivo && l.codice_banda) : [];
+
+  const slotCard = (titolo, bande, nomeSito) => {
+    const occ = bande.length > 0;
+    const label = occ ? bande.map(b => `${b.codice_banda} · ${fmt(glCapiPresenti(b))} capi`).join(' · ') : 'Libero';
+    return `<div class="soccida-card" onclick="glApriSlot('${nomeSito}')">
+      <div class="dot ${occ ? 'dot-green' : 'dot-gray'}"></div>
+      <div class="soc-main">
+        <div class="soc-nome">${titolo}</div>
+        <div class="soc-meta">${label}</div>
+      </div>
+      <span class="soc-arrow">&#8250;</span>
+    </div>`;
+  };
+
+  let html = reminderHtml;
+  html += `<div class="section-sep">Slot svezzamento</div><div class="soccide-list">`;
+  html += slotCard('Lucrezia (interno)', bandeLuc, GL_SVEZZAMENTO);
+  html += slotCard('Acquanegra (max 2 bande)', bandeAcq, GL_ACQUANEGRA);
+  html += `</div>`;
+
+  // Storico bande concluse (tutte le fasi già passate all'ingrasso)
+  const gruppi = glGruppiBande();
+  const concluse = Object.keys(gruppi).filter(c => !gruppi[c].some(l => l.attivo)).sort().reverse();
+  if(concluse.length) {
+    html += `<div class="section-sep">Storico bande concluse</div>`;
+    concluse.forEach(codice => {
+      const fasi = gruppi[codice];
+      html += `<div style="background:#FFF;border:0.5px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px;">
+        <div style="font-size:13px;font-weight:600;margin-bottom:6px;">${codice}</div>
+        <div style="font-size:11px;color:var(--text2);line-height:1.7;">`;
+      fasi.forEach(f => {
+        const s = allSoccide.find(x => x.id === f.soccida_id);
+        html += `${fmtDate(f.data_ingresso)} → ${s?.nome || '—'} (${f.codice})<br>`;
+      });
+      html += `</div></div>`;
+    });
+  }
+
+  container.innerHTML = html;
+}
+
+function glApriSlot(nomeSito) {
+  _glSlot = nomeSito;
+  renderGiroLucreziaSlot(nomeSito);
+}
+function glChiudiSlot() {
+  _glSlot = null;
+  renderGiroLucrezia();
+}
+
+function renderGiroLucreziaSlot(nomeSito) {
+  const container = document.getElementById('girolucrezia-content');
+  const soc = allSoccide.find(s => s.nome === nomeSito);
+  const label = nomeSito === GL_SVEZZAMENTO ? 'Lucrezia (interno)' : 'Acquanegra';
+  const bande = soc ? allLotti.filter(l => l.soccida_id === soc.id && l.attivo && l.codice_banda).sort((a,b) => a.data_ingresso.localeCompare(b.data_ingresso)) : [];
+
+  let html = `<button onclick="glChiudiSlot()" class="back-btn" style="display:flex;margin:0 0 12px;">← Giro Lucrezia</button>`;
+  html += `<div style="font-size:15px;font-weight:600;margin-bottom:12px;">${label}</div>`;
+
+  if(!bande.length) {
+    html += `<div class="empty">Slot libero, nessuna banda presente.</div>`;
+    container.innerHTML = html;
     return;
   }
 
   const oggi = new Date();
-  let attiveHtml = '';
-  let storicoHtml = '';
+  bande.forEach(lotto => {
+    const gg = Math.max(0, Math.floor((oggi - new Date(lotto.data_ingresso)) / 86400000));
+    const presenti = glCapiPresenti(lotto);
+    const pesoStimato = (lotto.media_ingresso != null && lotto.incremento_giornaliero)
+      ? (parseFloat(lotto.media_ingresso) + lotto.incremento_giornaliero * gg) : null;
+    const mortLotto = allMortalita.filter(m => m.lotto_id === lotto.id);
+    const sanLotto = allSanitario.filter(s => s.lotto_id === lotto.id);
+    const totMorti = mortLotto.reduce((s,m) => s+(m.capi_morti||0), 0);
+    const trasf = allTrasferimenti.find(t => t.lotto_id === lotto.id && t.tipo === 'ACQUISTO');
+    const valore = trasf ? trasf.costo_acquisto : null;
 
-  codici.forEach(codice => {
-    const fasi = gruppi[codice];
-    const faseAttuale = fasi.find(l => l.attivo) || fasi[fasi.length-1];
-    const conclusa = !fasi.some(l => l.attivo);
-    const soc = allSoccide.find(s => s.id === faseAttuale.soccida_id);
-    const presenti = glCapiPresenti(faseAttuale);
-    const ggFase = Math.max(0, Math.floor((oggi - new Date(faseAttuale.data_ingresso)) / 86400000));
-    const primaFase = fasi[0];
-    const ggTotali = Math.max(0, Math.floor((oggi - new Date(primaFase.data_ingresso)) / 86400000));
-    const pesoStimato = (faseAttuale.media_ingresso != null && faseAttuale.incremento_giornaliero)
-      ? (parseFloat(faseAttuale.media_ingresso) + faseAttuale.incremento_giornaliero * ggFase) : null;
-
-    const mortBanda = allMortalita.filter(m => fasi.some(f => f.id === m.lotto_id)).sort((a,b) => a.data_evento.localeCompare(b.data_evento));
-    const sanBanda = allSanitario.filter(s => fasi.some(f => f.id === s.lotto_id)).sort((a,b) => a.data_referto.localeCompare(b.data_referto));
-    const totMorti = mortBanda.reduce((s,m) => s+(m.capi_morti||0), 0);
-
-    const dataProx = new Date(primaFase.data_ingresso);
-    dataProx.setDate(dataProx.getDate() + GL_GG_SVEZZAMENTO);
-    const dataProxStr = dataProx.toISOString().slice(0,10);
-
-    let card = `<div style="background:#FFF;border:0.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <div style="font-size:14px;font-weight:600;">${codice} — ${soc?.nome || '—'}</div>
-        <span class="soc-badge ${conclusa ? 'badge-gray' : 'badge-green'}">${conclusa ? 'conclusa' : 'in corso'}</span>
-      </div>`;
-
-    if(!conclusa) {
-      card += `<div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:10px;">
+    html += `<div style="background:#FFF;border:0.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;">
+      <div style="font-size:14px;font-weight:600;margin-bottom:10px;">${lotto.codice_banda} · lotto ${lotto.codice}</div>
+      <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:10px;">
         <div class="stat-box hl"><div class="stat-label">Presenti</div><div class="stat-val green" style="font-size:17px">${fmt(presenti)} <span class="stat-unit">capi</span></div></div>
-        <div class="stat-box"><div class="stat-label">Gg in questa fase</div><div class="stat-val" style="font-size:17px">${ggFase} <span class="stat-unit">gg</span></div></div>
-        <div class="stat-box"><div class="stat-label">Età totale banda</div><div class="stat-val" style="font-size:17px">${ggTotali} <span class="stat-unit">gg</span></div></div>
-        <div class="stat-box" onclick="apriModaleIncr(${faseAttuale.id}, ${faseAttuale.incremento_giornaliero||'null'})" style="cursor:pointer;">
-          <div class="stat-label">Incr. giornaliero (tocca)</div><div class="stat-val" style="font-size:17px">${faseAttuale.incremento_giornaliero ? fmt(faseAttuale.incremento_giornaliero,3) : '—'} <span class="stat-unit">kg/gg</span></div>
+        <div class="stat-box"><div class="stat-label">Gg in svezzamento</div><div class="stat-val" style="font-size:17px">${gg} <span class="stat-unit">gg</span></div></div>
+        <div class="stat-box" onclick="apriModaleIncr(${lotto.id}, ${lotto.incremento_giornaliero||'null'})" style="cursor:pointer;">
+          <div class="stat-label">Incr. giornaliero (tocca)</div><div class="stat-val" style="font-size:17px">${lotto.incremento_giornaliero ? fmt(lotto.incremento_giornaliero,3) : '—'} <span class="stat-unit">kg/gg</span></div>
         </div>
         <div class="stat-box"><div class="stat-label">Peso stimato oggi</div><div class="stat-val" style="font-size:17px">${pesoStimato ? fmt(pesoStimato,1) : '—'} <span class="stat-unit">kg</span></div></div>
-        <div class="stat-box"><div class="stat-label">Prossimo spost. previsto</div><div class="stat-val" style="font-size:14px">${fmtDate(dataProxStr)}</div></div>
-      </div>`;
-    }
-
-    card += `<div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;">Percorso banda</div>
-      <div style="margin-bottom:10px;">`;
-    fasi.forEach(f => {
-      const s = allSoccide.find(x => x.id === f.soccida_id);
-      card += `<div style="display:flex;justify-content:space-between;padding:6px 8px;background:var(--bg2);border-radius:var(--radius);margin-bottom:3px;font-size:11px;">
-        <span>${fmtDate(f.data_ingresso)} → ${s?.nome || '—'} (lotto ${f.codice})</span>
-        <span style="font-family:var(--mono);color:var(--text2);">${fmt(f.capi_entrati)} capi</span>
-      </div>`;
-    });
-    card += `</div>`;
-
-    card += `<div style="display:flex;gap:4px;margin-bottom:8px;">
-      <button onclick="apriInserisciMortalita(${faseAttuale.id})" style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--red);background:var(--red-bg);color:var(--red);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
-        + Mortalità${mortBanda.length ? ' ('+mortBanda.length+')' : ''}
-      </button>
-      <button onclick="showPage('analisi',${faseAttuale.id})" style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg2);color:var(--text2);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
-        Referti${sanBanda.length ? ' ('+sanBanda.length+')' : ''}
-      </button>
+        <div class="stat-box"><div class="stat-label">Mortalità</div><div class="stat-val" style="font-size:17px;color:${totMorti>0?'var(--red)':'inherit'}">${totMorti} <span class="stat-unit">capi</span></div></div>
+        <div class="stat-box hl"${trasf ? ` onclick="apriCostoAcquisto(${trasf.id},'costo_acquisto')" style="cursor:pointer;"` : ''}>
+          <div class="stat-label">Valore banda${trasf ? ' (tocca)' : ''}</div><div class="stat-val" style="font-size:17px">${valore != null ? fmt(valore)+' €' : '—'}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:4px;">
+        <button onclick="apriInserisciMortalita(${lotto.id})" style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--red);background:var(--red-bg);color:var(--red);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
+          + Mortalità${mortLotto.length ? ' ('+mortLotto.length+')' : ''}
+        </button>
+        <button onclick="showPage('analisi',${lotto.id})" style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg2);color:var(--text2);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
+          Referti${sanLotto.length ? ' ('+sanLotto.length+')' : ''}
+        </button>
+      </div>
     </div>`;
-
-    if(mortBanda.length) {
-      card += `<div style="font-size:11px;color:var(--text2);font-family:var(--mono);">Mortalità totale banda: <span style="color:var(--red);font-weight:500;">${totMorti} capi</span></div>`;
-    }
-
-    card += `</div>`;
-
-    if(conclusa) storicoHtml += card; else attiveHtml += card;
   });
 
-  let html = '';
-  if(attiveHtml) html += `<div class="section-sep">Bande attive</div>` + attiveHtml;
-  if(storicoHtml) html += `<div class="section-sep">Storico bande concluse</div>` + storicoHtml;
   container.innerHTML = html;
 }
 
@@ -2861,6 +2942,7 @@ async function salvaCostoAcquisto() {
     if(t) { t[_costoCampo] = costo; if(body.calcolo_prezzo) t.calcolo_prezzo = body.calcolo_prezzo; }
     chiudiCostoAcquisto();
     renderTrasferimenti();
+    if(currentPage === 'girolucrezia') renderGiroLucrezia();
   } catch(e) {
     alert('Errore: ' + e.message);
   }
