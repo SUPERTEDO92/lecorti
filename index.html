@@ -2189,17 +2189,19 @@ function renderGiroLucreziaSlot(nomeSito) {
     html += `<div style="background:#FFF;border:0.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;">
       <div style="font-size:14px;font-weight:600;margin-bottom:10px;">${lotto.codice_banda} · lotto ${lotto.codice}</div>
       <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:10px;">
-        <div class="stat-box hl"><div class="stat-label">Presenti</div><div class="stat-val green" style="font-size:17px">${fmt(presenti)} <span class="stat-unit">capi</span></div></div>
-        <div class="stat-box"><div class="stat-label">${labelGg}</div><div class="stat-val" style="font-size:17px">${gg} <span class="stat-unit">gg</span></div></div>
-        <div class="stat-box" onclick="apriModaleIncr(${lotto.id}, ${lotto.incremento_giornaliero||'null'})" style="cursor:pointer;">
-          <div class="stat-label">Incr. giornaliero (tocca)</div><div class="stat-val" style="font-size:17px">${lotto.incremento_giornaliero ? fmt(lotto.incremento_giornaliero,3) : '—'} <span class="stat-unit">kg/gg</span></div>
-        </div>
-        <div class="stat-box"><div class="stat-label">Peso stimato oggi</div><div class="stat-val" style="font-size:17px">${pesoStimato ? fmt(pesoStimato,1) : '—'} <span class="stat-unit">kg</span></div></div>
-        <div class="stat-box"><div class="stat-label">Mortalità</div><div class="stat-val" style="font-size:17px;color:${totMorti>0?'var(--red)':'inherit'}">${totMorti} <span class="stat-unit">capi</span></div></div>
-        <div class="stat-box hl"${trasf ? ` onclick="apriCostoAcquisto(${trasf.id},'costo_acquisto')" style="cursor:pointer;"` : ''}>
-          <div class="stat-label">Valore banda${trasf ? ' (tocca)' : ''}</div><div class="stat-val" style="font-size:17px">${valore != null ? fmt(valore)+' €' : '—'}</div>
-        </div>
+        <div class="stat-box hl"><div class="stat-label">Presenti</div><div class="stat-val green" style="font-size:18px">${fmt(presenti)} <span class="stat-unit">capi</span></div></div>
+        <div class="stat-box"><div class="stat-label">${labelGg}</div><div class="stat-val" style="font-size:18px">${gg} <span class="stat-unit">gg</span></div></div>
+        <div class="stat-box"><div class="stat-label">Peso stimato</div><div class="stat-val" style="font-size:18px">${pesoStimato ? fmt(pesoStimato,1) : '—'} <span class="stat-unit">kg</span></div></div>
       </div>
+      <div class="trasf-line" style="margin-bottom:4px;">
+        <div class="tc" onclick="apriModaleIncr(${lotto.id}, ${lotto.incremento_giornaliero||'null'})" style="cursor:pointer;"><div class="tc-label">incr. giornaliero</div><div class="tc-val">${lotto.incremento_giornaliero ? fmt(lotto.incremento_giornaliero,3)+' kg/gg' : '—'}</div></div>
+        <div class="tc"><div class="tc-label">mortalità</div><div class="tc-val" style="color:${totMorti>0?'var(--red)':'inherit'}">${totMorti} capi</div></div>
+      </div>
+      <div class="trasf-line" style="margin-bottom:6px;">
+        <div class="tc"><div class="tc-label">valore banda</div><div class="tc-val ${valore != null ? 'green' : ''}">${valore != null ? fmt(valore)+' €' : '—'}</div></div>
+        <div class="tc"><div class="tc-label">€/capo</div><div class="tc-val ${valore != null ? 'green' : ''}">${valore != null && lotto.capi_entrati ? fmt(valore/lotto.capi_entrati,0)+' €' : '—'}</div></div>
+      </div>
+      ${trasf ? `<button onclick="apriCostoAcquisto(${trasf.id},'costo_acquisto')" style="width:100%;padding:7px;background:${valore != null ? 'var(--bg2)' : 'var(--amber-bg)'};color:${valore != null ? 'var(--text2)' : 'var(--amber)'};border:0.5px solid ${valore != null ? 'var(--border)' : '#F0DC8A'};border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;margin-bottom:10px;">${valore != null ? '✎ Modifica valore' : '+ Inserisci valore'}</button>` : ''}
       <div style="display:flex;gap:4px;">
         <button onclick="apriInserisciMortalita(${lotto.id})" style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--red);background:var(--red-bg);color:var(--red);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
           + Mortalità${mortLotto.length ? ' ('+mortLotto.length+')' : ''}
