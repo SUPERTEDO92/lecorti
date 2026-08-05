@@ -1202,6 +1202,19 @@
 const MACELLI = ['ANNONI','CAPPOLA','GHINZELLI','MARTELLI','MEC','PINI ITALIA','COSTA','ZANDALAZINI','SASSI','LINGIARDI','BERTESAGO','FESTA','ROVESCALA','__MANUALE__'];
 const CESSIONARI = ['FM FONTANELLE','OPAS','OPAS ALIMENTARE','__MANUALE__'];
 
+// Ordina le uscite per numero di bolla (DDT) crescente invece che per data.
+// Estrae la parte numerica iniziale del numero_ddt (es. "27/BOR" -> 27, "11/26" -> 11, "08" -> 8);
+// se manca o non è parsabile, va in fondo. A parità di numero, usa la data come spareggio.
+function ddtSortKey(u){
+  const m = String(u.numero_ddt||'').match(/\d+/);
+  return m ? parseInt(m[0],10) : Infinity;
+}
+function sortByDdt(a,b){
+  const ka = ddtSortKey(a), kb = ddtSortKey(b);
+  if(ka !== kb) return ka - kb;
+  return String(a.data_uscita||'').localeCompare(String(b.data_uscita||''));
+}
+
 // State
 let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [], allMortalita = [], allSanitario = [], allVenditeDirette = [], allUsciteCategorie = [], allVenditeDiretteCategorie = [], allIngressi = [], allLettereDop = [];
 let storicoFilter = 'tutti';
@@ -2305,7 +2318,7 @@ function renderDetail(socId) {
   }
 
   lotti.forEach(lotto => {
-    const uscite = allUscite.filter(u => u.lotto_id === lotto.id).sort((a,b) => a.data_uscita.localeCompare(b.data_uscita));
+    const uscite = allUscite.filter(u => u.lotto_id === lotto.id).sort(sortByDdt);
     const ingresso = new Date(lotto.data_ingresso);
     const gg = Math.floor((oggi - ingresso) / 86400000);
     const capiUsciti = uscite.reduce((s,u) => s+(u.capi||0), 0);
@@ -3081,7 +3094,7 @@ function renderStampa(lottoId) {
   const lotto = allLotti.find(l => l.id === lottoId);
   if(!lotto) return;
   const soc = allSoccide.find(s => s.id === lotto.soccida_id);
-  const uscite = allUscite.filter(u => u.lotto_id === lottoId).sort((a,b) => a.data_uscita.localeCompare(b.data_uscita));
+  const uscite = allUscite.filter(u => u.lotto_id === lottoId).sort(sortByDdt);
   const referti = (allSanitario||[]).filter(r => r.lotto_id === lottoId).sort((a,b) => a.data_referto.localeCompare(b.data_referto));
   const mortalita = (allMortalita||[]).filter(m => m.lotto_id === lottoId).sort((a,b) => a.data_evento.localeCompare(b.data_evento));
 
@@ -3283,7 +3296,7 @@ function renderIlaria(mese) {
   // Filtra uscite del mese, ordine cronologico
   let rows = allUscite
     .filter(u => u.data_uscita?.startsWith(mese))
-    .sort((a,b) => a.data_uscita.localeCompare(b.data_uscita));
+    .sort((a,b) => String(a.data_uscita||'').localeCompare(String(b.data_uscita||'')));
 
   // Totali
   const totCapi = rows.reduce((s,u) => s+(u.capi||0), 0);
@@ -4788,7 +4801,7 @@ function renderArchivioSoccida(socId) {
 
   // Ogni lotto
   lotti.forEach(lotto => {
-    const uscite = allUscite.filter(u => u.lotto_id === lotto.id).sort((a,b) => a.data_uscita.localeCompare(b.data_uscita));
+    const uscite = allUscite.filter(u => u.lotto_id === lotto.id).sort(sortByDdt);
     // Trasferimenti in uscita — cerca per lotto_id (tipo TRASFERIMENTO)
     // OPPURE per soccida_partenza (quando inseriti come ACQUISTO della soccida destinazione)
     const socLotto = allSoccide.find(s => s.id === lotto.soccida_id);
@@ -4988,7 +5001,7 @@ function stampaArchivioSoccida(socId) {
   <div class="sub">Archivio cicli · Stampato il ${new Date().toLocaleDateString('it-IT')}</div>`;
 
   lotti.forEach(lotto => {
-    const uscite = allUscite.filter(u => u.lotto_id === lotto.id).sort((a,b) => a.data_uscita.localeCompare(b.data_uscita));
+    const uscite = allUscite.filter(u => u.lotto_id === lotto.id).sort(sortByDdt);
     const morti = allMortalita.filter(m => m.lotto_id === lotto.id).reduce((s,m) => s+(m.capi_morti||0), 0);
     const capiUsciti = uscite.reduce((s,u) => s+(u.capi||0), 0);
     const totKg = uscite.reduce((s,u) => s+(u.kg_totali||0), 0);
