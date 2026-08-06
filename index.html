@@ -1352,6 +1352,7 @@ function transizioneBanconota(originEl, callback) {
   if(!cover || !bill) { callback(); return; }
   const maxDim = Math.max(window.innerWidth, window.innerHeight) * 2.4;
 
+  gsap.killTweensOf([cover, bill]);
   gsap.set(cover, { left: cx, top: cy, width: 20, height: 20, scale: 0 });
   gsap.set(bill, { left: cx, top: cy, opacity: 0, scale: 0.3, rotate: -8 });
 

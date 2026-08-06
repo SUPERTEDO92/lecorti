@@ -390,6 +390,7 @@
 
   <div id="pagina-trasf" class="tab-pagina">
     <div class="chips" id="chips-trasf"></div>
+    <div class="chips" id="chips-trasf-tipo"></div>
     <div class="summary" id="summary-trasf"></div>
     <div id="list-trasf"><div class="loading">Caricamento…</div></div>
   </div>
@@ -413,6 +414,7 @@ function transizioneBanconota(originEl, callback) {
   if(!cover || !bill) { callback(); return; }
   const maxDim = Math.max(window.innerWidth, window.innerHeight) * 2.4;
 
+  gsap.killTweensOf([cover, bill]);
   gsap.set(cover, { left: cx, top: cy, width: 20, height: 20, scale: 0 });
   gsap.set(bill, { left: cx, top: cy, opacity: 0, scale: 0.3, rotate: -8 });
 
@@ -432,6 +434,7 @@ function transizioneBanconota(originEl, callback) {
 let allUscite = [], allLotti = [], allSoccide = [], allTrasferimenti = [], allIngressi = [];
 let filtroMese = 'tutti';
 let filtroMeseTrasf = 'tutti';
+let filtroTipoTrasf = 'tutti';
 let filtroSoccida = 'tutte';
 let filtroDaFatturare = false;
 const DA_FATTURARE_DA = '2026-07-01';
@@ -465,6 +468,7 @@ async function loadAll() {
   buildSoccidaSelect();
   render();
   buildChipsTrasf();
+  buildChipsTrasfTipo();
   renderTrasf();
 }
 
@@ -800,6 +804,25 @@ function buildChipsTrasf() {
   document.getElementById('chips-trasf').innerHTML = html;
 }
 
+function buildChipsTrasfTipo() {
+  const opts = [
+    ['tutti', 'Tutti'],
+    ['TRASFERIMENTO', 'Trasferimenti'],
+    ['ACQUISTO', 'Acquisti'],
+    ['VENDITA', 'Vendite']
+  ];
+  document.getElementById('chips-trasf-tipo').innerHTML = opts.map(([val, label]) =>
+    `<div class="chip${filtroTipoTrasf === val ? ' active' : ''}" onclick="setFiltroTrasfTipo('${val}',this)">${label}</div>`
+  ).join('');
+}
+
+function setFiltroTrasfTipo(val, el) {
+  filtroTipoTrasf = val;
+  document.querySelectorAll('#chips-trasf-tipo .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderTrasf();
+}
+
 function setFiltroTrasf(val, el) {
   filtroMeseTrasf = val;
   document.querySelectorAll('#chips-trasf .chip').forEach(c => c.classList.remove('active'));
@@ -830,6 +853,7 @@ function renderTrasf() {
     })
     .sort((a,b) => b.data_trasferimento.localeCompare(a.data_trasferimento));
   if(filtroMeseTrasf !== 'tutti') lista = lista.filter(t => t.data_trasferimento.startsWith(filtroMeseTrasf));
+  if(filtroTipoTrasf !== 'tutti') lista = lista.filter(t => t.tipo === filtroTipoTrasf);
 
   const totCapi = lista.reduce((s,t) => s+(t.capi||0), 0);
   const totKg = lista.reduce((s,t) => s+(t.kg||0), 0);
@@ -1069,6 +1093,7 @@ function stampaTrasferimenti() {
       return !speculare;
     });
   if(filtroMeseTrasf !== 'tutti') lista = lista.filter(t => t.data_trasferimento.startsWith(filtroMeseTrasf));
+  if(filtroTipoTrasf !== 'tutti') lista = lista.filter(t => t.tipo === filtroTipoTrasf);
   lista.sort((a,b) => b.data_trasferimento.localeCompare(a.data_trasferimento));
 
   const byMonth = {};
