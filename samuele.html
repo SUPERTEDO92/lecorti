@@ -24,9 +24,22 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; padding-bottom: 40px; }
 
-  .topbar { position: sticky; top: 0; z-index: 250; background: var(--text); color: #F5F3EE; padding: 12px 20px 10px; }
+  .topbar { position: sticky; top: 0; z-index: 250; background: var(--text); color: #F5F3EE; }
+  .topbar-title { padding: 12px 20px 8px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
   .topbar-logo { font-family: var(--mono); font-size: 15px; font-weight: 500; letter-spacing: .1em; }
-  .topbar-date { font-size: 11px; color: #888; font-family: var(--mono); margin-top: 2px; }
+  .topbar-date { font-size: 11px; color: #888; font-family: var(--mono); }
+  .topbar-menu-btn {
+    background: rgba(255,255,255,.08); border: 0.5px solid rgba(255,255,255,.18);
+    color: #F5F3EE; font-family: var(--mono); font-size: 12px;
+    padding: 5px 12px; border-radius: 20px; cursor: pointer;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .topbar-menu-btn .chev { display:inline-block; transition: transform .25s ease; font-size: 9px; }
+  .topbar-menu-btn.open .chev { transform: rotate(180deg); }
+  .topbar-nav { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 20px 12px; max-height: 200px; overflow: hidden; transition: max-height .25s ease, padding .25s ease, opacity .2s ease; opacity: 1; }
+  .topbar-nav.collapsed { max-height: 0; padding-top: 0; padding-bottom: 0; opacity: 0; }
+  .nav-btn { background: rgba(255,255,255,.06); border: 0.5px solid rgba(255,255,255,.14); color: #D8D4CB; font-family: var(--font); font-size: 12.5px; font-weight: 500; padding: 7px 13px; border-radius: 20px; cursor: pointer; }
+  .nav-btn.active { background: #F5F3EE; color: var(--text); border-color: #F5F3EE; }
 
   .container { max-width: 480px; margin: 0 auto; padding: 14px 14px 0; }
 
@@ -141,8 +154,15 @@
 <img src="img/bg-home-piglets.jpg" alt="" style="position:fixed; inset:0; width:100%; height:100%; object-fit:cover; object-position:center center; opacity:.15; z-index:-2; pointer-events:none;">
 
 <div class="topbar">
-  <div class="topbar-logo">LE CORTI — SAMUELE</div>
-  <div class="topbar-date" id="topbar-date"></div>
+  <div class="topbar-title">
+    <span class="topbar-logo">LE CORTI — SAMUELE</span>
+    <button class="topbar-menu-btn" id="topbar-menu-btn" onclick="toggleTopbarNav()">Menu <span class="chev">▾</span></button>
+    <span class="topbar-date" id="topbar-date"></span>
+  </div>
+  <div class="topbar-nav collapsed" id="topbar-nav">
+    <button class="nav-btn active" id="nav-soccide" onclick="setNav('soccide'); renderLista();">Soccide</button>
+    <button class="nav-btn" id="nav-macelli" onclick="setNav('macelli'); renderRubricaMacelli();">🏭 Macelli</button>
+  </div>
 </div>
 
 <div class="container">
@@ -160,6 +180,38 @@ const PIG_SVG = '<svg viewBox="0 0 100 70" xmlns="http://www.w3.org/2000/svg" st
 
 let allSoccide = [], allLotti = [], allUscite = [], allMortalita = [], allIngressi = [];
 let soccidaAttiva = null;
+
+// ── Rubrica macelli (sola lettura, solo slaughterhouse, niente allevamenti/fornitori) ──
+const macelliRubrica = [
+  { nome: 'ANNONI S.p.A.', indirizzo: 'Località Madonna dei Prati — Busseto (PR)', cod_asl: 'Cod. CE IT404M' },
+  { nome: 'GHINZELLI SRL', indirizzo: 'Via Primo Maggio, 28 — 46019 Viadana (MN)', cod_asl: 'Cod. CE IT544M' },
+  { nome: 'OPAS Alimentare Srl', indirizzo: 'Via per Guastalla, 21 — Migliarina di Carpi (MO)', cod_asl: 'Cod. CE IT791M' },
+];
+
+let navAttiva = 'soccide';
+function setNav(n) {
+  navAttiva = n;
+  document.getElementById('nav-soccide').classList.toggle('active', n === 'soccide');
+  document.getElementById('nav-macelli').classList.toggle('active', n === 'macelli');
+}
+function toggleTopbarNav() {
+  const nav = document.getElementById('topbar-nav');
+  const btn = document.getElementById('topbar-menu-btn');
+  const open = nav.classList.toggle('collapsed') === false;
+  btn.classList.toggle('open', open);
+}
+function renderRubricaMacelli() {
+  transizioneMandria(() => {
+    soccidaAttiva = null;
+    const html = `<div class="soccide-list">${macelliRubrica.map(m => `
+      <div style="background:#FFF;border:0.5px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;">
+        <div style="font-size:15px;font-weight:600;">${m.nome}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px;margin-bottom:10px;">${m.indirizzo}</div>
+        ${m.cod_asl ? `<div style="display:inline-flex;align-items:center;gap:6px;background:var(--bg2);border-radius:20px;padding:4px 10px;font-size:11px;"><span style="color:var(--text3);">Macello</span><span style="font-family:var(--mono);font-weight:500;">${m.cod_asl}</span></div>` : ''}
+      </div>`).join('')}</div>`;
+    document.getElementById('content').innerHTML = html;
+  });
+}
 
 document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('it-IT');
 
