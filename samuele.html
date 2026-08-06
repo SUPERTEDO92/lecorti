@@ -209,14 +209,30 @@ function toggleTopbarNav() {
 function renderRubricaMacelli() {
   transizioneMandria(() => {
     soccidaAttiva = null;
-    const html = `<div class="soccide-list">${macelliRubrica.map(m => `
-      <div style="background:#FFF;border:0.5px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;">
-        <div style="font-size:15px;font-weight:600;">${m.nome}</div>
-        <div style="font-size:12px;color:var(--text2);margin-top:2px;margin-bottom:10px;">${m.indirizzo}</div>
-        ${m.cod_asl ? `<div style="display:inline-flex;align-items:center;gap:6px;background:var(--bg2);border-radius:20px;padding:4px 10px;font-size:11px;"><span style="color:var(--text3);">Macello</span><span style="font-family:var(--mono);font-weight:500;">${m.cod_asl}</span></div>` : ''}
-      </div>`).join('')}</div>`;
+    const html = `<div style="margin-bottom:12px;">
+      <input type="text" id="mac-cerca" placeholder="🔍 Cerca per nome, indirizzo, codice..." oninput="macFiltra()" style="width:100%;padding:9px 12px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;">
+    </div>
+    <div class="soccide-list" id="mac-list"></div>`;
     document.getElementById('content').innerHTML = html;
+    renderMacelliCards(macelliRubrica);
   });
+}
+function renderMacelliCards(lista) {
+  document.getElementById('mac-list').innerHTML = lista.length ? lista.map(m => `
+    <div style="background:#FFF;border:0.5px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;">
+      <div style="font-size:15px;font-weight:600;">${m.nome}</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:2px;margin-bottom:10px;">${m.indirizzo}</div>
+      ${m.cod_asl ? `<div style="display:inline-flex;align-items:center;gap:6px;background:var(--bg2);border-radius:20px;padding:4px 10px;font-size:11px;"><span style="color:var(--text3);">Macello</span><span style="font-family:var(--mono);font-weight:500;">${m.cod_asl}</span></div>` : ''}
+    </div>`).join('') : `<div class="empty">Nessun macello trovato.</div>`;
+}
+function macFiltra() {
+  const q = document.getElementById('mac-cerca').value.toLowerCase();
+  if(!q) { renderMacelliCards(macelliRubrica); return; }
+  renderMacelliCards(macelliRubrica.filter(m =>
+    m.nome.toLowerCase().includes(q) ||
+    m.indirizzo.toLowerCase().includes(q) ||
+    (m.cod_asl || '').toLowerCase().includes(q)
+  ));
 }
 
 document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('it-IT');
