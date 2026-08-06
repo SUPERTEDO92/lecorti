@@ -1169,6 +1169,7 @@
     </div>
   </div>
   <div class="filter-bar" id="trasf-filters"></div>
+  <div class="filter-bar" id="trasf-tipo-filters"></div>
   <div class="storico-container" id="trasf-list">
     <div class="loading">Caricamento...</div>
   </div>
@@ -2861,6 +2862,26 @@ function stampaTrasferimenti() {
 }
 
 let trasfFilter = 'tutti';
+let trasfTipoFilter = 'tutti';
+
+function buildTrasfTipoFilters() {
+  const opts = [
+    ['tutti', 'Tutti'],
+    ['TRASFERIMENTO', 'Trasferimenti'],
+    ['ACQUISTO', 'Acquisti'],
+    ['VENDITA', 'Vendite']
+  ];
+  document.getElementById('trasf-tipo-filters').innerHTML = opts.map(([val, label]) =>
+    `<button class="filter-chip${trasfTipoFilter === val ? ' active' : ''}" onclick="setTrasfTipoFilter('${val}',this)">${label}</button>`
+  ).join('');
+}
+
+function setTrasfTipoFilter(val, el) {
+  trasfTipoFilter = val;
+  document.querySelectorAll('#trasf-tipo-filters .filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderTrasferimenti();
+}
 
 function buildTrasfFilters() {
   const mesi = [...new Set(allTrasferimenti.map(t => t.data_trasferimento?.substring(0,7)).filter(Boolean))].sort().reverse();
@@ -2904,6 +2925,7 @@ function renderTrasferimenti() {
     })
     .sort((a,b) => b.data_trasferimento.localeCompare(a.data_trasferimento));
   if(trasfFilter !== 'tutti') lista = lista.filter(t => t.data_trasferimento.startsWith(trasfFilter));
+  if(trasfTipoFilter !== 'tutti') lista = lista.filter(t => t.tipo === trasfTipoFilter);
 
   const byMonth = {};
   lista.forEach(t => {
@@ -2987,7 +3009,8 @@ function renderTrasferimenti() {
   });
 
   buildTrasfFilters();
-  document.getElementById('trasf-list').innerHTML = html;
+  buildTrasfTipoFilters();
+  document.getElementById('trasf-list').innerHTML = html || `<div class="empty">Nessun movimento per questo filtro.</div>`;
 }
 
 // ── COSTO ACQUISTO / PREZZO VENDITA (ingresso/uscita) ──
