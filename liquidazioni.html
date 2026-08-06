@@ -79,11 +79,12 @@
     to   { --wipe: 145%; }
   }
   .tab-pagina.incoming {
-    position: fixed; inset: 0;
+    position: fixed; top: 0; bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 100%; max-width: 680px;
     overflow-y: auto;
     background: var(--bg);
     z-index: 200;
-    max-width: none;
     margin: 0;
     padding: 20px 16px 40px;
   }
