@@ -174,6 +174,12 @@
   <div id="referti-content"><div class="loading">Caricamento...</div></div>
 </div>
 
+<!-- NOTE VETERINARIO (elenco + inserimento) -->
+<div class="page" id="page-note">
+  <img src="img/bg-home-piglets.jpg" alt="" class="bg-hero">
+  <div id="note-content"><div class="loading">Caricamento...</div></div>
+</div>
+
 <!-- MODALE MORTALITÀ — identica a index.html (unica cosa scrivibile) -->
 <div id="modal-mort" class="modal-overlay">
   <div id="modal-mort-panel" style="position:relative;overflow:visible;background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;">
@@ -253,6 +259,8 @@ let currentPage = 'home';
 let currentDetailSocId = null;
 let _glSlot = null;
 let _refertiTornaFn = () => showPage('home');
+let _noteTornaFn = () => showPage('home');
+let currentNoteLottoId = null;
 
 document.getElementById('today-date').textContent = new Date().toLocaleDateString('it-IT', {day:'2-digit',month:'2-digit',year:'numeric'});
 
@@ -338,7 +346,7 @@ function showPage(name, arg) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('visible'));
   document.getElementById(`page-${name}`).classList.add('visible');
   currentPage = name;
-  document.getElementById('global-back-btn').style.display = ['home','detail','referti'].includes(name) ? 'none' : 'flex';
+  document.getElementById('global-back-btn').style.display = ['home','detail','referti','note'].includes(name) ? 'none' : 'flex';
   if(name === 'home') renderHome();
   if(name === 'girolucrezia') renderGiroLucrezia();
   if(name === 'detail' && arg) { currentDetailSocId = arg; renderDetail(arg); }
@@ -348,6 +356,7 @@ function showPage(name, arg) {
 function refreshCurrentView() {
   if(currentPage === 'detail' && currentDetailSocId) renderDetail(currentDetailSocId);
   else if(currentPage === 'girolucrezia') renderGiroLucrezia();
+  else if(currentPage === 'note' && currentNoteLottoId) renderNote(currentNoteLottoId);
 }
 
 // ── HOME ──
@@ -612,7 +621,7 @@ function renderGiroLucreziaSlot(nomeSito) {
       <button onclick="apriReferti(${lotto.id}, () => { _glSlot='${nomeSito}'; showPage('girolucrezia'); })" style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg2);color:var(--text2);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
         Referti${sanLotto.length ? ' ('+sanLotto.length+')' : ''}
       </button>
-      <button onclick="apriInserisciNota(${lotto.id})" style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--accent);background:var(--amber-bg);color:var(--amber);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
+      <button onclick="apriNote(${lotto.id}, () => { _glSlot='${nomeSito}'; showPage('girolucrezia'); })" style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--accent);background:var(--amber-bg);color:var(--amber);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
         Note${noteLotto.length ? ' ('+noteLotto.length+')' : ''}
       </button>
     </div>`;
@@ -721,7 +730,7 @@ function renderDetail(socId) {
       <button onclick="apriReferti(${lotto.id}, () => showPage('detail', ${soc.id}))" style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg2);color:var(--text2);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
         Referti${sanLotto.length ? ' ('+sanLotto.length+')' : ''}
       </button>
-      <button onclick="apriInserisciNota(${lotto.id})" style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--accent);background:var(--amber-bg);color:var(--amber);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
+      <button onclick="apriNote(${lotto.id}, () => showPage('detail', ${soc.id}))" style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--accent);background:var(--amber-bg);color:var(--amber);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
         Note${noteLotto.length ? ' ('+noteLotto.length+')' : ''}
       </button>
     </div>`;
@@ -771,6 +780,51 @@ function renderReferti(lottoId) {
   }
 
   document.getElementById('referti-content').innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════════
+// NOTE VETERINARIO — pagina elenco (come Referti) + bottone fisso
+// "+ Inserisci nota" in alto che apre la tendina di inserimento
+// ══════════════════════════════════════════════════════════════
+function apriNote(lottoId, tornaFn) {
+  _noteTornaFn = tornaFn || (() => showPage('home'));
+  currentNoteLottoId = lottoId;
+  showPage('note', lottoId);
+  renderNote(lottoId);
+}
+
+function renderNote(lottoId) {
+  currentNoteLottoId = lottoId;
+  const lotto = allLotti.find(l => l.id === lottoId);
+  const soc = lotto ? allSoccide.find(s => s.id === lotto.soccida_id) : null;
+  const note = (allNoteVet||[]).filter(n => n.lotto_id === lottoId).sort((a,b) => b.data_nota.localeCompare(a.data_nota));
+
+  let html = `<button class="back-btn" onclick="_noteTornaFn()" style="display:flex;margin:0 0 12px;">← Indietro</button>`;
+  html += `<div class="izs-header" style="background:var(--amber);">
+    <div class="izs-title">Note</div>
+    <div class="izs-sub">${soc?.nome || '—'} · Lotto ${lotto?.codice_banda ? lotto.codice_banda + ' · ' : ''}${lotto?.codice || '—'}</div>
+  </div>`;
+
+  html += `<button onclick="apriInserisciNota(${lottoId})" style="width:100%;padding:11px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-bottom:14px;">
+    + Inserisci nota
+  </button>`;
+
+  if(note.length) {
+    html += note.map(n => `
+      <div class="referto-card">
+        <div class="referto-head" style="background:var(--amber-bg);border-bottom:0.5px solid #F0DC8A;">
+          <span class="referto-data" style="color:var(--amber);">${fmtDateFull(n.data_nota)}</span>
+          <span class="referto-lotto">Lotto ${lotto?.codice || '—'}</span>
+        </div>
+        <div class="referto-body">
+          <div style="font-size:13px;color:var(--text);white-space:pre-wrap;">${n.testo}</div>
+        </div>
+      </div>`).join('');
+  } else {
+    html += `<div class="referto-empty">Nessuna nota registrata per questo lotto.</div>`;
+  }
+
+  document.getElementById('note-content').innerHTML = html;
 }
 
 // ══════════════════════════════════════════════════════════════
