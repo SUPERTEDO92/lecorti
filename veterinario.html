@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Le Corti — Veterinario</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Veterinario">
+<meta name="theme-color" content="#1A1A18">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  :root {
+    --bg: #F5F3EE;
+    --bg2: #EDEAE3;
+    --bg3: #E3DFD6;
+    --text: #1A1A18;
+    --text2: #6B6B66;
+    --text3: #9C9C96;
+    --accent: #C17B2A;
+    --accent2: #E8A84A;
+    --green: #2A7A4A;
+    --green-bg: #E8F5EE;
+    --amber: #9A6010;
+    --amber-bg: #FDF3E0;
+    --red: #A03030;
+    --red-bg: #FCEAEA;
+    --border: #D4D0C8;
+    --border2: #C4C0B8;
+    --font: 'IBM Plex Sans', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+    --radius: 6px;
+    --radius-lg: 10px;
+    --shadow-sm: 0 1px 2px rgba(26,26,24,.05), 0 1px 1px rgba(26,26,24,.03);
+    --shadow-md: 0 3px 10px rgba(26,26,24,.07), 0 1px 3px rgba(26,26,24,.05);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; overflow-anchor: none; }
+  html { overflow-anchor: none; }
+
+  /* TOPBAR — identico a index.html */
+  .topbar { position: sticky; top: 0; z-index: 250; background: var(--text); color: #F5F3EE; overflow-anchor: none; }
+  .topbar-title { padding: 12px 20px 8px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .topbar-logo { font-family: var(--mono); font-size: 15px; font-weight: 500; letter-spacing: .1em; }
+  .topbar-date { font-size: 11px; color: #888; font-family: var(--mono); }
+  .topbar-menu-btn { background: rgba(255,255,255,.08); border: 0.5px solid rgba(255,255,255,.18); color: #F5F3EE; font-family: var(--mono); font-size: 12px; padding: 5px 12px; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+  .topbar-menu-btn .chev { display:inline-block; transition: transform .25s ease; font-size: 9px; }
+  .topbar-menu-btn.open .chev { transform: rotate(180deg); }
+  .topbar-nav { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 12px 8px; border-top: 0.5px solid rgba(255,255,255,.08); overflow: hidden; overflow-anchor: none; max-height: 130px; opacity: 1; transition: max-height .55s cubic-bezier(.4,0,.2,1), opacity .45s ease, padding .55s cubic-bezier(.4,0,.2,1), border-color .55s ease; }
+  .topbar-nav.collapsed { max-height: 0; opacity: 0; padding-top: 0; padding-bottom: 0; border-top-color: transparent; }
+  .nav-btn { flex: 1 1 30%; padding: 7px 4px; border-radius: var(--radius); border: none; font-size: 13px; font-family: var(--font); cursor: pointer; text-align: center; background: transparent; color: #888; transition: all .15s; }
+  .nav-btn:hover { color: #FFF; background: rgba(255,255,255,.1); }
+  .nav-btn.active { background: rgba(255,255,255,.15); color: #FFF; }
+
+  /* LAYOUT — identico a index.html */
+  .page { display: none; padding: 20px; max-width: 480px; margin: 0 auto; overflow-anchor: none; }
+  .page.visible { display: block; animation: pageFadeSoft 2.2s ease; }
+  @keyframes pageFadeSoft { from { opacity: 0; } to { opacity: 1; } }
+
+  /* CARDS SOCCIDE — identiche a index.html */
+  .soccide-list { display: flex; flex-direction: column; gap: 2px; margin-top: 2px; }
+  .soccida-card { background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 12px 14px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: all .12s; box-shadow: var(--shadow-sm); }
+  .soccida-card:hover { border-color: var(--border2); background: var(--bg2); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot-green { background: var(--green); }
+  .dot-amber { background: var(--accent); }
+  .dot-gray { background: var(--text3); }
+  .soc-main { flex: 1; min-width: 0; }
+  .soc-nome { font-size: 13px; font-weight: 500; }
+  .soc-meta { font-size: 11px; color: var(--text2); margin-top: 1px; }
+  .soc-badge { font-size: 10px; font-family: var(--mono); padding: 2px 7px; border-radius: 20px; font-weight: 500; }
+  .badge-green { background: var(--green-bg); color: var(--green); }
+  .badge-amber { background: var(--amber-bg); color: var(--amber); }
+  .badge-gray { background: var(--bg3); color: var(--text2); }
+  .soc-arrow { color: var(--text3); font-size: 16px; }
+
+  .section-sep { font-size: 10px; font-family: var(--mono); font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: .1em; padding: 16px 0 2px; }
+
+  /* DETAIL PAGE — identico a index.html */
+  .back-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #FFF; cursor: pointer; background: #2A6B8A; border: none; font-family: var(--font); padding: 6px 12px; margin: -22px 0 6px; border-radius: var(--radius); }
+  .back-btn:hover, .back-btn:active { opacity: .85; }
+  .detail-sticky-wrap { position: static; z-index: 90; margin: 0 0 8px; padding-top: 4px; padding-bottom: 2px; }
+  #page-detail { padding-top: 2px; }
+  .detail-header { background: var(--text); color: #F5F3EE; border-radius: var(--radius-lg); padding: 10px 16px; margin-bottom: 0; box-shadow: var(--shadow-md); }
+  .detail-title { font-size: 17px; font-weight: 500; font-family: var(--mono); }
+
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px; }
+  .stat-box { background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 10px 12px; box-shadow: var(--shadow-sm); }
+  .stat-box.hl { background: var(--green-bg); border-color: #B8DECA; box-shadow: var(--shadow-sm); }
+  .stat-label { font-size: 10px; color: var(--text2); font-family: var(--mono); text-transform: uppercase; letter-spacing: .05em; }
+  .stat-val { font-size: 20px; font-weight: 500; color: var(--text); margin-top: 2px; }
+  .stat-val.green { color: var(--green); }
+  .stat-unit { font-size: 11px; color: var(--text2); font-weight: 300; }
+
+  .loading { text-align: center; padding: 40px 20px; color: var(--text2); font-size: 13px; font-family: var(--mono); }
+  .empty { text-align: center; padding: 30px; color: var(--text3); font-size: 12px; }
+
+  .field-label { font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:4px; }
+  .input-std { width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg); }
+  .bg-hero { position:fixed; inset:0; width:100%; height:100%; object-fit:cover; object-position:center center; opacity:.35; z-index:-2; pointer-events:none; }
+  .grid-2 { display:grid;grid-template-columns:1fr 1fr;gap:8px; }
+  .modal-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center; }
+
+  /* REFERTI IZS — identico a index.html */
+  .izs-header { background: var(--red); color: #FFF; border-radius: var(--radius-lg); padding: 14px 16px; margin-bottom: 12px; box-shadow: var(--shadow-md); }
+  .izs-title { font-size: 15px; font-weight: 500; font-family: var(--mono); }
+  .izs-sub { font-size: 11px; color: rgba(255,255,255,.65); margin-top: 3px; }
+  .referto-card { background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 8px; box-shadow: var(--shadow-sm); }
+  .referto-head { padding: 8px 14px; background: #FEF2F2; border-bottom: 0.5px solid #FCCFCF; display: flex; justify-content: space-between; align-items: center; }
+  .referto-data { font-size: 11px; font-family: var(--mono); color: var(--red); font-weight: 500; }
+  .referto-lotto { font-size: 10px; font-family: var(--mono); color: var(--text2); background: var(--bg2); padding: 2px 7px; border-radius: 10px; }
+  .referto-body { padding: 10px 14px; }
+  .referto-patologia { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+  .referto-note { font-size: 11px; color: var(--text2); }
+  .referto-empty { text-align: center; padding: 32px 20px; color: var(--text3); font-size: 12px; background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); }
+
+  /* MANDRIA DI MAIALINI — identica a index.html (GSAP) */
+  .piglet-herd { position: fixed; inset: 0; z-index: 300; pointer-events: none; }
+  .piglet-herd span { position: absolute; left: -80px; top: 0; will-change: transform, opacity; }
+</style>
+</head>
+<body>
+
+<div class="piglet-herd" id="piglet-herd"></div>
+
+<div class="topbar">
+  <div class="topbar-title">
+    <span class="topbar-logo">LE CORTI — VETERINARIO</span>
+    <button class="topbar-menu-btn" id="topbar-menu-btn" onclick="toggleTopbarNav()">Menu <span class="chev">▾</span></button>
+    <span class="topbar-date" id="today-date"></span>
+  </div>
+  <div class="topbar-nav collapsed" id="topbar-nav">
+    <button class="nav-btn active" onclick="showPage('home')">🐷 Soccide</button>
+  </div>
+</div>
+
+<button class="back-btn" id="global-back-btn" onclick="showPage('home')" style="display:none;margin:6px 14px 4px;">← Soccide</button>
+
+<!-- HOME -->
+<div class="page visible" id="page-home">
+  <img src="img/bg-home-piglets.jpg" alt="" style="position:fixed; inset:0; width:100%; height:100%; object-fit:cover; object-position:center center; opacity:.15; z-index:-2; pointer-events:none;">
+  <div style="margin:-20px -20px 0; height:170px; position:relative; overflow:hidden;">
+    <img src="img/bg-home-piglets.jpg" alt="" style="width:100%; height:100%; object-fit:cover; object-position:center 30%; display:block;">
+    <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(26,26,24,.06) 0%, rgba(26,26,24,.04) 62%, var(--bg) 97%);"></div>
+  </div>
+  <div id="soccide-list-container" style="position:relative; z-index:1; margin-top:-12px;">
+    <div class="loading">Caricamento...</div>
+  </div>
+</div>
+
+<!-- GIRO LUCREZIA -->
+<div class="page" id="page-girolucrezia">
+  <img src="img/bg-home-piglets.jpg" alt="" class="bg-hero">
+  <div style="padding:14px;">
+    <div id="girolucrezia-content"><div class="loading">Caricamento...</div></div>
+  </div>
+</div>
+
+<!-- DETAIL (VEZZOLI / SEMENZA) -->
+<div class="page" id="page-detail">
+  <img src="img/bg-home-piglets.jpg" alt="" class="bg-hero">
+  <div class="detail-sticky-wrap">
+    <button class="back-btn" onclick="showPage('home')" style="margin:0 0 6px;">← Soccide</button>
+    <div id="detail-header-sticky"></div>
+  </div>
+  <div id="detail-content"><div class="loading">Caricamento...</div></div>
+</div>
+
+<!-- REFERTI IZS (sola lettura) -->
+<div class="page" id="page-referti">
+  <img src="img/bg-home-piglets.jpg" alt="" class="bg-hero">
+  <div id="referti-content"><div class="loading">Caricamento...</div></div>
+</div>
+
+<!-- MODALE MORTALITÀ — identica a index.html (unica cosa scrivibile) -->
+<div id="modal-mort" class="modal-overlay">
+  <div id="modal-mort-panel" style="position:relative;overflow:visible;background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;">
+    <div style="position:absolute;top:-138px;left:50%;transform:translateX(-50%);font-size:126px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.3));pointer-events:none;">💀</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-size:14px;font-weight:500;font-family:var(--mono);">Registra mortalità</div>
+      <button onclick="chiudiMortalita()" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
+    </div>
+    <div id="modal-mort-info" style="font-size:11px;color:var(--text2);background:var(--bg2);padding:8px 10px;border-radius:var(--radius);margin-bottom:14px;font-family:var(--mono);"></div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div class="grid-2">
+        <div>
+          <div class="field-label">DATA</div>
+          <input type="date" id="mort-data" class="input-std">
+        </div>
+        <div>
+          <div class="field-label">N° CAPI MORTI</div>
+          <input type="number" id="mort-capi" placeholder="es. 2" min="0" class="input-std">
+        </div>
+      </div>
+      <div>
+        <div class="field-label">TRATTAMENTO (opzionale)</div>
+        <input type="text" id="mort-trattamento" placeholder="es. AMO, STR, FLO..." class="input-std">
+      </div>
+      <div>
+        <div class="field-label">NOTE (opzionale)</div>
+        <input type="text" id="mort-note" placeholder="es. 15 scarti arrivo" class="input-std">
+      </div>
+    </div>
+    <button onclick="salvaMortalita()" style="width:100%;padding:13px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:16px;">
+      ✓ Salva
+    </button>
+  </div>
+</div>
+
+<script src="lecorti-shared.js"></script>
+<script>
+// ── Soccide visibili a questa pagina: le tre del Giro Lucrezia + Vezzoli e Semenza
+// (Vezzoli è ingrasso "normale" ma il veterinario segue anche quell'allevamento) ──
+const GL_SVEZZAMENTO = 'LUCREZIA SVEZZAMENTO';
+const GL_ACQUANEGRA = 'ACQUANEGRA';
+const GL_INGRASSO = 'LUCREZIA INGRASSO';
+const GL_NOMI = [GL_SVEZZAMENTO, GL_ACQUANEGRA, GL_INGRASSO];
+const ALTRE_SOCCIDE = ['VEZZOLI', 'SEMENZA'];
+const SOCCIDE_MOSTRATE = [...GL_NOMI, ...ALTRE_SOCCIDE];
+const GL_GG_SVEZZAMENTO = 60;
+const GL_GG_LAVAGGIO = 6;
+const GL_GG_CICLO_BANDA = 21;
+
+let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [], allMortalita = [], allSanitario = [], allIngressi = [];
+let currentPage = 'home';
+let currentDetailSocId = null;
+let _glSlot = null;
+let _refertiTornaFn = () => showPage('home');
+
+document.getElementById('today-date').textContent = new Date().toLocaleDateString('it-IT', {day:'2-digit',month:'2-digit',year:'numeric'});
+
+function toggleTopbarNav() {
+  const nav = document.getElementById('topbar-nav');
+  const btn = document.getElementById('topbar-menu-btn');
+  const open = nav.classList.toggle('collapsed') === false;
+  btn.classList.toggle('open', open);
+}
+
+async function loadAll() {
+  allSoccide = await sb('soccide', `?nome=in.(${SOCCIDE_MOSTRATE.map(n=>encodeURIComponent(n)).join(',')})`);
+  const socIds = allSoccide.map(s => s.id);
+  if(!socIds.length) {
+    document.getElementById('soccide-list-container').innerHTML = '<div class="empty">Nessuna soccida trovata.</div>';
+    return;
+  }
+  allLotti = await sb('lotti', `?soccida_id=in.(${socIds.join(',')})&attivo=eq.true&order=data_ingresso.asc`);
+  const lottiIds = allLotti.map(l => l.id);
+  [allUscite, allTrasferimenti, allMortalita, allSanitario, allIngressi] = await Promise.all([
+    lottiIds.length ? sb('uscite', `?lotto_id=in.(${lottiIds.join(',')})`) : [],
+    lottiIds.length ? sb('trasferimenti', `?lotto_id=in.(${lottiIds.join(',')})`) : [],
+    lottiIds.length ? sb('mortalita', `?lotto_id=in.(${lottiIds.join(',')})&order=data_evento.desc`) : [],
+    lottiIds.length ? sb('sanitario', `?lotto_id=in.(${lottiIds.join(',')})&order=data_referto.desc`) : [],
+    lottiIds.length ? sb('lotti_ingressi', `?lotto_id=in.(${lottiIds.join(',')})&order=data_ingresso.asc`) : [],
+  ]);
+  renderHome();
+}
+
+// --- Mandria di maialini — identica a index.html (GSAP) ---
+const PIG_SVG = '<svg viewBox="0 0 100 70" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;"><ellipse cx="52" cy="40" rx="34" ry="24" fill="#F2A6A0"/><ellipse cx="20" cy="24" rx="10" ry="9" fill="#F2A6A0"/><ellipse cx="17" cy="21" rx="4.5" ry="4" fill="#D97D78"/><circle cx="34" cy="30" r="3" fill="#2A2622"/><ellipse cx="14" cy="42" rx="15" ry="13" fill="#EF9791"/><ellipse cx="9" cy="40" rx="3" ry="4" fill="#2A2622"/><ellipse cx="9" cy="46" rx="3" ry="4" fill="#2A2622"/><path d="M84 30 Q94 24 90 34 Q96 38 86 38" fill="none" stroke="#EF9791" stroke-width="4" stroke-linecap="round"/><ellipse cx="46" cy="60" rx="6" ry="4" fill="#D97D78"/><ellipse cx="66" cy="60" rx="6" ry="4" fill="#D97D78"/></svg>';
+
+function animazionePigletti(callback, fallbackCallback) {
+  try {
+    const herd = document.getElementById('piglet-herd');
+    if(!herd || typeof gsap === 'undefined') { (fallbackCallback || callback)(); return; }
+    gsap.killTweensOf(herd.querySelectorAll('span'));
+    const CONFIG = [
+      { top: 40, size: 128, star: true },
+      { top: 56, size: 92,  star: true },
+      { top: 63, size: 80,  star: true },
+      { top: 22, size: 46,  star: false },
+      { top: 80, size: 40,  star: false },
+    ];
+    let html = '';
+    CONFIG.forEach(c => { html += `<span style="top:${c.top}%;width:${c.size}px;height:${Math.round(c.size*0.7)}px;${c.star ? '' : 'opacity:.5;'}">${PIG_SVG}</span>`; });
+    herd.innerHTML = html;
+    const piglets = Array.from(herd.querySelectorAll('span'));
+    const runX = window.innerWidth + 200;
+    let maxEnd = 0, starIdx = 0, extraIdx = 0;
+    piglets.forEach((p, i) => {
+      const isStar = CONFIG[i].star;
+      if(isStar) {
+        const delay = starIdx * 0.13;
+        const dur = 1.05 + starIdx * 0.18;
+        gsap.set(p, { x: 0, y: 0, scaleX: -1, opacity: 0 });
+        const tl = gsap.timeline({ delay });
+        tl.to(p, { opacity: 1, duration: 0.15, ease: 'power1.out' }, 0)
+          .to(p, { x: runX, duration: dur, ease: 'power1.inOut' }, 0)
+          .to(p, { y: -16, duration: dur / 9, ease: 'sine.inOut', yoyo: true, repeat: 8 }, 0)
+          .to(p, { opacity: 0, duration: 0.15, ease: 'power1.in' }, dur - 0.15);
+        maxEnd = Math.max(maxEnd, delay + dur); starIdx++;
+      } else {
+        const delay = 0.15 + extraIdx * 0.25;
+        const dur = 1.3;
+        gsap.set(p, { x: 0, scaleX: -1, opacity: 0 });
+        gsap.to(p, { opacity: 0.5, duration: 0.15, delay, ease: 'power1.out' });
+        gsap.to(p, { x: runX, duration: dur, delay, ease: 'power1.inOut' });
+        gsap.to(p, { opacity: 0, duration: 0.15, delay: delay + dur - 0.15, ease: 'power1.in' });
+        maxEnd = Math.max(maxEnd, delay + dur); extraIdx++;
+      }
+    });
+    setTimeout(() => { callback(); }, 320);
+    setTimeout(() => { herd.innerHTML = ''; }, (maxEnd + 0.25) * 1000);
+  } catch(err) {
+    (fallbackCallback || callback)();
+  }
+}
+
+// ── NAVIGAZIONE ──
+function showPage(name, arg) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('visible'));
+  document.getElementById(`page-${name}`).classList.add('visible');
+  currentPage = name;
+  document.getElementById('global-back-btn').style.display = ['home','detail','referti'].includes(name) ? 'none' : 'flex';
+  if(name === 'home') renderHome();
+  if(name === 'girolucrezia') renderGiroLucrezia();
+  if(name === 'detail' && arg) { currentDetailSocId = arg; renderDetail(arg); }
+  window.scrollTo(0,0);
+}
+
+function refreshCurrentView() {
+  if(currentPage === 'detail' && currentDetailSocId) renderDetail(currentDetailSocId);
+  else if(currentPage === 'girolucrezia') renderGiroLucrezia();
+}
+
+// ── HOME ──
+function renderHome() {
+  const container = document.getElementById('soccide-list-container');
+  const activeLotti = allLotti.filter(l => l.attivo);
+
+  let html = `<div class="section-sep">Scrofaia</div><div class="soccide-list">
+    <div class="soccida-card" onclick="apriGiroLucreziaConAnimazione()">
+      <div class="dot dot-green"></div>
+      <div class="soc-main">
+        <div class="soc-nome">🐷 Giro Lucrezia</div>
+        <div class="soc-meta">Bande tri-settimanali · svezzamento → ingrasso</div>
+      </div>
+      <span class="soc-arrow">&#8250;</span>
+    </div>
+  </div>`;
+
+  const altre = allSoccide.filter(s => ALTRE_SOCCIDE.includes(s.nome) && activeLotti.some(l => l.soccida_id === s.id));
+  if(altre.length) {
+    html += `<div class="section-sep">Altri allevamenti seguiti</div><div class="soccide-list">`;
+    html += altre.map(s => renderSoccidaCard(s, activeLotti)).join('');
+    html += `</div>`;
+  }
+  container.innerHTML = html;
+}
+
+function renderSoccidaCard(soc, activeLotti) {
+  const lotti = activeLotti.filter(l => l.soccida_id === soc.id);
+  if(!lotti.length) return '';
+  const totPresenti = lotti.reduce((tot, lotto) => tot + glCapiPresenti(lotto), 0);
+  const dot = totPresenti > 50 ? 'dot-green' : totPresenti > 10 ? 'dot-amber' : 'dot-gray';
+  const badge = totPresenti > 50 ? 'badge-green' : totPresenti > 0 ? 'badge-amber' : 'badge-gray';
+  const badgeText = totPresenti > 50 ? 'attivo' : totPresenti > 0 ? 'in uscita' : 'concluso';
+  const metaLotti = lotti.length > 1 ? `${lotti.length} lotti · ` : (lotti[0].codice + ' · ');
+  const lettere = [...new Set(lotti.map(l => l.lettera_dop).filter(Boolean))].join(', ');
+  return `<div class="soccida-card" onclick="apriSoccidaConAnimazione(${soc.id})">
+    <div class="dot ${dot}"></div>
+    <div class="soc-main">
+      <div class="soc-nome">${soc.nome}</div>
+      <div class="soc-meta">${metaLotti}${fmt(totPresenti)} capi${lettere ? ' · ' + lettere : ''}</div>
+    </div>
+    <span class="soc-badge ${badge}">${badgeText}</span>
+    <span class="soc-arrow">&#8250;</span>
+  </div>`;
+}
+
+function apriSoccidaConAnimazione(socId) {
+  animazionePigletti(() => { showPage('detail', socId); }, () => { showPage('detail', socId); });
+}
+
+// ── Capi presenti (stessa logica di index.html, niente prezzi coinvolti) ──
+function glCapiPresenti(lotto) {
+  const capiIng = (allIngressi||[]).filter(i => i.lotto_id === lotto.id);
+  const totIng = capiIng.length ? capiIng.reduce((s,i)=>s+(i.capi||0),0) : (lotto.capi_entrati||0);
+  const capiUsciti = allUscite.filter(u => u.lotto_id === lotto.id).reduce((s,u) => s+(u.capi||0), 0);
+  const capiMorti = allMortalita.filter(m => m.lotto_id === lotto.id).reduce((s,m) => s+(m.capi_morti||0), 0);
+  const capiTrasf = allTrasferimenti.filter(t => t.lotto_id === lotto.id && t.tipo !== 'ACQUISTO').reduce((s,t) => s+(t.capi||0), 0);
+  return totIng - capiUsciti - capiMorti - capiTrasf;
+}
+
+// ══════════════════════════════════════════════════════════════
+// GIRO LUCREZIA — stesso layout/logica di index.html (04/08/2026),
+// niente costo/valore banda: non concerne il veterinario.
+// ══════════════════════════════════════════════════════════════
+function glGruppiBande() {
+  const gruppi = {};
+  allLotti.filter(l => l.codice_banda).forEach(l => {
+    if(!gruppi[l.codice_banda]) gruppi[l.codice_banda] = [];
+    gruppi[l.codice_banda].push(l);
+  });
+  Object.values(gruppi).forEach(arr => arr.sort((a,b) => a.data_ingresso.localeCompare(b.data_ingresso)));
+  return gruppi;
+}
+
+function glSitoOccupato(nomeSito, dataRif) {
+  const soc = allSoccide.find(s => s.nome === nomeSito);
+  if(!soc) return { occupato:false, count:0 };
+  const rif = dataRif ? new Date(dataRif) : new Date();
+  const attivi = allLotti.filter(l => l.soccida_id === soc.id && l.attivo && l.codice_banda).filter(l => {
+    const ggPermanenza = Math.floor((rif - new Date(l.data_ingresso)) / 86400000);
+    return ggPermanenza < (GL_GG_SVEZZAMENTO + GL_GG_LAVAGGIO);
+  });
+  return { occupato: attivi.length > 0, count: attivi.length };
+}
+function glSuggerisciSito(dataRif) {
+  const luc = glSitoOccupato(GL_SVEZZAMENTO, dataRif);
+  if(!luc.occupato) return GL_SVEZZAMENTO;
+  const acq = glSitoOccupato(GL_ACQUANEGRA, dataRif);
+  if(acq.count < 2) return GL_ACQUANEGRA;
+  return GL_SVEZZAMENTO;
+}
+function glUltimaBandaInfo() {
+  const gruppi = glGruppiBande();
+  const codici = Object.keys(gruppi);
+  if(!codici.length) return null;
+  let migliore = null;
+  codici.forEach(codice => {
+    const primaFase = gruppi[codice][0];
+    if(!migliore || primaFase.data_ingresso > migliore.dataIngresso) migliore = { codice, dataIngresso: primaFase.data_ingresso };
+  });
+  return migliore;
+}
+
+function renderGiroLucrezia() {
+  if(_glSlot) { renderGiroLucreziaSlot(_glSlot); return; }
+  const container = document.getElementById('girolucrezia-content');
+
+  const ultima = glUltimaBandaInfo();
+  let reminderHtml;
+  if(ultima) {
+    const prox = new Date(ultima.dataIngresso);
+    prox.setDate(prox.getDate() + GL_GG_CICLO_BANDA);
+    const proxStr = prox.toISOString().slice(0,10);
+    const sito = glSuggerisciSito(proxStr);
+    const sitoLabel = sito === GL_SVEZZAMENTO ? 'Lucrezia (interno)' : 'Acquanegra';
+    const oggi = new Date(); oggi.setHours(0,0,0,0);
+    const scaduta = prox <= oggi;
+    reminderHtml = `<div style="background:${scaduta ? 'var(--red-bg)' : 'var(--amber-bg)'};border:0.5px solid ${scaduta ? 'var(--red)' : 'var(--accent)'};border-radius:12px;padding:18px;margin-bottom:16px;">
+      <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;color:${scaduta ? 'var(--red)' : 'var(--amber)'};margin-bottom:8px;">📅 Prossima banda</div>
+      <div style="font-size:25px;font-weight:600;margin-bottom:5px;">${fmtDate(proxStr)}</div>
+      <div style="font-size:21px;font-weight:600;color:${scaduta ? 'var(--red)' : 'var(--amber)'};">→ ${sitoLabel}</div>
+    </div>`;
+  } else {
+    reminderHtml = `<div class="empty" style="margin-bottom:16px;">Nessuna banda ancora registrata — nessun promemoria disponibile.</div>`;
+  }
+
+  const socLuc = allSoccide.find(s => s.nome === GL_SVEZZAMENTO);
+  const socAcq = allSoccide.find(s => s.nome === GL_ACQUANEGRA);
+  const socIng = allSoccide.find(s => s.nome === GL_INGRASSO);
+  const bandeLuc = socLuc ? allLotti.filter(l => l.soccida_id === socLuc.id && l.attivo && l.codice_banda) : [];
+  const bandeAcq = socAcq ? allLotti.filter(l => l.soccida_id === socAcq.id && l.attivo && l.codice_banda) : [];
+  const bandeIng = socIng ? allLotti.filter(l => l.soccida_id === socIng.id && l.attivo && l.codice_banda) : [];
+
+  const slotCard = (titolo, bande, nomeSito) => {
+    const occ = bande.length > 0;
+    const label = occ ? bande.map(b => `${b.codice_banda} · ${fmt(glCapiPresenti(b))} capi`).join(' · ') : 'Libero';
+    return `<div class="soccida-card" onclick="glApriSlotConAnimazione('${nomeSito}')">
+      <div class="dot ${occ ? 'dot-green' : 'dot-gray'}"></div>
+      <div class="soc-main">
+        <div class="soc-nome">${titolo}</div>
+        <div class="soc-meta">${label}</div>
+      </div>
+      <span class="soc-arrow">&#8250;</span>
+    </div>`;
+  };
+
+  let html = reminderHtml;
+  html += `<div class="section-sep">Slot svezzamento</div><div class="soccide-list">`;
+  html += slotCard('Lucrezia (interno)', bandeLuc, GL_SVEZZAMENTO);
+  html += slotCard('Acquanegra (max 2 bande)', bandeAcq, GL_ACQUANEGRA);
+  html += `</div>`;
+  html += `<div class="section-sep">Slot ingrasso</div><div class="soccide-list">`;
+  html += slotCard('Lucrezia (ingrasso)', bandeIng, GL_INGRASSO);
+  html += `</div>`;
+
+  container.innerHTML = html;
+}
+
+function apriGiroLucreziaConAnimazione() {
+  _glSlot = null;
+  animazionePigletti(() => { showPage('girolucrezia'); }, () => { showPage('girolucrezia'); });
+}
+function glApriSlot(nomeSito) { _glSlot = nomeSito; renderGiroLucreziaSlot(nomeSito); }
+function glApriSlotConAnimazione(nomeSito) {
+  animazionePigletti(() => { glApriSlot(nomeSito); }, () => { glApriSlot(nomeSito); });
+}
+function glChiudiSlot() { _glSlot = null; renderGiroLucrezia(); }
+
+function renderGiroLucreziaSlot(nomeSito) {
+  const container = document.getElementById('girolucrezia-content');
+  const soc = allSoccide.find(s => s.nome === nomeSito);
+  const label = nomeSito === GL_SVEZZAMENTO ? 'Lucrezia (interno)' : nomeSito === GL_INGRASSO ? 'Lucrezia (ingrasso)' : 'Acquanegra';
+  const bande = soc ? allLotti.filter(l => l.soccida_id === soc.id && l.attivo && l.codice_banda).sort((a,b) => a.data_ingresso.localeCompare(b.data_ingresso)) : [];
+
+  let html = `<button onclick="glChiudiSlot()" class="back-btn" style="display:flex;margin:0 0 12px;">← Giro Lucrezia</button>`;
+  html += `<div class="detail-header" style="margin-bottom:12px;"><div class="detail-title">${label}</div></div>`;
+  const labelGg = nomeSito === GL_INGRASSO ? 'Gg in ingrasso' : 'Gg in svezzamento';
+
+  if(!bande.length) {
+    html += `<div class="empty">Slot libero, nessuna banda presente.</div>`;
+    container.innerHTML = html;
+    return;
+  }
+
+  const oggi = new Date();
+  bande.forEach((lotto, idx) => {
+    if(idx > 0) html += `<div style="border-top:3px solid var(--text3);margin:22px 0;"></div>`;
+    const gg = Math.max(0, Math.floor((oggi - new Date(lotto.data_ingresso)) / 86400000));
+    const presenti = glCapiPresenti(lotto);
+    const pesoStimato = (lotto.media_ingresso != null && lotto.incremento_giornaliero)
+      ? Math.round(parseFloat(lotto.media_ingresso) + lotto.incremento_giornaliero * gg) : null;
+    const mortLotto = allMortalita.filter(m => m.lotto_id === lotto.id).sort((a,b) => a.data_evento.localeCompare(b.data_evento));
+    const sanLotto = allSanitario.filter(s => s.lotto_id === lotto.id);
+    const totMorti = mortLotto.reduce((s,m) => s+(m.capi_morti||0), 0);
+
+    html += `<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:17px;font-weight:600;font-family:var(--mono);display:flex;align-items:center;gap:8px;">
+          <span>${lotto.codice_banda} · lotto ${lotto.codice}</span>
+          ${lotto.ddt_ingresso_documento_id ? `<button onclick="apriDocumento(${lotto.ddt_ingresso_documento_id})" style="background:var(--green-bg);border:0.5px solid #B8DECA;border-radius:10px;padding:2px 9px;font-size:11px;font-weight:600;color:var(--green);cursor:pointer;font-family:var(--font);">📄 DDT</button>` : ''}
+        </div>
+        <div style="font-size:13px;color:var(--text2);margin-top:4px">${lotto.provenienza || ''}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:15px;font-weight:600;font-family:var(--mono);">${fmtDateFull(lotto.data_ingresso)}</div>
+        ${lotto.lettera_dop ? `<div style="font-size:13px;font-weight:700;color:var(--text);margin-top:2px;">LETTERA: ${lotto.lettera_dop}</div>` : ''}
+      </div>
+    </div>`;
+
+    // Incremento — sola lettura per il veterinario (niente modifica, niente prezzi)
+    html += `<div style="width:100%;margin-bottom:8px;padding:8px;background:var(--accent);color:#FFF;border-radius:var(--radius);font-size:12px;font-family:var(--mono);font-weight:500;">
+      Incremento: +${lotto.incremento_giornaliero ? lotto.incremento_giornaliero.toFixed(3) : '—'} kg/gg
+    </div>`;
+
+    html += `<div class="stat-grid" style="margin-bottom:10px;grid-template-columns:repeat(3,1fr);">
+      <div class="stat-box"><div class="stat-label">Capi entrati</div><div class="stat-val" style="font-size:18px">${fmt(lotto.capi_entrati)} <span class="stat-unit">capi</span></div></div>
+      <div class="stat-box hl"><div class="stat-label">Presenti</div><div class="stat-val green" style="font-size:18px">${fmt(presenti)} <span class="stat-unit">capi</span></div></div>
+      <div class="stat-box"><div class="stat-label">${labelGg}</div><div class="stat-val" style="font-size:18px">${gg} <span class="stat-unit">gg</span></div></div>
+      <div class="stat-box"><div class="stat-label">Peso arrivo</div><div class="stat-val" style="font-size:18px">${lotto.media_ingresso ? fmt(lotto.media_ingresso,1) : '—'} <span class="stat-unit">kg/capo</span></div></div>
+      <div class="stat-box"><div class="stat-label">Peso stimato oggi</div><div class="stat-val" style="font-size:18px">${pesoStimato ? pesoStimato : '—'} <span class="stat-unit">kg</span></div></div>
+      <div class="stat-box"><div class="stat-label">Mortalità</div><div class="stat-val" style="font-size:18px;color:${totMorti > 0 ? 'var(--red)' : 'inherit'}">${totMorti} <span class="stat-unit">capi</span></div>
+        ${lotto.capi_entrati ? `<div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:1px;">${fmt(totMorti/lotto.capi_entrati*100,2)}%</div>` : ''}
+      </div>
+    </div>`;
+
+    html += `<div style="display:flex;gap:4px;">
+      <button onclick="apriInserisciMortalita(${lotto.id})" style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--red);background:var(--red-bg);color:var(--red);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
+        + Mortalità${mortLotto.length ? ' ('+mortLotto.length+')' : ''}
+      </button>
+      <button onclick="apriReferti(${lotto.id}, () => { _glSlot='${nomeSito}'; showPage('girolucrezia'); })" style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg2);color:var(--text2);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
+        Referti${sanLotto.length ? ' ('+sanLotto.length+')' : ''}
+      </button>
+    </div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════════
+// DETAIL — VEZZOLI / SEMENZA (stesso header/stat-grid di renderDetail
+// di index.html, niente costo acquisto/uscite: non concerne il veterinario)
+// ══════════════════════════════════════════════════════════════
+function renderDetail(socId) {
+  const soc = allSoccide.find(s => s.id === socId);
+  const content = document.getElementById('detail-content');
+  if(!soc) { showPage('home'); return; }
+  const oggi = new Date();
+
+  document.getElementById('detail-header-sticky').innerHTML = `<div class="detail-header"><div class="detail-title">${soc.nome}</div></div>`;
+
+  const lotti = allLotti.filter(l => l.soccida_id === socId && l.attivo).sort((a,b) => a.data_ingresso.localeCompare(b.data_ingresso));
+  if(!lotti.length) { content.innerHTML = `<div class="empty">Nessun lotto attivo.</div>`; return; }
+
+  let html = '';
+  lotti.forEach(lotto => {
+    const ingLotto = (allIngressi||[]).filter(i => i.lotto_id === lotto.id);
+    const totIng = ingLotto.length ? ingLotto.reduce((s,i)=>s+(i.capi||0),0) : (lotto.capi_entrati||0);
+    const gg = Math.floor((oggi - new Date(lotto.data_ingresso)) / 86400000);
+    const capiUsciti = allUscite.filter(u => u.lotto_id === lotto.id).reduce((s,u) => s+(u.capi||0), 0);
+    const capiMorti = allMortalita.filter(m => m.lotto_id === lotto.id).reduce((s,m) => s+(m.capi_morti||0), 0);
+    const trasfUscita = allTrasferimenti.filter(t => t.lotto_id === lotto.id && t.tipo !== 'ACQUISTO').reduce((s,t) => s+(t.capi||0), 0);
+    const presenti = totIng - capiUsciti - capiMorti - trasfUscita;
+    const prevPeso = lotto.media_ingresso && lotto.incremento_giornaliero ? Math.round(lotto.media_ingresso + gg * lotto.incremento_giornaliero) : null;
+
+    html += `<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:17px;font-weight:600;font-family:var(--mono);display:flex;align-items:center;gap:8px;">
+          <span>Lotto ${lotto.codice}</span>
+          ${lotto.ddt_ingresso_documento_id ? `<button onclick="apriDocumento(${lotto.ddt_ingresso_documento_id})" style="background:var(--green-bg);border:0.5px solid #B8DECA;border-radius:10px;padding:2px 9px;font-size:11px;font-weight:600;color:var(--green);cursor:pointer;font-family:var(--font);">📄 DDT</button>` : ''}
+        </div>
+        <div style="font-size:13px;color:var(--text2);margin-top:4px">${lotto.provenienza || ''}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:15px;font-weight:600;font-family:var(--mono);">${fmtDateFull(lotto.data_ingresso)}</div>
+        ${lotto.lettera_dop ? `<div style="font-size:13px;font-weight:700;color:var(--text);margin-top:2px;">LETTERA: ${lotto.lettera_dop}</div>` : ''}
+      </div>
+    </div>`;
+
+    if(lotto.capannone) {
+      html += `<div style="background:var(--text);color:#FFF;border-radius:var(--radius);padding:9px 14px;margin-bottom:8px;text-align:center;font-size:13px;font-weight:700;font-family:var(--mono);letter-spacing:.05em;">📍 CAPANNONE: ${lotto.capannone.toUpperCase()}</div>`;
+    }
+
+    // Incremento — sola lettura per il veterinario
+    html += `<div style="width:100%;margin-bottom:8px;padding:8px;background:var(--accent);color:#FFF;border-radius:var(--radius);font-size:12px;font-family:var(--mono);font-weight:500;">
+      Incremento: +${lotto.incremento_giornaliero ? lotto.incremento_giornaliero.toFixed(3) : '—'} kg/gg
+    </div>`;
+
+    const capiMortiTot = allMortalita.filter(m => m.lotto_id === lotto.id).reduce((s,m) => s+(m.capi_morti||0), 0);
+    html += `<div class="stat-grid" style="margin-bottom:10px;grid-template-columns:repeat(3,1fr);">
+      <div class="stat-box"><div class="stat-label">Capi entrati</div><div class="stat-val" style="font-size:18px">${fmt(totIng)} <span class="stat-unit">capi</span></div></div>
+      <div class="stat-box hl"><div class="stat-label">Presenti stimati</div><div class="stat-val green" style="font-size:18px">${fmt(presenti)} <span class="stat-unit">capi</span></div></div>
+      <div class="stat-box"><div class="stat-label">Giorni in stalla</div><div class="stat-val" style="font-size:18px">${gg} <span class="stat-unit">gg</span></div></div>
+      <div class="stat-box"><div class="stat-label">Peso arrivo</div><div class="stat-val" style="font-size:18px">${lotto.media_ingresso ? fmt(lotto.media_ingresso,1) : '—'} <span class="stat-unit">kg/capo</span></div></div>
+      <div class="stat-box"><div class="stat-label">Previsione peso</div><div class="stat-val" style="font-size:18px">${prevPeso ? prevPeso : '—'} <span class="stat-unit">kg</span></div></div>
+      <div class="stat-box"><div class="stat-label">Mortalità</div><div class="stat-val" style="font-size:18px;color:${capiMortiTot > 0 ? 'var(--red)' : 'inherit'}">${capiMortiTot} <span class="stat-unit">capi</span></div>
+        ${totIng ? `<div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:1px;">${fmt(capiMortiTot/totIng*100,2)}%</div>` : ''}
+      </div>
+    </div>`;
+
+    const mortLotto = allMortalita.filter(m => m.lotto_id === lotto.id).sort((a,b) => a.data_evento.localeCompare(b.data_evento));
+    const sanLotto = allSanitario.filter(s => s.lotto_id === lotto.id);
+
+    html += `<div style="display:flex;gap:4px;">
+      <button onclick="apriInserisciMortalita(${lotto.id})" style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--red);background:var(--red-bg);color:var(--red);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
+        + Mortalità${mortLotto.length ? ' ('+mortLotto.length+')' : ''}
+      </button>
+      <button onclick="apriReferti(${lotto.id}, () => showPage('detail', ${soc.id}))" style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg2);color:var(--text2);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
+        Referti${sanLotto.length ? ' ('+sanLotto.length+')' : ''}
+      </button>
+    </div>`;
+
+    html += `<div style="border-top:3px solid var(--text3);margin:22px 0"></div>`;
+  });
+
+  content.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════════
+// REFERTI IZS — sola lettura, stesso stile di renderAnalisi in index.html
+// (senza grafico mortalità: non necessario per la semplice consultazione)
+// ══════════════════════════════════════════════════════════════
+function apriReferti(lottoId, tornaFn) {
+  _refertiTornaFn = tornaFn || (() => showPage('home'));
+  showPage('referti', lottoId);
+  renderReferti(lottoId);
+}
+
+function renderReferti(lottoId) {
+  const lotto = allLotti.find(l => l.id === lottoId);
+  const soc = lotto ? allSoccide.find(s => s.id === lotto.soccida_id) : null;
+  const referti = (allSanitario||[]).filter(r => r.lotto_id === lottoId).sort((a,b) => a.data_referto.localeCompare(b.data_referto));
+
+  let html = `<button class="back-btn" onclick="_refertiTornaFn()" style="display:flex;margin:0 0 12px;">← Indietro</button>`;
+  html += `<div class="izs-header">
+    <div class="izs-title">Referti IZS</div>
+    <div class="izs-sub">${soc?.nome || '—'} · Lotto ${lotto?.codice_banda ? lotto.codice_banda + ' · ' : ''}${lotto?.codice || '—'}</div>
+  </div>`;
+
+  if(referti.length) {
+    html += referti.map(r => `
+      <div class="referto-card">
+        <div class="referto-head">
+          <span class="referto-data">${fmtDateFull(r.data_referto)}</span>
+          <span class="referto-lotto">Lotto ${lotto?.codice || '—'}</span>
+        </div>
+        <div class="referto-body">
+          <div class="referto-patologia">${r.patologia}</div>
+          ${r.note_trattamento ? `<div class="referto-note">↳ ${r.note_trattamento}</div>` : ''}
+          ${r.referto_documento_id ? `<button onclick="apriDocumento(${r.referto_documento_id})" style="margin-top:6px;background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:3px 10px;font-size:11px;color:var(--text2);cursor:pointer;font-family:var(--font);">📄 Apri referto PDF</button>` : ''}
+        </div>
+      </div>`).join('');
+  } else {
+    html += `<div class="referto-empty">Nessun referto registrato per questo lotto.</div>`;
+  }
+
+  document.getElementById('referti-content').innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════════
+// MORTALITÀ — unica sezione scrivibile, stessa modale/animazione di index.html
+// ══════════════════════════════════════════════════════════════
+let _mortLottoId = null;
+
+function apriInserisciMortalita(lottoId) {
+  _mortLottoId = lottoId;
+  const lotto = allLotti.find(l => l.id === lottoId);
+  const soc = allSoccide.find(s => s.id === lotto?.soccida_id);
+  document.getElementById('modal-mort-info').textContent =
+    `${soc?.nome || '—'}${lotto?.codice_banda ? ' · ' + lotto.codice_banda : ''} · Lotto ${lotto?.codice || '—'}${lotto?.lettera_dop ? ' · ' + lotto.lettera_dop : ''}`;
+  ['mort-capi','mort-note','mort-trattamento'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('mort-data').value = new Date().toISOString().split('T')[0];
+  const overlay = document.getElementById('modal-mort');
+  const panel = document.getElementById('modal-mort-panel');
+  overlay.style.display = 'flex';
+  gsap.set(overlay, { opacity: 0 });
+  gsap.set(panel, { yPercent: 100 });
+  gsap.to(overlay, { opacity: 1, duration: 0.25, ease: 'power1.out' });
+  gsap.to(panel, { yPercent: 0, duration: 0.42, ease: 'power3.out' });
+}
+
+function chiudiMortalita() {
+  const overlay = document.getElementById('modal-mort');
+  const panel = document.getElementById('modal-mort-panel');
+  gsap.to(panel, { yPercent: 100, duration: 0.32, ease: 'power2.in' });
+  gsap.to(overlay, { opacity: 0, duration: 0.32, ease: 'power1.in', onComplete: () => { overlay.style.display = 'none'; } });
+  _mortLottoId = null;
+}
+
+async function salvaMortalita() {
+  const data = document.getElementById('mort-data').value;
+  const capi = parseInt(document.getElementById('mort-capi').value) || 0;
+  const tratt = document.getElementById('mort-trattamento').value || null;
+  const note = document.getElementById('mort-note').value || null;
+  if(!data || capi < 0) { alert('Inserisci data e numero capi (anche 0 per solo trattamento)'); return; }
+
+  const lotto = allLotti.find(l => l.id === _mortLottoId);
+  const soc = allSoccide.find(s => s.id === lotto?.soccida_id);
+
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/mortalita`, {
+      method: 'POST', headers: SB_H,
+      body: JSON.stringify({
+        lotto_id: _mortLottoId,
+        soccida: soc?.nome || '',
+        data_evento: data,
+        lettera_dop: lotto?.lettera_dop || null,
+        capi_morti: capi,
+        trattamento: tratt,
+        note
+      })
+    });
+    if(!r.ok) throw new Error(await r.text());
+    const nuova = await r.json();
+    if(Array.isArray(nuova)) allMortalita.push(...nuova); else allMortalita.push(nuova);
+    chiudiMortalita();
+    refreshCurrentView();
+  } catch(e) {
+    alert('Errore: ' + e.message);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('modal-mort')?.addEventListener('click', function(e) {
+    if(e.target === this) chiudiMortalita();
+  });
+});
+
+loadAll();
+</script>
+</body>
+</html>
