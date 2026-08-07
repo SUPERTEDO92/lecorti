@@ -74,33 +74,57 @@ async function loadAll() {
     ? await sb('vendite_dirette_categorie', `?vendita_id=in.(${venditaIds.join(',')})`)
     : [];
 
-  document.getElementById('header-agg').textContent = `${allVenditeDirette.length} vendit${allVenditeDirette.length !== 1 ? 'e' : 'a'} · agg. ${new Date().toLocaleDateString('it-IT')}`;
+  const aperte = allVenditeDirette.filter(v => !v.chiuso);
+  document.getElementById('header-agg').textContent = `${aperte.length} vendit${aperte.length !== 1 ? 'e' : 'a'} aperte · agg. ${new Date().toLocaleDateString('it-IT')}`;
   render();
 }
 
 function render() {
   const cont = document.getElementById('vendite-content');
-  if(!allVenditeDirette.length) {
-    cont.innerHTML = '<div class="vd-card"><div class="empty">Nessuna vendita diretta registrata.</div></div>';
-    return;
+  const aperte = allVenditeDirette.filter(v => !v.chiuso);
+  const chiuse = allVenditeDirette.filter(v => v.chiuso);
+
+  let html = '';
+  if(!aperte.length) {
+    html = '<div class="vd-card"><div class="empty">Nessuna vendita aperta — conto sistemato.</div></div>';
+  } else {
+    html = `<div class="vd-card">` + aperte.map(v => renderRiga(v)).join('') + `</div>`;
   }
-  cont.innerHTML = `<div class="vd-card">` + allVenditeDirette.map(v => {
-    const cats = allVenditeDiretteCategorie.filter(c => c.vendita_id === v.id);
-    const catHtml = cats.length ? `<div class="vd-detail" style="margin-top:3px;">${cats.map(c => `${c.categoria}: ${fmt(c.capi)} capi${c.peso_kg ? ' · ' + fmt(c.peso_kg,1) + ' kg' : ''}`).join(' · ')}</div>` : '';
-    return `
-    <div class="vd-row">
-      <div style="flex:1;">
-        <div class="vd-date">${fmtDate(v.data_vendita)}</div>
-        <div class="vd-detail">${fmt(v.capi)} capi${v.peso_kg ? ' · ' + fmt(v.peso_kg,1) + ' kg' : ''}</div>
-        <div class="vd-detail">Importo: ${v.prezzo != null ? '€ ' + fmt(v.prezzo,2) : '—'}${v.prezzo_kg != null ? ' · € ' + fmt(v.prezzo_kg,3) + '/kg' : ''}</div>
-        ${catHtml}
-      </div>
-      <div class="vd-status" style="background:${v.pagato ? 'var(--green)' : 'var(--red-bg)'};border:0.5px solid ${v.pagato ? 'var(--green)' : 'var(--red)'};">
-        <span style="color:${v.pagato ? '#FFF' : 'var(--red)'};">${v.pagato ? '✓' : '✕'}</span>
-      </div>
+
+  if(chiuse.length) {
+    html += `<button type="button" onclick="toggleStorico()" id="storico-toggle" style="width:100%;margin-top:12px;padding:10px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);font-size:12px;font-family:var(--font);color:var(--text2);cursor:pointer;text-align:left;display:flex;align-items:center;justify-content:space-between;">
+      <span>🔒 Vendite già sistemate (${chiuse.length})</span><span id="storico-chev">›</span>
+    </button>
+    <div id="storico-content" style="display:none;margin-top:8px;"><div class="vd-card">${chiuse.map(v => renderRiga(v)).join('')}</div></div>`;
+  }
+
+  cont.innerHTML = html;
+}
+
+function renderRiga(v) {
+  const cats = allVenditeDiretteCategorie.filter(c => c.vendita_id === v.id);
+  const catHtml = cats.length ? `<div class="vd-detail" style="margin-top:3px;">${cats.map(c => `${c.categoria}: ${fmt(c.capi)} capi${c.peso_kg ? ' · ' + fmt(c.peso_kg,1) + ' kg' : ''}`).join(' · ')}</div>` : '';
+  return `
+  <div class="vd-row">
+    <div style="flex:1;">
+      <div class="vd-date">${fmtDate(v.data_vendita)}</div>
+      <div class="vd-detail">${fmt(v.capi)} capi${v.peso_kg ? ' · ' + fmt(v.peso_kg,1) + ' kg' : ''}</div>
+      <div class="vd-detail">Importo: ${v.prezzo != null ? '€ ' + fmt(v.prezzo,2) : '—'}${v.prezzo_kg != null ? ' · € ' + fmt(v.prezzo_kg,3) + '/kg' : ''}</div>
+      ${catHtml}
     </div>
-  `;
-  }).join('') + `</div>`;
+    <div class="vd-status" style="background:${v.pagato ? 'var(--green)' : 'var(--red-bg)'};border:0.5px solid ${v.pagato ? 'var(--green)' : 'var(--red)'};">
+      <span style="color:${v.pagato ? '#FFF' : 'var(--red)'};">${v.pagato ? '✓' : '✕'}</span>
+    </div>
+  </div>
+`;
+}
+
+function toggleStorico() {
+  const box = document.getElementById('storico-content');
+  const chev = document.getElementById('storico-chev');
+  const aperto = box.style.display !== 'none';
+  box.style.display = aperto ? 'none' : 'block';
+  chev.textContent = aperto ? '›' : '⌄';
 }
 
 loadAll();
