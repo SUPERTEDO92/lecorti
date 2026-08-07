@@ -1184,6 +1184,14 @@
   </div>
 </div>
 
+<!-- NOTE (elenco + inserimento, stesso pattern di analisi/referti) -->
+<div class="page" id="page-note">
+  <img src="img/bg-home-piglets.jpg" alt="" class="bg-hero">
+  <div id="note-content">
+    <div class="loading">Caricamento...</div>
+  </div>
+</div>
+
 <!-- STAMPA REPORT PDF -->
 <div class="page" id="page-stampa">
   <div id="stampa-content">
@@ -1217,9 +1225,11 @@ function sortByDdt(a,b){
 }
 
 // State
-let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [], allMortalita = [], allSanitario = [], allVenditeDirette = [], allUsciteCategorie = [], allVenditeDiretteCategorie = [], allIngressi = [], allLettereDop = [];
+let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [], allMortalita = [], allSanitario = [], allVenditeDirette = [], allUsciteCategorie = [], allVenditeDiretteCategorie = [], allIngressi = [], allLettereDop = [], allNoteVet = [];
 let storicoFilter = 'tutti';
 let currentPage = 'home';
+let _noteTornaFn = () => showPage('home');
+let currentNoteLottoId = null;
 
 function toggleTopbarNav() {
   const nav = document.getElementById('topbar-nav');
@@ -1233,7 +1243,7 @@ let currentLottoId = null;
 document.getElementById('today-date').textContent = new Date().toLocaleDateString('it-IT', {day:'2-digit',month:'2-digit',year:'numeric'});
 
 async function loadAll() {
-  [allSoccide, allLotti, allUscite, allTrasferimenti, allMortalita, allSanitario, allVenditeDirette, allUsciteCategorie, allVenditeDiretteCategorie] = await Promise.all([
+  [allSoccide, allLotti, allUscite, allTrasferimenti, allMortalita, allSanitario, allVenditeDirette, allUsciteCategorie, allVenditeDiretteCategorie, allNoteVet] = await Promise.all([
     sb('soccide', '?order=nome'),
     sb('lotti', '?order=data_ingresso.desc'),
     sb('uscite', '?order=data_uscita.desc'),
@@ -1243,6 +1253,7 @@ async function loadAll() {
     sb('vendite_dirette', '?order=data_vendita.desc'),
     sb('uscite_categorie', '?order=id'),
     sb('vendite_dirette_categorie', '?order=id'),
+    sb('note_veterinario', '?order=data_nota.desc'),
   ]);
   allIngressi = await sb('lotti_ingressi', '?order=data_ingresso.asc');
   allLettereDop = await sb('lotti_lettere_dop', '?order=id.asc');
@@ -1423,7 +1434,7 @@ function showPage(name, lottoId) {
   document.querySelectorAll('.page').forEach(p => { if(p !== newPage) p.classList.remove('visible'); });
   currentPage = name;
 
-  document.getElementById('global-back-btn').style.display = ['home','detail','inserimento','analisi','stampa'].includes(name) ? 'none' : 'flex';
+  document.getElementById('global-back-btn').style.display = ['home','detail','inserimento','analisi','stampa','note'].includes(name) ? 'none' : 'flex';
   const navMap = {home:'home',storico:'storico',trasferimenti:'trasferimenti',archivio:'archivio',inserimento:'inserimento',calcolo:'calcolo',girolucrezia:'girolucrezia'};
   const navName = navMap[name] || name;
   document.querySelectorAll('.nav-btn').forEach(b => {
@@ -1440,6 +1451,7 @@ function showPage(name, lottoId) {
   if(name === 'girolucrezia') { _glSlot = null; renderGiroLucrezia(); }
   if(name === 'analisi' && lottoId) { currentLottoId = lottoId; renderAnalisi(lottoId); }
   if(name === 'analisi' && !lottoId && currentLottoId) renderAnalisi(currentLottoId);
+  if(name === 'note' && lottoId) { currentNoteLottoId = lottoId; renderNote(lottoId); }
   if(name === 'stampa' && lottoId) { currentLottoId = lottoId; renderStampa(lottoId); }
   window.scrollTo(0,0);
 }
@@ -2195,6 +2207,18 @@ function glChiudiSlot() {
   renderGiroLucrezia();
 }
 
+// Ritorno da una pagina secondaria (es. Note) allo slot Giro Lucrezia specifico,
+// senza passare da showPage('girolucrezia') che azzera sempre _glSlot
+function tornaAGirolucreziaSlot(nomeSito) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('visible'));
+  document.getElementById('page-girolucrezia').classList.add('visible');
+  currentPage = 'girolucrezia';
+  document.getElementById('global-back-btn').style.display = 'flex';
+  _glSlot = nomeSito;
+  renderGiroLucreziaSlot(nomeSito);
+  window.scrollTo(0,0);
+}
+
 function renderGiroLucreziaSlot(nomeSito) {
   const container = document.getElementById('girolucrezia-content');
   const soc = allSoccide.find(s => s.nome === nomeSito);
@@ -2297,6 +2321,9 @@ function renderGiroLucreziaSlot(nomeSito) {
       </button>
       <button onclick="showPage('analisi',${lotto.id})" style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg2);color:var(--text2);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
         Referti${sanLotto.length ? ' ('+sanLotto.length+')' : ''}
+      </button>
+      <button onclick="apriNote(${lotto.id}, () => tornaAGirolucreziaSlot('${nomeSito}'))" style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--accent);background:var(--amber-bg);color:var(--amber);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
+        Note${(allNoteVet.filter(n=>n.lotto_id===lotto.id)).length ? ' ('+(allNoteVet.filter(n=>n.lotto_id===lotto.id)).length+')' : ''}
       </button>
     </div>`;
   });
@@ -2487,6 +2514,8 @@ function renderDetail(socId) {
     const mortLotto = allMortalita ? allMortalita.filter(m => m.lotto_id === lotto.id).sort((a,b) => a.data_evento.localeCompare(b.data_evento)) : [];
     // Sanitario del lotto
     const sanLotto = allSanitario ? allSanitario.filter(s => s.lotto_id === lotto.id).sort((a,b) => a.data_referto.localeCompare(b.data_referto)) : [];
+    // Note del lotto
+    const noteLotto = allNoteVet ? allNoteVet.filter(n => n.lotto_id === lotto.id) : [];
 
     // Tab bar per lotto
     html += `<div style="display:flex;gap:4px;margin-bottom:10px;">
@@ -2501,6 +2530,10 @@ function renderDetail(socId) {
       <button onclick="switchLottoTab(${lotto.id},'izs',this)" class="ltab" data-lotto="${lotto.id}" data-tab="izs"
         style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg2);color:var(--text2);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
         Referti${sanLotto.length ? ' ('+sanLotto.length+')' : ''}
+      </button>
+      <button onclick="apriNote(${lotto.id}, () => showPage('detail', ${soc.id}))"
+        style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--accent);background:var(--amber-bg);color:var(--amber);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
+        Note${noteLotto.length ? ' ('+noteLotto.length+')' : ''}
       </button>
     </div>`;
 
@@ -3504,9 +3537,110 @@ async function salvaMortalita() {
   }
 }
 
+// ══════════════════════════════════════════════════════════════
+// NOTE — pagina elenco (come Analisi/Referti) + bottone fisso in alto
+// "+ Inserisci nota" che apre la stessa tendina GSAP della mortalità
+// ══════════════════════════════════════════════════════════════
+function apriNote(lottoId, tornaFn) {
+  _noteTornaFn = tornaFn || (() => showPage('home'));
+  showPage('note', lottoId);
+}
+
+function renderNote(lottoId) {
+  currentNoteLottoId = lottoId;
+  const lotto = allLotti.find(l => l.id === lottoId);
+  const soc = lotto ? allSoccide.find(s => s.id === lotto.soccida_id) : null;
+  const note = (allNoteVet||[]).filter(n => n.lotto_id === lottoId).sort((a,b) => b.data_nota.localeCompare(a.data_nota));
+
+  let html = `<button class="back-btn" onclick="_noteTornaFn()" style="display:flex;margin:0 0 12px;">← Indietro</button>`;
+  html += `<div class="izs-header" style="background:var(--amber);">
+    <div class="izs-title">Note</div>
+    <div class="izs-sub">${soc?.nome || '—'} · Lotto ${lotto?.codice_banda ? lotto.codice_banda + ' · ' : ''}${lotto?.codice || '—'}</div>
+  </div>`;
+
+  html += `<button onclick="apriInserisciNota(${lottoId})" style="width:100%;padding:11px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-bottom:14px;">
+    + Inserisci nota
+  </button>`;
+
+  if(note.length) {
+    html += note.map(n => `
+      <div class="referto-card">
+        <div class="referto-head" style="background:var(--amber-bg);border-bottom:0.5px solid #F0DC8A;">
+          <span class="referto-data" style="color:var(--amber);">${fmtDateFull(n.data_nota)}</span>
+          <span class="referto-lotto">Lotto ${lotto?.codice || '—'}</span>
+        </div>
+        <div class="referto-body">
+          <div style="font-size:13px;color:var(--text);white-space:pre-wrap;">${n.testo}</div>
+        </div>
+      </div>`).join('');
+  } else {
+    html += `<div class="referto-empty">Nessuna nota registrata per questo lotto.</div>`;
+  }
+
+  document.getElementById('note-content').innerHTML = html;
+}
+
+let _notaLottoId = null;
+
+function apriInserisciNota(lottoId) {
+  _notaLottoId = lottoId;
+  const lotto = allLotti.find(l => l.id === lottoId);
+  const soc = allSoccide.find(s => s.id === lotto?.soccida_id);
+  document.getElementById('modal-nota-info').textContent =
+    `${soc?.nome || '—'}${lotto?.codice_banda ? ' · ' + lotto.codice_banda : ''} · Lotto ${lotto?.codice || '—'}${lotto?.lettera_dop ? ' · ' + lotto.lettera_dop : ''}`;
+  document.getElementById('nota-testo').value = '';
+  document.getElementById('nota-data').value = new Date().toISOString().split('T')[0];
+  const overlay = document.getElementById('modal-nota');
+  const panel = document.getElementById('modal-nota-panel');
+  overlay.style.display = 'flex';
+  gsap.set(overlay, { opacity: 0 });
+  gsap.set(panel, { yPercent: 100 });
+  gsap.to(overlay, { opacity: 1, duration: 0.25, ease: 'power1.out' });
+  gsap.to(panel, { yPercent: 0, duration: 0.42, ease: 'power3.out' });
+}
+
+function chiudiNota() {
+  const overlay = document.getElementById('modal-nota');
+  const panel = document.getElementById('modal-nota-panel');
+  gsap.to(panel, { yPercent: 100, duration: 0.32, ease: 'power2.in' });
+  gsap.to(overlay, { opacity: 0, duration: 0.32, ease: 'power1.in', onComplete: () => { overlay.style.display = 'none'; } });
+  _notaLottoId = null;
+}
+
+async function salvaNota() {
+  const data = document.getElementById('nota-data').value;
+  const testo = document.getElementById('nota-testo').value.trim();
+  if(!data || !testo) { alert('Inserisci data e testo della nota'); return; }
+
+  const lotto = allLotti.find(l => l.id === _notaLottoId);
+  const soc = allSoccide.find(s => s.id === lotto?.soccida_id);
+
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/note_veterinario`, {
+      method: 'POST', headers: SB_H,
+      body: JSON.stringify({
+        lotto_id: _notaLottoId,
+        soccida: soc?.nome || '',
+        data_nota: data,
+        testo
+      })
+    });
+    if(!r.ok) throw new Error(await r.text());
+    const nuova = await r.json();
+    if(Array.isArray(nuova)) allNoteVet.push(...nuova); else allNoteVet.push(nuova);
+    chiudiNota();
+    if(currentNoteLottoId) renderNote(currentNoteLottoId);
+  } catch(e) {
+    alert('Errore: ' + e.message);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('modal-mort')?.addEventListener('click', function(e) {
     if(e.target === this) chiudiMortalita();
+  });
+  document.getElementById('modal-nota')?.addEventListener('click', function(e) {
+    if(e.target === this) chiudiNota();
   });
   document.getElementById('modal-costo')?.addEventListener('click', function(e) {
     if(e.target === this) chiudiCostoAcquisto();
@@ -4689,6 +4823,31 @@ loadAll();
       </div>
     </div>
     <button onclick="salvaMortalita()" style="width:100%;padding:13px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:16px;">
+      ✓ Salva
+    </button>
+  </div>
+</div>
+
+<!-- MODALE NOTE — stessa identica tendina della mortalità -->
+<div id="modal-nota" class="modal-overlay">
+  <div id="modal-nota-panel" style="position:relative;overflow:visible;background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;">
+    <div style="position:absolute;top:-138px;left:50%;transform:translateX(-50%);font-size:126px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.3));pointer-events:none;">📝</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-size:14px;font-weight:500;font-family:var(--mono);">Registra nota</div>
+      <button onclick="chiudiNota()" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
+    </div>
+    <div id="modal-nota-info" style="font-size:11px;color:var(--text2);background:var(--bg2);padding:8px 10px;border-radius:var(--radius);margin-bottom:14px;font-family:var(--mono);"></div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div>
+        <div class="field-label">DATA</div>
+        <input type="date" id="nota-data" class="input-std">
+      </div>
+      <div>
+        <div class="field-label">NOTA</div>
+        <textarea id="nota-testo" placeholder="Scrivi qui la nota..." rows="4" class="input-std" style="resize:vertical;font-family:var(--font);"></textarea>
+      </div>
+    </div>
+    <button onclick="salvaNota()" style="width:100%;padding:13px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:16px;">
       ✓ Salva
     </button>
   </div>
