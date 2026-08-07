@@ -3642,6 +3642,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('modal-nota')?.addEventListener('click', function(e) {
     if(e.target === this) chiudiNota();
   });
+  document.getElementById('modal-vendite')?.addEventListener('click', function(e) {
+    if(e.target === this) chiudiVenditeDirette();
+  });
   document.getElementById('modal-costo')?.addEventListener('click', function(e) {
     if(e.target === this) chiudiCostoAcquisto();
   });
@@ -4388,19 +4391,49 @@ async function salvaIncr() {
 
 // ── VENDITE DIRETTE (VEZZOLI) ──
 let _vdSoccidaId = null;
+let _vdMeseFiltro = null; // 'YYYY-MM' oppure null = tutte
+
 function apriVenditeDirette(socId) {
   _vdSoccidaId = socId;
+  _vdMeseFiltro = null;
   document.getElementById('vd-data').value = new Date().toISOString().slice(0,10);
   document.getElementById('vd-capi').value = '';
   document.getElementById('vd-peso').value = '';
   document.getElementById('vd-cat1-nome').value = '';
   if(_vdSecondaCategoria) toggleSecondaCategoria();
+  document.getElementById('vd-riepilogo').style.display = 'none';
+  document.getElementById('vd-riep-toggle').querySelector('span:last-child').textContent = '›';
   renderVenditeDirette();
   document.getElementById('modal-vendite').style.display = 'flex';
 }
+
+function chiudiVenditeDirette() {
+  document.getElementById('modal-vendite').style.display = 'none';
+}
+
 function renderVenditeDirette() {
-  const voci = allVenditeDirette.filter(v => v.soccida_id === _vdSoccidaId)
-    .sort((a,b) => b.data_vendita.localeCompare(a.data_vendita));
+  let voci = allVenditeDirette.filter(v => v.soccida_id === _vdSoccidaId);
+  if(_vdMeseFiltro) voci = voci.filter(v => (v.data_vendita||'').slice(0,7) === _vdMeseFiltro);
+  voci = voci.sort((a,b) => b.data_vendita.localeCompare(a.data_vendita));
+
+  const filtroBox = document.getElementById('vd-filtro-attivo');
+  if(_vdMeseFiltro) {
+    const [yy, mm] = _vdMeseFiltro.split('-');
+    const nomeMese = new Date(yy, parseInt(mm)-1, 1).toLocaleDateString('it-IT', {month:'long', year:'numeric'});
+    const totMese = voci.reduce((s,v) => s+(parseFloat(v.prezzo)||0), 0);
+    filtroBox.style.display = 'block';
+    filtroBox.innerHTML = `<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text2);text-transform:uppercase;">${nomeMese}</div>
+        <div style="font-size:17px;font-weight:700;font-family:var(--mono);color:var(--accent);margin-top:2px;">€ ${fmt(totMese,2)}</div>
+      </div>
+      <button onclick="resetFiltroVendite()" type="button" style="padding:7px 12px;background:#FFF;border:0.5px solid var(--border);border-radius:var(--radius);font-size:12px;font-family:var(--font);color:var(--text2);cursor:pointer;">← Tutte</button>
+    </div>`;
+  } else {
+    filtroBox.style.display = 'none';
+    filtroBox.innerHTML = '';
+  }
+
   const cont = document.getElementById('vendite-lista');
   if(!voci.length) { cont.innerHTML = `<div style="font-size:13px;color:var(--text2);text-align:center;padding:20px 0;">Nessuna vendita registrata.</div>`; return; }
   cont.innerHTML = voci.map(v => {
@@ -4410,7 +4443,10 @@ function renderVenditeDirette() {
     <div style="display:flex;align-items:center;gap:12px;padding:16px 4px;border-bottom:0.5px solid var(--border);">
       <div style="flex:1;">
         <div style="font-size:15px;font-weight:600;font-family:var(--mono);">${fmtDateFull(v.data_vendita)}</div>
-        <div style="font-size:13px;color:var(--text2);margin-top:3px;">${fmt(v.capi)} capi · ${v.peso_kg ? fmt(v.peso_kg,1)+' kg' : '—'}</div>
+        <div style="font-size:13px;color:var(--text2);margin-top:3px;">${fmt(v.capi)} capi</div>
+        <input type="number" value="${v.peso_kg != null ? v.peso_kg : ''}" placeholder="Peso kg" step="0.1"
+          onchange="salvaPesoVendita(${v.id}, this.value)"
+          style="margin-top:5px;width:100px;padding:6px 8px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:12px;font-family:var(--mono);background:var(--bg);">
         ${catHtml}
       </div>
       <div style="text-align:right;display:flex;flex-direction:column;gap:6px;">
@@ -4428,6 +4464,51 @@ function renderVenditeDirette() {
   `;
   }).join('');
 }
+
+// ── Riepilogo mensile (per "chiudere" i mesi passati con un totale) ──
+function toggleRiepilogoMensile() {
+  const box = document.getElementById('vd-riepilogo');
+  const aperto = box.style.display !== 'none';
+  box.style.display = aperto ? 'none' : 'block';
+  document.getElementById('vd-riep-toggle').querySelector('span:last-child').textContent = aperto ? '›' : '⌄';
+  if(!aperto) renderRiepilogoMensile();
+}
+
+function renderRiepilogoMensile() {
+  const voci = allVenditeDirette.filter(v => v.soccida_id === _vdSoccidaId);
+  const mesi = {};
+  voci.forEach(v => {
+    const key = (v.data_vendita||'').slice(0,7);
+    if(!key) return;
+    if(!mesi[key]) mesi[key] = { n:0, tot:0 };
+    mesi[key].n++;
+    mesi[key].tot += parseFloat(v.prezzo) || 0;
+  });
+  const chiavi = Object.keys(mesi).sort((a,b) => b.localeCompare(a));
+  const box = document.getElementById('vd-riepilogo');
+  if(!chiavi.length) { box.innerHTML = `<div style="font-size:12px;color:var(--text3);text-align:center;padding:10px 0;">Nessuna vendita registrata.</div>`; return; }
+  box.innerHTML = chiavi.map(k => {
+    const [yy, mm] = k.split('-');
+    const nomeMese = new Date(yy, parseInt(mm)-1, 1).toLocaleDateString('it-IT', {month:'long', year:'numeric'});
+    return `<button type="button" onclick="filtraVenditeMese('${k}')" style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:9px 10px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);font-family:var(--font);cursor:pointer;margin-bottom:4px;">
+      <span style="font-size:13px;text-transform:capitalize;">${nomeMese} <span style="color:var(--text2);font-size:11px;">(${mesi[k].n})</span></span>
+      <span style="font-size:13px;font-weight:700;font-family:var(--mono);color:var(--accent);">€ ${fmt(mesi[k].tot,2)}</span>
+    </button>`;
+  }).join('');
+}
+
+function filtraVenditeMese(meseKey) {
+  _vdMeseFiltro = meseKey;
+  document.getElementById('vd-riepilogo').style.display = 'none';
+  document.getElementById('vd-riep-toggle').querySelector('span:last-child').textContent = '›';
+  renderVenditeDirette();
+}
+
+function resetFiltroVendite() {
+  _vdMeseFiltro = null;
+  renderVenditeDirette();
+}
+
 let _vdSecondaCategoria = false;
 function toggleSecondaCategoria() {
   _vdSecondaCategoria = !_vdSecondaCategoria;
@@ -4476,6 +4557,7 @@ async function inserisciVenditaDiretta() {
 
     ['vd-cat1-nome','vd-capi','vd-peso','vd-cat2-nome','vd-cat2-capi','vd-cat2-peso'].forEach(id => document.getElementById(id).value = '');
     if(_vdSecondaCategoria) toggleSecondaCategoria();
+    _vdMeseFiltro = null;
     renderVenditeDirette();
     if(currentLottoId) renderDetail(currentLottoId);
   } catch(e) {
@@ -4500,7 +4582,8 @@ async function salvaPrezzoKgVendita(id, valore) {
   const prezzo_kg = valore === '' ? null : parseFloat(valore);
   const v = allVenditeDirette.find(x => x.id === id);
   // Calcolo automatico del totale (senza IVA) = €/kg × peso registrato
-  const totaleCalcolato = (prezzo_kg != null && v?.peso_kg) ? Math.round(prezzo_kg * v.peso_kg * 100) / 100 : v?.prezzo ?? null;
+  const pesoNum = v?.peso_kg != null ? parseFloat(v.peso_kg) : null;
+  const totaleCalcolato = (prezzo_kg != null && pesoNum) ? Math.round(prezzo_kg * pesoNum * 100) / 100 : (v?.prezzo != null ? parseFloat(v.prezzo) : null);
   try {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/vendite_dirette?id=eq.${id}`, {
       method: 'PATCH', headers: SB_H,
@@ -4508,6 +4591,28 @@ async function salvaPrezzoKgVendita(id, valore) {
     });
     if(!r.ok) throw new Error(await r.text());
     if(v) { v.prezzo_kg = prezzo_kg; v.prezzo = totaleCalcolato; }
+    const inputTotale = document.getElementById(`vd-prezzo-${id}`);
+    if(inputTotale) inputTotale.value = totaleCalcolato != null ? totaleCalcolato : '';
+    if(!pesoNum && prezzo_kg != null) {
+      alert('Prezzo/kg salvato, ma manca il peso: inserisci anche il peso (kg) per calcolare automaticamente l\'importo.');
+    }
+  } catch(e) {
+    alert('Errore: ' + e.message);
+  }
+}
+async function salvaPesoVendita(id, valore) {
+  const peso_kg = valore === '' ? null : parseFloat(valore);
+  const v = allVenditeDirette.find(x => x.id === id);
+  const prezzoKgNum = v?.prezzo_kg != null ? parseFloat(v.prezzo_kg) : null;
+  // Calcolo automatico del totale (senza IVA) = €/kg × peso, se il prezzo/kg è già presente
+  const totaleCalcolato = (prezzoKgNum != null && peso_kg) ? Math.round(prezzoKgNum * peso_kg * 100) / 100 : (v?.prezzo != null ? parseFloat(v.prezzo) : null);
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/vendite_dirette?id=eq.${id}`, {
+      method: 'PATCH', headers: SB_H,
+      body: JSON.stringify({ peso_kg, prezzo: totaleCalcolato })
+    });
+    if(!r.ok) throw new Error(await r.text());
+    if(v) { v.peso_kg = peso_kg; v.prezzo = totaleCalcolato; }
     const inputTotale = document.getElementById(`vd-prezzo-${id}`);
     if(inputTotale) inputTotale.value = totaleCalcolato != null ? totaleCalcolato : '';
   } catch(e) {
@@ -4752,43 +4857,52 @@ loadAll();
 
 <!-- VENDITE DIRETTE (VEZZOLI) -->
 <div id="modal-vendite" class="modal-overlay">
-  <div style="background:#FFF;border-radius:16px 16px 0 0;padding:22px 18px 32px;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+  <div style="background:#FFF;border-radius:16px 16px 0 0;padding:0;width:100%;max-width:560px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 18px 14px;border-bottom:0.5px solid var(--border);flex-shrink:0;">
       <div style="font-size:16px;font-weight:600;font-family:var(--mono);">Vendite dirette — VEZZOLI</div>
-      <button onclick="document.getElementById('modal-vendite').style.display='none'" style="background:none;border:none;font-size:24px;color:var(--text2);cursor:pointer;">×</button>
+      <button onclick="chiudiVenditeDirette()" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:50%;width:32px;height:32px;font-size:20px;color:var(--text2);cursor:pointer;flex-shrink:0;">×</button>
     </div>
 
-    <div id="vendite-lista" style="margin-bottom:18px;max-height:50vh;overflow-y:auto;"></div>
-
-    <div style="border-top:0.5px solid var(--border);padding-top:14px;">
-      <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:8px;">NUOVA VENDITA</div>
-      <div style="display:flex;gap:8px;margin-bottom:8px;">
-        <input type="date" id="vd-data" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
-      </div>
-
-      <div id="vd-cat1" style="margin-bottom:8px;">
-        <input type="text" id="vd-cat1-nome" placeholder="Categoria (opz. es. belli)" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);margin-bottom:8px;">
-        <div style="display:flex;gap:8px;">
-          <input type="number" id="vd-capi" placeholder="N° capi" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
-          <input type="number" id="vd-peso" placeholder="Peso kg" step="0.1" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
-        </div>
-      </div>
-
-      <div id="vd-cat2" style="display:none;margin-bottom:8px;">
-        <input type="text" id="vd-cat2-nome" placeholder="Categoria (es. brutti)" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);margin-bottom:8px;">
-        <div style="display:flex;gap:8px;">
-          <input type="number" id="vd-cat2-capi" placeholder="N° capi" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
-          <input type="number" id="vd-cat2-peso" placeholder="Peso kg" step="0.1" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
-        </div>
-      </div>
-
-      <button type="button" id="vd-toggle-cat2" onclick="toggleSecondaCategoria()" style="width:100%;padding:9px;background:none;border:1px dashed var(--border);border-radius:var(--radius);font-size:12px;font-family:var(--font);color:var(--text2);cursor:pointer;margin-bottom:12px;">
-        + Aggiungi seconda categoria (es. belli/brutti)
+    <div style="overflow-y:auto;padding:14px 18px 22px;">
+      <button type="button" id="vd-riep-toggle" onclick="toggleRiepilogoMensile()" style="width:100%;margin-bottom:10px;padding:9px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);font-size:12px;font-family:var(--font);font-weight:500;color:var(--text2);cursor:pointer;text-align:left;display:flex;align-items:center;justify-content:space-between;">
+        <span>📅 Riepilogo mensile</span><span>›</span>
       </button>
+      <div id="vd-riepilogo" style="display:none;margin-bottom:10px;"></div>
 
-      <button onclick="inserisciVenditaDiretta()" style="width:100%;padding:13px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;">
-        + Aggiungi vendita
-      </button>
+      <div id="vd-filtro-attivo" style="display:none;margin-bottom:8px;"></div>
+
+      <div id="vendite-lista" style="margin-bottom:18px;"></div>
+
+      <div style="border-top:0.5px solid var(--border);padding-top:14px;">
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:8px;">NUOVA VENDITA</div>
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <input type="date" id="vd-data" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
+        </div>
+
+        <div id="vd-cat1" style="margin-bottom:8px;">
+          <input type="text" id="vd-cat1-nome" placeholder="Categoria (opz. es. belli)" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);margin-bottom:8px;">
+          <div style="display:flex;gap:8px;">
+            <input type="number" id="vd-capi" placeholder="N° capi" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
+            <input type="number" id="vd-peso" placeholder="Peso kg" step="0.1" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
+          </div>
+        </div>
+
+        <div id="vd-cat2" style="display:none;margin-bottom:8px;">
+          <input type="text" id="vd-cat2-nome" placeholder="Categoria (es. brutti)" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);margin-bottom:8px;">
+          <div style="display:flex;gap:8px;">
+            <input type="number" id="vd-cat2-capi" placeholder="N° capi" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
+            <input type="number" id="vd-cat2-peso" placeholder="Peso kg" step="0.1" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
+          </div>
+        </div>
+
+        <button type="button" id="vd-toggle-cat2" onclick="toggleSecondaCategoria()" style="width:100%;padding:9px;background:none;border:1px dashed var(--border);border-radius:var(--radius);font-size:12px;font-family:var(--font);color:var(--text2);cursor:pointer;margin-bottom:12px;">
+          + Aggiungi seconda categoria (es. belli/brutti)
+        </button>
+
+        <button onclick="inserisciVenditaDiretta()" style="width:100%;padding:13px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;">
+          + Aggiungi vendita
+        </button>
+      </div>
     </div>
   </div>
 </div>
