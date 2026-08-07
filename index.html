@@ -4391,11 +4391,15 @@ async function salvaIncr() {
 
 // ── VENDITE DIRETTE (VEZZOLI) ──
 let _vdSoccidaId = null;
-let _vdMeseFiltro = null; // 'YYYY-MM' oppure null = tutte
+let _vdMeseFiltro = null; // 'YYYY-MM' oppure null = conto aperto
+let _vdModalitaChiusura = false;
+let _vdSelezionate = new Set();
 
 function apriVenditeDirette(socId) {
   _vdSoccidaId = socId;
   _vdMeseFiltro = null;
+  _vdModalitaChiusura = false;
+  _vdSelezionate = new Set();
   document.getElementById('vd-data').value = new Date().toISOString().slice(0,10);
   document.getElementById('vd-capi').value = '';
   document.getElementById('vd-peso').value = '';
@@ -4411,61 +4415,191 @@ function chiudiVenditeDirette() {
   document.getElementById('modal-vendite').style.display = 'none';
 }
 
+// Dispatcher: conto aperto (editabile) / recap di un mese chiuso (sola lettura) / selezione chiusura
 function renderVenditeDirette() {
-  let voci = allVenditeDirette.filter(v => v.soccida_id === _vdSoccidaId);
-  if(_vdMeseFiltro) voci = voci.filter(v => (v.data_vendita||'').slice(0,7) === _vdMeseFiltro);
-  voci = voci.sort((a,b) => b.data_vendita.localeCompare(a.data_vendita));
-
-  const filtroBox = document.getElementById('vd-filtro-attivo');
-  if(_vdMeseFiltro) {
-    const [yy, mm] = _vdMeseFiltro.split('-');
-    const nomeMese = new Date(yy, parseInt(mm)-1, 1).toLocaleDateString('it-IT', {month:'long', year:'numeric'});
-    const totMese = voci.reduce((s,v) => s+(parseFloat(v.prezzo)||0), 0);
-    filtroBox.style.display = 'block';
-    filtroBox.innerHTML = `<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
-      <div>
-        <div style="font-size:11px;font-family:var(--mono);color:var(--text2);text-transform:uppercase;">${nomeMese}</div>
-        <div style="font-size:17px;font-weight:700;font-family:var(--mono);color:var(--accent);margin-top:2px;">€ ${fmt(totMese,2)}</div>
-      </div>
-      <button onclick="resetFiltroVendite()" type="button" style="padding:7px 12px;background:#FFF;border:0.5px solid var(--border);border-radius:var(--radius);font-size:12px;font-family:var(--font);color:var(--text2);cursor:pointer;">← Tutte</button>
-    </div>`;
-  } else {
-    filtroBox.style.display = 'none';
-    filtroBox.innerHTML = '';
-  }
-
-  const cont = document.getElementById('vendite-lista');
-  if(!voci.length) { cont.innerHTML = `<div style="font-size:13px;color:var(--text2);text-align:center;padding:20px 0;">Nessuna vendita registrata.</div>`; return; }
-  cont.innerHTML = voci.map(v => {
-    const cats = allVenditeDiretteCategorie.filter(c => c.vendita_id === v.id);
-    const catHtml = cats.length ? `<div style="font-size:11px;color:var(--text2);margin-top:4px;">${cats.map(c => `${c.categoria}: ${fmt(c.capi)} capi${c.peso_kg ? ' · ' + fmt(c.peso_kg,1) + ' kg' : ''}`).join(' · ')}</div>` : '';
-    return `
-    <div style="display:flex;align-items:center;gap:12px;padding:16px 4px;border-bottom:0.5px solid var(--border);">
-      <div style="flex:1;">
-        <div style="font-size:15px;font-weight:600;font-family:var(--mono);">${fmtDateFull(v.data_vendita)}</div>
-        <div style="font-size:13px;color:var(--text2);margin-top:3px;">${fmt(v.capi)} capi</div>
-        <input type="number" value="${v.peso_kg != null ? v.peso_kg : ''}" placeholder="Peso kg" step="0.1"
-          onchange="salvaPesoVendita(${v.id}, this.value)"
-          style="margin-top:5px;width:100px;padding:6px 8px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:12px;font-family:var(--mono);background:var(--bg);">
-        ${catHtml}
-      </div>
-      <div style="text-align:right;display:flex;flex-direction:column;gap:6px;">
-        <input type="number" value="${v.prezzo_kg != null ? v.prezzo_kg : ''}" placeholder="€/kg" step="0.001"
-          onchange="salvaPrezzoKgVendita(${v.id}, this.value)"
-          style="width:120px;padding:8px 12px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);text-align:right;background:var(--bg);">
-        <input type="number" id="vd-prezzo-${v.id}" value="${v.prezzo != null ? v.prezzo : ''}" placeholder="prezzo €" step="0.01"
-          onchange="salvaPrezzoVendita(${v.id}, this.value)"
-          style="width:120px;padding:10px 12px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:15px;font-family:var(--mono);text-align:right;background:var(--bg);">
-      </div>
-      <button onclick="clickStatoPagamento(${v.id}, ${v.pagato ? 'true' : 'false'})" type="button" style="display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:50%;cursor:pointer;background:${v.pagato ? 'var(--green)' : '#FBEAEA'};border:0.5px solid ${v.pagato ? 'var(--green)' : 'var(--red)'};flex-shrink:0;">
-        <span style="color:${v.pagato ? '#FFF' : 'var(--red)'};font-size:20px;font-weight:600;">${v.pagato ? '✓' : '✕'}</span>
-      </button>
-    </div>
-  `;
-  }).join('');
+  if(_vdModalitaChiusura) { renderSelezioneChiusura(); return; }
+  if(_vdMeseFiltro) { renderRecapMese(_vdMeseFiltro); return; }
+  renderListaAperta();
 }
 
-// ── Riepilogo mensile (per "chiudere" i mesi passati con un totale) ──
+function renderListaAperta() {
+  document.getElementById('vd-filtro-attivo').style.display = 'none';
+  document.getElementById('vd-filtro-attivo').innerHTML = '';
+
+  const voci = allVenditeDirette.filter(v => v.soccida_id === _vdSoccidaId && !v.chiuso)
+    .sort((a,b) => b.data_vendita.localeCompare(a.data_vendita));
+
+  const cont = document.getElementById('vendite-lista');
+  let html = '';
+  if(!voci.length) {
+    html = `<div style="font-size:13px;color:var(--text2);text-align:center;padding:20px 0;">Nessuna vendita aperta. Conto azzerato — usa "Riepilogo mensile" per vedere lo storico.</div>`;
+  } else {
+    html = voci.map(v => {
+      const cats = allVenditeDiretteCategorie.filter(c => c.vendita_id === v.id);
+      const catHtml = cats.length ? `<div style="font-size:11px;color:var(--text2);margin-top:4px;">${cats.map(c => `${c.categoria}: ${fmt(c.capi)} capi${c.peso_kg ? ' · ' + fmt(c.peso_kg,1) + ' kg' : ''}`).join(' · ')}</div>` : '';
+      return `
+      <div style="display:flex;align-items:center;gap:12px;padding:16px 4px;border-bottom:0.5px solid var(--border);">
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:600;font-family:var(--mono);">${fmtDateFull(v.data_vendita)}</div>
+          <div style="font-size:13px;color:var(--text2);margin-top:3px;">${fmt(v.capi)} capi</div>
+          <input type="number" value="${v.peso_kg != null ? v.peso_kg : ''}" placeholder="Peso kg" step="0.1"
+            onchange="salvaPesoVendita(${v.id}, this.value)"
+            style="margin-top:5px;width:100px;padding:6px 8px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:12px;font-family:var(--mono);background:var(--bg);">
+          ${catHtml}
+        </div>
+        <div style="text-align:right;display:flex;flex-direction:column;gap:6px;">
+          <input type="number" value="${v.prezzo_kg != null ? v.prezzo_kg : ''}" placeholder="€/kg" step="0.001"
+            onchange="salvaPrezzoKgVendita(${v.id}, this.value)"
+            style="width:120px;padding:8px 12px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);text-align:right;background:var(--bg);">
+          <input type="number" id="vd-prezzo-${v.id}" value="${v.prezzo != null ? v.prezzo : ''}" placeholder="prezzo €" step="0.01"
+            onchange="salvaPrezzoVendita(${v.id}, this.value)"
+            style="width:120px;padding:10px 12px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:15px;font-family:var(--mono);text-align:right;background:var(--bg);">
+        </div>
+        <button onclick="clickStatoPagamento(${v.id}, ${v.pagato ? 'true' : 'false'})" type="button" style="display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:50%;cursor:pointer;background:${v.pagato ? 'var(--green)' : '#FBEAEA'};border:0.5px solid ${v.pagato ? 'var(--green)' : 'var(--red)'};flex-shrink:0;">
+          <span style="color:${v.pagato ? '#FFF' : 'var(--red)'};font-size:20px;font-weight:600;">${v.pagato ? '✓' : '✕'}</span>
+        </button>
+      </div>
+    `;
+    }).join('');
+  }
+
+  if(voci.length) {
+    html += `<button type="button" onclick="apriSelezioneChiusura()" style="width:100%;margin-top:12px;padding:11px;background:var(--text);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;">
+      🔒 Chiudi conto
+    </button>`;
+  }
+
+  cont.innerHTML = html;
+}
+
+// ── Selezione chiusura: scegli quali righe aperte "chiudere" (vanno nell'archivio/riepilogo mensile) ──
+function apriSelezioneChiusura() {
+  _vdModalitaChiusura = true;
+  _vdSelezionate = new Set(allVenditeDirette.filter(v => v.soccida_id === _vdSoccidaId && !v.chiuso).map(v => v.id));
+  renderVenditeDirette();
+}
+
+function annullaSelezioneChiusura() {
+  _vdModalitaChiusura = false;
+  renderVenditeDirette();
+}
+
+function toggleSelezioneRiga(id) {
+  if(_vdSelezionate.has(id)) _vdSelezionate.delete(id); else _vdSelezionate.add(id);
+  renderVenditeDirette();
+}
+
+function toggleSelezionaTutte() {
+  const voci = allVenditeDirette.filter(v => v.soccida_id === _vdSoccidaId && !v.chiuso);
+  if(_vdSelezionate.size === voci.length) _vdSelezionate = new Set();
+  else _vdSelezionate = new Set(voci.map(v => v.id));
+  renderVenditeDirette();
+}
+
+function renderSelezioneChiusura() {
+  document.getElementById('vd-filtro-attivo').style.display = 'none';
+  document.getElementById('vd-filtro-attivo').innerHTML = '';
+
+  const voci = allVenditeDirette.filter(v => v.soccida_id === _vdSoccidaId && !v.chiuso)
+    .sort((a,b) => b.data_vendita.localeCompare(a.data_vendita));
+  const cont = document.getElementById('vendite-lista');
+
+  const totSel = voci.filter(v => _vdSelezionate.has(v.id)).reduce((s,v) => s+(parseFloat(v.prezzo)||0), 0);
+
+  let html = `<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
+    <div style="font-size:12px;color:var(--text2);">Seleziona le vendite da chiudere</div>
+    <button type="button" onclick="toggleSelezionaTutte()" style="padding:6px 10px;background:#FFF;border:0.5px solid var(--border);border-radius:var(--radius);font-size:11px;font-family:var(--font);color:var(--text2);cursor:pointer;">
+      ${_vdSelezionate.size === voci.length ? 'Deseleziona tutte' : 'Seleziona tutte'}
+    </button>
+  </div>`;
+
+  html += voci.map(v => {
+    const sel = _vdSelezionate.has(v.id);
+    return `<div onclick="toggleSelezioneRiga(${v.id})" style="display:flex;align-items:center;gap:12px;padding:12px 8px;border-bottom:0.5px solid var(--border);cursor:pointer;background:${sel ? 'var(--green-bg)' : 'transparent'};border-radius:var(--radius);">
+      <div style="width:22px;height:22px;border-radius:5px;border:1.5px solid ${sel ? 'var(--green)' : 'var(--border)'};background:${sel ? 'var(--green)' : '#FFF'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        ${sel ? '<span style="color:#FFF;font-size:14px;font-weight:700;">✓</span>' : ''}
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:14px;font-weight:600;font-family:var(--mono);">${fmtDateFull(v.data_vendita)}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px;">${fmt(v.capi)} capi${v.peso_kg ? ' · ' + fmt(v.peso_kg,1) + ' kg' : ''}</div>
+      </div>
+      <div style="font-size:14px;font-weight:700;font-family:var(--mono);color:${v.prezzo != null ? 'var(--accent)' : 'var(--text3)'};">${v.prezzo != null ? '€ ' + fmt(v.prezzo,2) : '—'}</div>
+    </div>`;
+  }).join('');
+
+  html += `<div style="display:flex;gap:8px;margin-top:14px;">
+    <button type="button" onclick="annullaSelezioneChiusura()" style="flex:1;padding:12px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);color:var(--text2);cursor:pointer;">
+      Annulla
+    </button>
+    <button type="button" onclick="confermaChiusuraSelezionate()" ${_vdSelezionate.size ? '' : 'disabled'} style="flex:2;padding:12px;background:${_vdSelezionate.size ? 'var(--text)' : 'var(--border)'};color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:${_vdSelezionate.size ? 'pointer' : 'default'};">
+      🔒 Chiudi ${_vdSelezionate.size} selezionat${_vdSelezionate.size === 1 ? 'a' : 'e'} — € ${fmt(totSel,2)}
+    </button>
+  </div>`;
+
+  cont.innerHTML = html;
+}
+
+async function confermaChiusuraSelezionate() {
+  if(!_vdSelezionate.size) return;
+  const ids = Array.from(_vdSelezionate);
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/vendite_dirette?id=in.(${ids.join(',')})`, {
+      method: 'PATCH', headers: SB_H,
+      body: JSON.stringify({ chiuso: true })
+    });
+    if(!r.ok) throw new Error(await r.text());
+    ids.forEach(id => {
+      const v = allVenditeDirette.find(x => x.id === id);
+      if(v) v.chiuso = true;
+    });
+    _vdModalitaChiusura = false;
+    _vdSelezionate = new Set();
+    renderVenditeDirette();
+    if(document.getElementById('vd-riepilogo').style.display !== 'none') renderRiepilogoMensile();
+  } catch(e) {
+    alert('Errore: ' + e.message);
+  }
+}
+
+// ── Recap di un mese (sola lettura, comprende sia aperte che chiuse di quel mese) ──
+function renderRecapMese(meseKey) {
+  const voci = allVenditeDirette.filter(v => v.soccida_id === _vdSoccidaId && (v.data_vendita||'').slice(0,7) === meseKey)
+    .sort((a,b) => a.data_vendita.localeCompare(b.data_vendita));
+
+  const [yy, mm] = meseKey.split('-');
+  const nomeMese = new Date(yy, parseInt(mm)-1, 1).toLocaleDateString('it-IT', {month:'long', year:'numeric'});
+  const totCapi = voci.reduce((s,v) => s+(v.capi||0), 0);
+  const totKg = voci.reduce((s,v) => s+(parseFloat(v.peso_kg)||0), 0);
+  const totImporto = voci.reduce((s,v) => s+(parseFloat(v.prezzo)||0), 0);
+
+  const filtroBox = document.getElementById('vd-filtro-attivo');
+  filtroBox.style.display = 'block';
+  filtroBox.innerHTML = `<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
+    <div>
+      <div style="font-size:11px;font-family:var(--mono);color:var(--text2);text-transform:uppercase;">${nomeMese} — riepilogo</div>
+      <div style="font-size:17px;font-weight:700;font-family:var(--mono);color:var(--accent);margin-top:2px;">€ ${fmt(totImporto,2)}</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:1px;">${fmt(totCapi)} capi · ${fmt(totKg,1)} kg</div>
+    </div>
+    <button onclick="resetFiltroVendite()" type="button" style="padding:7px 12px;background:#FFF;border:0.5px solid var(--border);border-radius:var(--radius);font-size:12px;font-family:var(--font);color:var(--text2);cursor:pointer;">← Conto aperto</button>
+  </div>`;
+
+  const cont = document.getElementById('vendite-lista');
+  if(!voci.length) { cont.innerHTML = `<div style="font-size:13px;color:var(--text2);text-align:center;padding:20px 0;">Nessuna vendita in questo mese.</div>`; return; }
+  cont.innerHTML = voci.map(v => `
+    <div style="display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:0.5px solid var(--border);">
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:600;font-family:var(--mono);">${fmtDateFull(v.data_vendita)} ${v.chiuso ? '<span style="font-size:10px;font-weight:500;color:var(--text2);">🔒</span>' : ''}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px;">${fmt(v.capi)} capi · ${v.peso_kg ? fmt(v.peso_kg,1)+' kg' : '—'}${v.prezzo_kg != null ? ' · € '+fmt(v.prezzo_kg,3)+'/kg' : ''}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:14px;font-weight:700;font-family:var(--mono);color:${v.prezzo != null ? 'var(--text)' : 'var(--text3)'};">${v.prezzo != null ? '€ '+fmt(v.prezzo,2) : '—'}</div>
+        <div style="font-size:10px;color:${v.pagato ? 'var(--green)' : 'var(--red)'};margin-top:1px;">${v.pagato ? '✓ pagato' : '✕ da pagare'}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Riepilogo mensile (elenco mesi con totale, per aprire il recap di ciascuno) ──
 function toggleRiepilogoMensile() {
   const box = document.getElementById('vd-riepilogo');
   const aperto = box.style.display !== 'none';
@@ -4499,6 +4633,7 @@ function renderRiepilogoMensile() {
 
 function filtraVenditeMese(meseKey) {
   _vdMeseFiltro = meseKey;
+  _vdModalitaChiusura = false;
   document.getElementById('vd-riepilogo').style.display = 'none';
   document.getElementById('vd-riep-toggle').querySelector('span:last-child').textContent = '›';
   renderVenditeDirette();
@@ -4506,6 +4641,7 @@ function filtraVenditeMese(meseKey) {
 
 function resetFiltroVendite() {
   _vdMeseFiltro = null;
+  _vdModalitaChiusura = false;
   renderVenditeDirette();
 }
 
@@ -4558,6 +4694,7 @@ async function inserisciVenditaDiretta() {
     ['vd-cat1-nome','vd-capi','vd-peso','vd-cat2-nome','vd-cat2-capi','vd-cat2-peso'].forEach(id => document.getElementById(id).value = '');
     if(_vdSecondaCategoria) toggleSecondaCategoria();
     _vdMeseFiltro = null;
+    _vdModalitaChiusura = false;
     renderVenditeDirette();
     if(currentLottoId) renderDetail(currentLottoId);
   } catch(e) {
