@@ -3572,6 +3572,7 @@ function renderNote(lottoId) {
         </div>
         <div class="referto-body">
           <div style="font-size:13px;color:var(--text);white-space:pre-wrap;">${n.testo}</div>
+          ${n.foto_documento_id ? `<button onclick="apriDocumento(${n.foto_documento_id})" style="margin-top:8px;background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:3px 10px;font-size:11px;color:var(--text2);cursor:pointer;font-family:var(--font);">📷 Foto</button>` : ''}
         </div>
       </div>`).join('');
   } else {
@@ -3582,15 +3583,21 @@ function renderNote(lottoId) {
 }
 
 let _notaLottoId = null;
+let _notaFotoBlob = null;
 
 function apriInserisciNota(lottoId) {
   _notaLottoId = lottoId;
+  _notaFotoBlob = null;
   const lotto = allLotti.find(l => l.id === lottoId);
   const soc = allSoccide.find(s => s.id === lotto?.soccida_id);
   document.getElementById('modal-nota-info').textContent =
     `${soc?.nome || '—'}${lotto?.codice_banda ? ' · ' + lotto.codice_banda : ''} · Lotto ${lotto?.codice || '—'}${lotto?.lettera_dop ? ' · ' + lotto.lettera_dop : ''}`;
   document.getElementById('nota-testo').value = '';
   document.getElementById('nota-data').value = new Date().toISOString().split('T')[0];
+  const fotoInput = document.getElementById('nota-foto');
+  if(fotoInput) fotoInput.value = '';
+  const fotoPreview = document.getElementById('nota-foto-preview');
+  if(fotoPreview) fotoPreview.innerHTML = '';
   const overlay = document.getElementById('modal-nota');
   const panel = document.getElementById('modal-nota-panel');
   overlay.style.display = 'flex';
@@ -3608,6 +3615,69 @@ function chiudiNota() {
   _notaLottoId = null;
 }
 
+// Comprime una foto lato client prima dell'upload (canvas: max 1600px lato lungo,
+// JPEG qualità 0.72) — da 3-4MB di una foto da telefono si scende tipicamente
+// a 150-400KB, sufficiente per consultazione su schermo senza appesantire Storage
+function compressImage(file, maxDim = 1600, quality = 0.72) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      let { width, height } = img;
+      if(width > height && width > maxDim) { height = Math.round(height * maxDim / width); width = maxDim; }
+      else if(height >= width && height > maxDim) { width = Math.round(width * maxDim / height); height = maxDim; }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      canvas.toBlob(blob => { URL.revokeObjectURL(url); blob ? resolve(blob) : reject(new Error('Compressione fallita')); }, 'image/jpeg', quality);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Immagine non leggibile')); };
+    img.src = url;
+  });
+}
+
+document.getElementById('nota-foto')?.addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  const preview = document.getElementById('nota-foto-preview');
+  if(!file) { _notaFotoBlob = null; preview.innerHTML = ''; return; }
+  preview.innerHTML = '<div style="font-size:11px;color:var(--text2);">Comprimo foto…</div>';
+  try {
+    _notaFotoBlob = await compressImage(file);
+    const kb = Math.round(_notaFotoBlob.size / 1024);
+    const url = URL.createObjectURL(_notaFotoBlob);
+    preview.innerHTML = `<img src="${url}" style="max-width:100%;max-height:160px;border-radius:8px;display:block;"><div style="font-size:11px;color:var(--text2);margin-top:4px;">${kb} KB (compressa)</div>`;
+  } catch(err) {
+    preview.innerHTML = '<div style="font-size:11px;color:#C0392B;">Errore lettura foto — riprova</div>';
+    _notaFotoBlob = null;
+  }
+});
+
+// Carica la foto già compressa su Storage (bucket "documenti", stesso bucket del resto
+// dell'archivio) e crea la riga in documenti — stesso pattern usato da import-documento,
+// ma qui l'upload è diretto dal client (bucket pubblico, INSERT anon consentito)
+async function uploadFotoNota(blob) {
+  const nomeFile = `nota_${Date.now()}.jpg`;
+  const insDoc = await fetch(`${SUPABASE_URL}/rest/v1/documenti`, {
+    method: 'POST', headers: SB_H,
+    body: JSON.stringify({ nome_file: nomeFile, content_type: 'image/jpeg', dimensione_kb: Math.round(blob.size / 1024 * 100) / 100 })
+  });
+  if(!insDoc.ok) throw new Error(await insDoc.text());
+  const [doc] = await insDoc.json();
+  const storagePath = `${doc.id}_${nomeFile}`;
+  const up = await fetch(`${SUPABASE_URL}/storage/v1/object/documenti/${storagePath}`, {
+    method: 'POST',
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'image/jpeg' },
+    body: blob
+  });
+  if(!up.ok) throw new Error(await up.text());
+  const updDoc = await fetch(`${SUPABASE_URL}/rest/v1/documenti?id=eq.${doc.id}`, {
+    method: 'PATCH', headers: SB_H,
+    body: JSON.stringify({ storage_path: storagePath })
+  });
+  if(!updDoc.ok) throw new Error(await updDoc.text());
+  return doc.id;
+}
+
 async function salvaNota() {
   const data = document.getElementById('nota-data').value;
   const testo = document.getElementById('nota-testo').value.trim();
@@ -3617,13 +3687,17 @@ async function salvaNota() {
   const soc = allSoccide.find(s => s.id === lotto?.soccida_id);
 
   try {
+    let fotoDocId = null;
+    if(_notaFotoBlob) fotoDocId = await uploadFotoNota(_notaFotoBlob);
+
     const r = await fetch(`${SUPABASE_URL}/rest/v1/note_veterinario`, {
       method: 'POST', headers: SB_H,
       body: JSON.stringify({
         lotto_id: _notaLottoId,
         soccida: soc?.nome || '',
         data_nota: data,
-        testo
+        testo,
+        foto_documento_id: fotoDocId
       })
     });
     if(!r.ok) throw new Error(await r.text());
@@ -5097,6 +5171,11 @@ loadAll();
       <div>
         <div class="field-label">NOTA</div>
         <textarea id="nota-testo" placeholder="Scrivi qui la nota..." rows="4" class="input-std" style="resize:vertical;font-family:var(--font);"></textarea>
+      </div>
+      <div>
+        <div class="field-label">FOTO (opzionale)</div>
+        <input type="file" id="nota-foto" accept="image/*" capture="environment" class="input-std" style="padding:8px;">
+        <div id="nota-foto-preview" style="margin-top:8px;"></div>
       </div>
     </div>
     <button onclick="salvaNota()" style="width:100%;padding:13px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:16px;">
