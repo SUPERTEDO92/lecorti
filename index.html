@@ -3636,22 +3636,6 @@ function compressImage(file, maxDim = 1600, quality = 0.72) {
   });
 }
 
-document.getElementById('nota-foto')?.addEventListener('change', async (e) => {
-  const file = e.target.files[0];
-  const preview = document.getElementById('nota-foto-preview');
-  if(!file) { _notaFotoBlob = null; preview.innerHTML = ''; return; }
-  preview.innerHTML = '<div style="font-size:11px;color:var(--text2);">Comprimo foto…</div>';
-  try {
-    _notaFotoBlob = await compressImage(file);
-    const kb = Math.round(_notaFotoBlob.size / 1024);
-    const url = URL.createObjectURL(_notaFotoBlob);
-    preview.innerHTML = `<img src="${url}" style="max-width:100%;max-height:160px;border-radius:8px;display:block;"><div style="font-size:11px;color:var(--text2);margin-top:4px;">${kb} KB (compressa)</div>`;
-  } catch(err) {
-    preview.innerHTML = '<div style="font-size:11px;color:#C0392B;">Errore lettura foto — riprova</div>';
-    _notaFotoBlob = null;
-  }
-});
-
 // Carica la foto già compressa su Storage (bucket "documenti", stesso bucket del resto
 // dell'archivio) e crea la riga in documenti — stesso pattern usato da import-documento,
 // ma qui l'upload è diretto dal client (bucket pubblico, INSERT anon consentito)
@@ -3711,6 +3695,21 @@ async function salvaNota() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('nota-foto')?.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    const preview = document.getElementById('nota-foto-preview');
+    if(!file) { _notaFotoBlob = null; preview.innerHTML = ''; return; }
+    preview.innerHTML = '<div style="font-size:11px;color:var(--text2);">Comprimo foto…</div>';
+    try {
+      _notaFotoBlob = await compressImage(file);
+      const kb = Math.round(_notaFotoBlob.size / 1024);
+      const url = URL.createObjectURL(_notaFotoBlob);
+      preview.innerHTML = `<img src="${url}" style="max-width:100%;max-height:160px;border-radius:8px;display:block;"><div style="font-size:11px;color:var(--text2);margin-top:4px;">${kb} KB (compressa)</div>`;
+    } catch(err) {
+      preview.innerHTML = '<div style="font-size:11px;color:#C0392B;">Errore lettura foto — riprova</div>';
+      _notaFotoBlob = null;
+    }
+  });
   document.getElementById('modal-mort')?.addEventListener('click', function(e) {
     if(e.target === this) chiudiMortalita();
   });
