@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Le Corti — Gestionale</title>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -3728,6 +3728,32 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('incr-modal-close')?.addEventListener('click', function() {
     document.getElementById('modal-incr').style.display = 'none';
   });
+
+  // Fix tastiera mobile sui modali a bottom-sheet (.modal-overlay): su Android,
+  // quando compare la tastiera il layout viewport NON si restringe (solo il visual
+  // viewport), e il browser scrolla la pagina per portare l'input a fuoco in vista.
+  // Il modale (position:fixed, inset:0) resta ancorato al layout viewport intero e
+  // viene trascinato su con la pagina: la X in alto esce dallo schermo e il modale
+  // sembra "non scorrere" e "non chiudersi". Qui si riancora il modale aperto al
+  // visual viewport reale ad ogni resize/scroll (apertura/chiusura tastiera).
+  if(window.visualViewport) {
+    const syncModalToVisualViewport = () => {
+      const vv = window.visualViewport;
+      document.querySelectorAll('.modal-overlay').forEach(el => {
+        if(el.style.display !== 'flex' && el.style.display !== 'block') return;
+        el.style.top = vv.offsetTop + 'px';
+        el.style.left = vv.offsetLeft + 'px';
+        el.style.width = vv.width + 'px';
+        el.style.height = vv.height + 'px';
+        el.style.bottom = 'auto';
+        el.style.right = 'auto';
+      });
+    };
+    window.visualViewport.addEventListener('resize', syncModalToVisualViewport);
+    window.visualViewport.addEventListener('scroll', syncModalToVisualViewport);
+    // Riancora anche subito ad ogni apertura modale (click su un bottone che apre un modal-overlay)
+    document.body.addEventListener('click', () => setTimeout(syncModalToVisualViewport, 0), true);
+  }
 
   // Pre-warming animazione maialini: la prima esecuzione andava a scatti
   // perché il browser rasterizza il glifo 🐖 e crea il layer GPU (will-change) solo
