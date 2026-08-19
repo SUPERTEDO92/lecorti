@@ -600,6 +600,7 @@
     <button class="nav-btn" onclick="showPage('macelli')">Macelli</button>
     <button class="nav-btn" onclick="showPage('calcolo')">🧮 Calcolo prezzo</button>
     <button class="nav-btn" onclick="transizioneSfoglio(this, () => showPage('rubrica'))">📋 Rubrica</button>
+    <button class="nav-btn" onclick="showPage('documentale')">📁 Documentale</button>
   </div>
 </div>
 
@@ -621,6 +622,17 @@
 <div class="page" id="page-archivio">
   <img src="img/bg-home-piglets.jpg" alt="" class="bg-hero">
   <div id="archivio-content"><div class="loading">Caricamento…</div></div>
+</div>
+
+<!-- DOCUMENTALE — manuali operativi, moduli biosicurezza, documenti soccide, normativa -->
+<div class="page" id="page-documentale">
+  <img src="img/bg-home-piglets.jpg" alt="" class="bg-hero">
+  <div style="padding:14px 14px 4px;">
+    <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:10px;">Manuali operativi · Biosicurezza · Documenti soccide · Normativa</div>
+  </div>
+  <div class="filter-bar" id="doc-cat-chips" style="padding:0 14px;"></div>
+  <div class="filter-bar" id="doc-soccida-chips" style="padding:0 14px;display:none;"></div>
+  <div id="documentale-list" style="padding:0 14px 20px;"><div class="loading">Caricamento...</div></div>
 </div>
 
 <!-- MACELLI -->
@@ -1225,7 +1237,7 @@ function sortByDdt(a,b){
 }
 
 // State
-let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [], allMortalita = [], allSanitario = [], allVenditeDirette = [], allUsciteCategorie = [], allVenditeDiretteCategorie = [], allIngressi = [], allLettereDop = [], allNoteVet = [];
+let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [], allMortalita = [], allSanitario = [], allVenditeDirette = [], allUsciteCategorie = [], allVenditeDiretteCategorie = [], allIngressi = [], allLettereDop = [], allNoteVet = [], allArchivioDoc = [];
 let storicoFilter = 'tutti';
 let currentPage = 'home';
 let _noteTornaFn = () => showPage('home');
@@ -1244,7 +1256,7 @@ let currentLottoId = null;
 document.getElementById('today-date').textContent = new Date().toLocaleDateString('it-IT', {day:'2-digit',month:'2-digit',year:'numeric'});
 
 async function loadAll() {
-  [allSoccide, allLotti, allUscite, allTrasferimenti, allMortalita, allSanitario, allVenditeDirette, allUsciteCategorie, allVenditeDiretteCategorie, allNoteVet] = await Promise.all([
+  [allSoccide, allLotti, allUscite, allTrasferimenti, allMortalita, allSanitario, allVenditeDirette, allUsciteCategorie, allVenditeDiretteCategorie, allNoteVet, allArchivioDoc] = await Promise.all([
     sb('soccide', '?order=nome'),
     sb('lotti', '?order=data_ingresso.desc'),
     sb('uscite', '?order=data_uscita.desc'),
@@ -1255,6 +1267,7 @@ async function loadAll() {
     sb('uscite_categorie', '?order=id'),
     sb('vendite_dirette_categorie', '?order=id'),
     sb('note_veterinario', '?order=data_nota.desc'),
+    sb('archivio_documenti', '?order=titolo.asc'),
   ]);
   allIngressi = await sb('lotti_ingressi', '?order=data_ingresso.asc');
   allLettereDop = await sb('lotti_lettere_dop', '?order=id.asc');
@@ -1450,6 +1463,7 @@ function showPage(name, lottoId) {
   if(name === 'trasferimenti') renderTrasferimenti();
   if(name === 'rubrica' && !window._rubricaInit) { window._rubricaInit = true; rubRender(allevamenti); }
   if(name === 'girolucrezia') { _glSlot = null; renderGiroLucrezia(); }
+  if(name === 'documentale') renderDocumentale();
   if(name === 'analisi' && lottoId) { currentLottoId = lottoId; renderAnalisi(lottoId); }
   if(name === 'analisi' && !lottoId && currentLottoId) renderAnalisi(currentLottoId);
   if(name === 'note' && lottoId) { currentNoteLottoId = lottoId; renderNote(lottoId); }
@@ -5294,6 +5308,89 @@ loadAll();
 </div>
 
 <script>
+// ── DOCUMENTALE — manuali operativi, moduli biosicurezza, documenti soccide, normativa ──
+// Tabella archivio_documenti: categoria/sottocategoria/titolo/descrizione/soccida_id/documento_id/scadenza
+// Inserimento sempre via Claude da chat (INSERT + push documento su lecorti-docs-tmp), nessun form in UI.
+let docCatFiltro = 'tutti';
+let docSoccidaFiltro = 'tutti';
+const DOC_CATEGORIE = { biosicurezza: 'Biosicurezza', manuali: 'Manuali operativi', soccide: 'Documenti soccide', normativa: 'Normativa e varie' };
+
+function setDocCat(cat) {
+  docCatFiltro = cat;
+  docSoccidaFiltro = 'tutti';
+  renderDocumentale();
+}
+function setDocSoccida(id) {
+  docSoccidaFiltro = id;
+  renderDocumentale();
+}
+
+function renderDocumentale() {
+  // Chip categoria
+  const catChips = ['tutti', ...Object.keys(DOC_CATEGORIE)];
+  document.getElementById('doc-cat-chips').innerHTML = catChips.map(c =>
+    `<div class="chip ${docCatFiltro === c ? 'active' : ''}" onclick="setDocCat('${c}')">${c === 'tutti' ? 'Tutti' : DOC_CATEGORIE[c]}</div>`
+  ).join('');
+
+  let lista = [...allArchivioDoc];
+  if(docCatFiltro !== 'tutti') lista = lista.filter(d => d.categoria === docCatFiltro);
+
+  // Chip soccida — solo quando la categoria è "soccide"
+  const soccidaChipsEl = document.getElementById('doc-soccida-chips');
+  if(docCatFiltro === 'soccide') {
+    const socIds = [...new Set(allArchivioDoc.filter(d => d.categoria === 'soccide' && d.soccida_id).map(d => d.soccida_id))];
+    const socNomi = socIds.map(id => allSoccide.find(s => s.id === id)).filter(Boolean).sort((a,b) => a.nome.localeCompare(b.nome));
+    soccidaChipsEl.style.display = socNomi.length ? 'flex' : 'none';
+    soccidaChipsEl.innerHTML = `<div class="chip ${docSoccidaFiltro === 'tutti' ? 'active' : ''}" onclick="setDocSoccida('tutti')">Tutte</div>` +
+      socNomi.map(s => `<div class="chip ${docSoccidaFiltro == s.id ? 'active' : ''}" onclick="setDocSoccida(${s.id})">${s.nome}</div>`).join('');
+    if(docSoccidaFiltro !== 'tutti') lista = lista.filter(d => d.soccida_id == docSoccidaFiltro);
+  } else {
+    soccidaChipsEl.style.display = 'none';
+  }
+
+  lista.sort((a,b) => {
+    if(a.scadenza && b.scadenza) return a.scadenza.localeCompare(b.scadenza);
+    if(a.scadenza) return -1;
+    if(b.scadenza) return 1;
+    return a.titolo.localeCompare(b.titolo);
+  });
+
+  if(!lista.length) {
+    document.getElementById('documentale-list').innerHTML = '<div class="empty" style="padding:40px 0;text-align:center;color:var(--text3);">Nessun documento in questa categoria.</div>';
+    return;
+  }
+
+  const oggi = new Date().toISOString().split('T')[0];
+  const html = lista.map(d => {
+    const soc = d.soccida_id ? allSoccide.find(s => s.id === d.soccida_id) : null;
+    let scadenzaBadge = '';
+    if(d.scadenza) {
+      const scaduta = d.scadenza < oggi;
+      const inGiorni = Math.ceil((new Date(d.scadenza) - new Date(oggi)) / 86400000);
+      const inScadenza = !scaduta && inGiorni <= 30;
+      const col = scaduta ? 'var(--red)' : inScadenza ? 'var(--amber)' : 'var(--text2)';
+      const bg = scaduta ? 'var(--red-bg)' : inScadenza ? 'var(--amber-bg)' : 'var(--bg2)';
+      scadenzaBadge = `<span style="font-size:10px;font-family:var(--mono);font-weight:600;padding:3px 9px;border-radius:10px;background:${bg};color:${col};">${scaduta ? '⚠ Scaduto' : '⏳'} ${fmtDate(d.scadenza)}</span>`;
+    }
+    return `<div style="background:#FFF;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:10px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px;">
+        <div style="font-size:14px;font-weight:600;">${d.titolo}</div>
+        ${scadenzaBadge}
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:${d.descrizione ? '8px' : '0'};font-size:11px;color:var(--text2);">
+        ${d.sottocategoria ? `<span style="background:var(--bg2);border-radius:8px;padding:2px 8px;">${d.sottocategoria}</span>` : ''}
+        ${soc ? `<span style="background:var(--bg2);border-radius:8px;padding:2px 8px;">${soc.nome}</span>` : ''}
+      </div>
+      ${d.descrizione ? `<div style="font-size:12px;color:var(--text2);margin-bottom:8px;white-space:pre-wrap;">${d.descrizione}</div>` : ''}
+      ${d.documento_id
+        ? `<button onclick="apriDocumento(${d.documento_id})" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:5px 12px;font-size:11px;color:var(--text2);cursor:pointer;font-family:var(--font);">📄 Apri documento</button>`
+        : `<div style="font-size:11px;color:var(--text3);font-style:italic;">Documento non ancora caricato</div>`}
+    </div>`;
+  }).join('');
+
+  document.getElementById('documentale-list').innerHTML = html;
+}
+
 // ── ARCHIVIO ──
 let _archivioSocId = null;
 
