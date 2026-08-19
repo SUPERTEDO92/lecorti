@@ -178,7 +178,7 @@ const SOCCIDE_MOSTRATE = ['FILIPPINI', 'MIGLIORATI', 'SCARATTI'];
 // (bug di rendering su Firefox Android con emoji color-font flippate+animate).
 const PIG_SVG = '<svg viewBox="0 0 100 70" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;"><ellipse cx="52" cy="40" rx="34" ry="24" fill="#F2A6A0"/><ellipse cx="20" cy="24" rx="10" ry="9" fill="#F2A6A0"/><ellipse cx="17" cy="21" rx="4.5" ry="4" fill="#D97D78"/><circle cx="34" cy="30" r="3" fill="#2A2622"/><ellipse cx="14" cy="42" rx="15" ry="13" fill="#EF9791"/><ellipse cx="9" cy="40" rx="3" ry="4" fill="#2A2622"/><ellipse cx="9" cy="46" rx="3" ry="4" fill="#2A2622"/><path d="M84 30 Q94 24 90 34 Q96 38 86 38" fill="none" stroke="#EF9791" stroke-width="4" stroke-linecap="round"/><ellipse cx="46" cy="60" rx="6" ry="4" fill="#D97D78"/><ellipse cx="66" cy="60" rx="6" ry="4" fill="#D97D78"/></svg>';
 
-let allSoccide = [], allLotti = [], allUscite = [], allMortalita = [], allIngressi = [];
+let allSoccide = [], allLotti = [], allUscite = [], allMortalita = [], allIngressi = [], allNoteVet = [];
 let soccidaAttiva = null;
 
 // ── Rubrica macelli (sola lettura, solo slaughterhouse, niente allevamenti/fornitori) ──
@@ -248,10 +248,11 @@ async function loadAll() {
   allLotti = await sb('lotti', `?soccida_id=in.(${socIds.join(',')})&attivo=eq.true&order=data_ingresso.asc`);
   const lottiIds = allLotti.map(l => l.id);
 
-  [allUscite, allMortalita, allIngressi] = await Promise.all([
+  [allUscite, allMortalita, allIngressi, allNoteVet] = await Promise.all([
     lottiIds.length ? sb('uscite', `?lotto_id=in.(${lottiIds.join(',')})&order=data_uscita.asc`) : [],
     lottiIds.length ? sb('mortalita', `?lotto_id=in.(${lottiIds.join(',')})&order=data_evento.desc`) : [],
     lottiIds.length ? sb('lotti_ingressi', `?lotto_id=in.(${lottiIds.join(',')})&order=data_ingresso.asc`) : [],
+    lottiIds.length ? sb('note_veterinario', `?lotto_id=in.(${lottiIds.join(',')})&order=data_nota.desc`) : [],
   ]);
 
   renderLista();
@@ -463,10 +464,12 @@ function render() {
       html += `<div class="empty">Nessuna uscita registrata.</div>`;
     }
 
-    // TABBAR solo Mortalità / Incremento
+    // TABBAR Mortalità / Incremento / Note
+    const noteLotto = allNoteVet.filter(n => n.lotto_id === lotto.id).sort((a,b) => b.data_nota.localeCompare(a.data_nota));
     html += `<div style="display:flex;gap:4px;margin:12px 0 10px;">
       <button onclick="switchTab(${lotto.id},'mortalita',this)" class="ltab ltab-active" data-lotto="${lotto.id}">Mortalità</button>
       <button onclick="switchTab(${lotto.id},'incremento',this)" class="ltab" data-lotto="${lotto.id}">Incremento</button>
+      <button onclick="switchTab(${lotto.id},'note',this)" class="ltab" data-lotto="${lotto.id}">Note${noteLotto.length ? ' ('+noteLotto.length+')' : ''}</button>
     </div>`;
 
     // TAB MORTALITA — inserimento + elenco
@@ -516,6 +519,30 @@ function render() {
     </div>`;
     html += `</div>`;
 
+    // TAB NOTE — inserimento + elenco (stessa tabella note_veterinario di index.html/veterinario.html)
+    html += `<div id="ltab-note-${lotto.id}" style="display:none;">`;
+    html += `<button class="btn-mort" style="background:var(--accent);" onclick="apriFormNota(${lotto.id})">📝 Inserisci nota</button>`;
+    html += `<div id="form-nota-${lotto.id}" style="display:none;" class="form-box">
+      <div class="field-label">DATA</div>
+      <input type="date" id="n-data-${lotto.id}" class="field-input">
+      <div class="field-label">NOTA</div>
+      <textarea id="n-testo-${lotto.id}" class="field-input" rows="3" style="resize:vertical;font-family:var(--font);" placeholder="Scrivi qui la nota..."></textarea>
+      <button class="btn-mort" style="margin-bottom:0;background:var(--accent);" onclick="salvaNota(${lotto.id})">✓ Salva</button>
+    </div>`;
+    if(noteLotto.length) {
+      html += `<div class="simple-container">`;
+      noteLotto.forEach(n => {
+        html += `<div class="simple-row" style="display:block;">
+          <div class="simple-date">${fmtDate(n.data_nota)}</div>
+          <div style="font-size:12px;color:var(--text);margin-top:4px;white-space:pre-wrap;">${n.testo}</div>
+        </div>`;
+      });
+      html += `</div>`;
+    } else {
+      html += `<div class="empty">Nessuna nota registrata.</div>`;
+    }
+    html += `</div>`;
+
     html += `<div style="border-top:1px solid var(--border);margin:16px 0"></div>`;
   });
 
@@ -523,7 +550,7 @@ function render() {
 }
 
 function switchTab(lottoId, tab, btn) {
-  ['mortalita','incremento'].forEach(t => {
+  ['mortalita','incremento','note'].forEach(t => {
     const el = document.getElementById(`ltab-${t}-${lottoId}`);
     if(el) el.style.display = t === tab ? 'block' : 'none';
   });
@@ -561,6 +588,37 @@ async function salvaMortalita(lottoId) {
     const nuova = await r.json();
     allMortalita.push(Array.isArray(nuova) ? nuova[0] : nuova);
     showToast(`✓ Mortalità registrata — ${capi} capi il ${fmtDate(data)}`, true);
+    render();
+  } catch(e) {
+    showToast('Errore: ' + e.message, false);
+  }
+}
+
+function apriFormNota(lottoId) {
+  const form = document.getElementById(`form-nota-${lottoId}`);
+  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+  document.getElementById(`n-data-${lottoId}`).value = new Date().toISOString().split('T')[0];
+}
+
+async function salvaNota(lottoId) {
+  const data = document.getElementById(`n-data-${lottoId}`).value;
+  const testo = document.getElementById(`n-testo-${lottoId}`).value.trim();
+  if(!data || !testo) { showToast('Inserisci data e testo della nota', false); return; }
+
+  const lotto = allLotti.find(l => l.id === lottoId);
+  const soc = allSoccide.find(s => s.id === lotto.soccida_id);
+
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/note_veterinario`, {
+      method: 'POST', headers: SB_H,
+      body: JSON.stringify({
+        lotto_id: lottoId, soccida: soc.nome, data_nota: data, testo
+      })
+    });
+    if(!r.ok) throw new Error(await r.text());
+    const nuova = await r.json();
+    allNoteVet.push(Array.isArray(nuova) ? nuova[0] : nuova);
+    showToast(`✓ Nota registrata — ${fmtDate(data)}`, true);
     render();
   } catch(e) {
     showToast('Errore: ' + e.message, false);
