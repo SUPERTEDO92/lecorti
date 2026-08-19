@@ -1178,7 +1178,7 @@
 <!-- ANALISI E REFERTI IZS -->
 <div class="page" id="page-analisi">
   <img src="img/bg-home-piglets.jpg" alt="" class="bg-hero">
-  <button class="back-btn" onclick="showPage('detail', currentLottoId)">← Dettaglio lotto</button>
+  <button class="back-btn" onclick="_analisiTornaFn()">← Dettaglio lotto</button>
   <div id="analisi-content">
     <div class="loading">Caricamento...</div>
   </div>
@@ -1229,6 +1229,7 @@ let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [], allMo
 let storicoFilter = 'tutti';
 let currentPage = 'home';
 let _noteTornaFn = () => showPage('home');
+let _analisiTornaFn = () => showPage('home');
 let currentNoteLottoId = null;
 
 function toggleTopbarNav() {
@@ -2320,7 +2321,7 @@ function renderGiroLucreziaSlot(nomeSito) {
       <button onclick="apriInserisciMortalita(${lotto.id})" style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--red);background:var(--red-bg);color:var(--red);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
         + Mortalità${mortLotto.length ? ' ('+mortLotto.length+')' : ''}
       </button>
-      <button onclick="showPage('analisi',${lotto.id})" style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg2);color:var(--text2);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
+      <button onclick="apriAnalisi(${lotto.id}, () => tornaAGirolucreziaSlot('${nomeSito}'))" style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg2);color:var(--text2);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
         Referti${sanLotto.length ? ' ('+sanLotto.length+')' : ''}
       </button>
       <button onclick="apriNote(${lotto.id}, () => tornaAGirolucreziaSlot('${nomeSito}'))" style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--accent);background:var(--amber-bg);color:var(--amber);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
@@ -2628,7 +2629,7 @@ function renderDetail(socId) {
 
     // --- TAB REFERTI IZS ---
     html += `<div id="ltab-izs-${lotto.id}" style="display:none;">`;
-    html += `<button onclick="showPage('analisi',${lotto.id})" class="btn-izs" style="width:100%;margin-bottom:8px;">
+    html += `<button onclick="apriAnalisi(${lotto.id}, () => showPage('detail', ${socId}))" class="btn-izs" style="width:100%;margin-bottom:8px;">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4m5 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
       Vedi tutti i referti IZS
     </button>`;
@@ -3120,6 +3121,10 @@ async function salvaCostoAcquisto() {
 }
 
 // ── ANALISI E REFERTI IZS ──
+function apriAnalisi(lottoId, tornaFn) {
+  _analisiTornaFn = tornaFn || (() => showPage('home'));
+  showPage('analisi', lottoId);
+}
 function renderAnalisi(lottoId) {
   const lotto = allLotti.find(l => l.id === lottoId);
   const soc = lotto ? allSoccide.find(s => s.id === lotto.soccida_id) : null;
