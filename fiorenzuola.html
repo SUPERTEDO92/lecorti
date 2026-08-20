@@ -67,9 +67,11 @@
   }
   .group-btn:active { opacity: .85; }
   .btn-back {
-    background: none; border: none; color: var(--accent); font-size: 13px; font-weight: 600;
-    font-family: var(--font); cursor: pointer; padding: 4px 0; margin-bottom: 10px;
+    background: var(--accent); border: none; color: #FFF; font-size: 13px; font-weight: 600;
+    font-family: var(--font); cursor: pointer; padding: 8px 14px; margin-bottom: 10px;
+    border-radius: var(--radius); display: inline-block;
   }
+  .btn-back:active { opacity: .85; }
 
   .row-item {
     display: flex; justify-content: space-between; align-items: center;
@@ -293,20 +295,16 @@ function noteDisplay(note) {
   return map[note] ? t(map[note]) : note;
 }
 
-// Gruppi di capannoni selezionabili (2/4 = ex sede, 3/5 = sede attuale dopo spostamento)
-const GRUPPI_CAPANNONE = [
-  { key: '24', label: 'CAPANNONE 2/4', vals: ['cap 2', 'cap 4'] },
-  { key: '35', label: 'CAPANNONE 3/5', vals: ['cap 3', 'cap 5'] },
-];
-
-let currentView = { lottoId: null, groupKey: null };
+// Ogni lotto mostra il proprio capannone reale (da lotto.capannone) — niente più gruppo fisso 2/4 vs 3/5,
+// così un nuovo lotto in un capannone libero (es. CAP 2) non eredita mai i dati di lotti spostati altrove
+let currentView = { lottoId: null };
 
 function render() {
   if(!allLotti.length) {
     document.getElementById('content').innerHTML = `<div class="empty">${t('nessunLotto')}</div>`;
     return;
   }
-  if(currentView.lottoId !== null && currentView.groupKey !== null) {
+  if(currentView.lottoId !== null) {
     renderDetail();
   } else {
     renderList();
@@ -316,45 +314,42 @@ function render() {
 function renderList() {
   let html = '';
   allLotti.forEach((lotto, idx) => {
+    const label = (lotto.capannone || '—').toUpperCase();
     html += `
     ${idx > 0 ? '<div class="divider"></div>' : ''}
     <div class="lotto-sub" style="margin-bottom:8px;">${lotto.provenienza || ''} · ${fmtDateFull(lotto.data_ingresso)}</div>
-    ${GRUPPI_CAPANNONE.map(g => `
-      <button class="group-btn" onclick="apriGruppo(${lotto.id}, '${g.key}')">📍 ${g.label}</button>
-    `).join('')}
+    <button class="group-btn" onclick="apriLotto(${lotto.id})">📍 ${label}</button>
     `;
   });
   document.getElementById('content').innerHTML = html;
 }
 
-function apriGruppo(lottoId, groupKey) {
-  currentView = { lottoId, groupKey };
+function apriLotto(lottoId) {
+  currentView = { lottoId };
   render();
 }
 
 function tornaLista() {
-  currentView = { lottoId: null, groupKey: null };
+  currentView = { lottoId: null };
   render();
 }
 
 function renderDetail() {
-  const { lottoId, groupKey } = currentView;
+  const { lottoId } = currentView;
   const lotto = allLotti.find(l => l.id === lottoId);
-  const group = GRUPPI_CAPANNONE.find(g => g.key === groupKey);
 
-  // Presenti = sempre sul totale del lotto (stessa popolazione, anche se spostata di capannone) —
-  // la mortalità va sottratta indipendentemente da dove è stata registrata, mai solo per gruppo
   const ingLotto = allIngressi.filter(i => i.lotto_id === lottoId);
   const totIngLotto = ingLotto.reduce((s,i) => s+(i.capi||0), 0);
   const mortLotto = allMortalita.filter(m => m.lotto_id === lottoId);
   const totMortiLotto = mortLotto.reduce((s,m) => s+(m.capi_morti||0), 0);
   const presenti = (ingLotto.length ? totIngLotto : (lotto.capi_entrati||0)) - totMortiLotto;
+  const label = (lotto.capannone || '—').toUpperCase();
 
   const html = `
     <button class="btn-back" onclick="tornaLista()">‹ ${lang === 'pa' ? 'ਵਾਪਸ' : 'Indietro'}</button>
     <div class="lotto-header">
       <div>
-        <div class="lotto-codice" style="font-size:18px;">📍 ${group.label}</div>
+        <div class="lotto-codice" style="font-size:18px;">📍 ${label}</div>
         <div class="lotto-sub">${lotto.provenienza || ''} · ${fmtDateFull(lotto.data_ingresso)}</div>
       </div>
       <div style="text-align:right;">
@@ -364,18 +359,19 @@ function renderDetail() {
     </div>
 
     <div class="btn-row" style="grid-template-columns:1fr;">
-      <button class="btn-mort" onclick="apriModal(${lotto.id}, '${group.key}')">${t('btnMortalita')}</button>
+      <button class="btn-mort" onclick="apriModal(${lotto.id})">${t('btnMortalita')}</button>
     </div>
   `;
   document.getElementById('content').innerHTML = html;
 }
 
-function apriModal(lottoId, groupKey) {
-  const group = GRUPPI_CAPANNONE.find(g => g.key === groupKey);
+function apriModal(lottoId) {
+  const lotto = allLotti.find(l => l.id === lottoId);
   _mortLottoId = lottoId;
+  const vals = (lotto.capannone || 'cap 2').split('·').map(s => s.trim()).filter(Boolean);
   const sel = document.getElementById('m-capannone');
-  sel.innerHTML = group.vals.map(v => `<option value="${v}">${v.toUpperCase()}</option>`).join('');
-  sel.value = group.vals[0];
+  sel.innerHTML = vals.map(v => `<option value="${v}">${v.toUpperCase()}</option>`).join('');
+  sel.value = vals[0];
   ['m-capi','m-note'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('m-data').value = new Date().toISOString().split('T')[0];
   document.getElementById('modal-mort').style.display = 'flex';
