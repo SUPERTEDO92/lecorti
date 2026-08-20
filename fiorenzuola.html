@@ -342,11 +342,13 @@ function renderDetail() {
   const lotto = allLotti.find(l => l.id === lottoId);
   const group = GRUPPI_CAPANNONE.find(g => g.key === groupKey);
 
-  const ingG = allIngressi.filter(i => i.lotto_id === lottoId && group.vals.includes((i.capannone || '').toLowerCase()));
-  const totIng = ingG.reduce((s,i) => s+(i.capi||0), 0);
-  const mortG = allMortalita.filter(m => m.lotto_id === lottoId && group.vals.includes((m.capannone || '').toLowerCase()));
-  const totMorti = mortG.reduce((s,m) => s+(m.capi_morti||0), 0);
-  const presenti = totIng - totMorti;
+  // Presenti = sempre sul totale del lotto (stessa popolazione, anche se spostata di capannone) —
+  // la mortalità va sottratta indipendentemente da dove è stata registrata, mai solo per gruppo
+  const ingLotto = allIngressi.filter(i => i.lotto_id === lottoId);
+  const totIngLotto = ingLotto.reduce((s,i) => s+(i.capi||0), 0);
+  const mortLotto = allMortalita.filter(m => m.lotto_id === lottoId);
+  const totMortiLotto = mortLotto.reduce((s,m) => s+(m.capi_morti||0), 0);
+  const presenti = (ingLotto.length ? totIngLotto : (lotto.capi_entrati||0)) - totMortiLotto;
 
   const html = `
     <button class="btn-back" onclick="tornaLista()">‹ ${lang === 'pa' ? 'ਵਾਪਸ' : 'Indietro'}</button>
