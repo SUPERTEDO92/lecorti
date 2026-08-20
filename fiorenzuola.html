@@ -361,6 +361,24 @@ function renderDetail() {
     <div class="btn-row" style="grid-template-columns:1fr;">
       <button class="btn-mort" onclick="apriModal(${lotto.id})">${t('btnMortalita')}</button>
     </div>
+
+    ${mortLotto.length ? `
+      <div class="section-title" style="margin-top:12px;">${t('mortRegistrate')}</div>
+      <div class="mort-scroll">
+      ${mortLotto.slice().sort((a,b) => b.data_evento.localeCompare(a.data_evento)).map(m => `
+        <div class="row-item">
+          <div>
+            <div class="row-data">${fmtDate(m.data_evento)}${m.capannone ? ` · <strong style="text-transform:uppercase;">${m.capannone}</strong>` : ''}</div>
+            ${m.note ? `<div class="row-info">${noteDisplay(m.note)}</div>` : ''}
+          </div>
+          <div>
+            <div class="row-capi" style="color:var(--red);">${m.capi_morti || 0}</div>
+            <div class="row-capi-label">${t('capiUnit')}</div>
+          </div>
+        </div>`).join('')}
+      </div>
+      <div class="row-totale"><span>${t('totMortalita')}</span><span style="color:var(--red);font-weight:500">${totMortiLotto} ${t('capiUnit')}</span></div>
+    ` : ''}
   `;
   document.getElementById('content').innerHTML = html;
 }
