@@ -1443,7 +1443,7 @@ window.addEventListener('error', (e) => {
   }
 });
 
-function showPage(name, lottoId) {
+function showPage(name, lottoId, meta) {
   const newPage = document.getElementById(`page-${name}`);
   document.querySelectorAll('.page').forEach(p => { if(p !== newPage) p.classList.remove('visible'); });
   currentPage = name;
@@ -1466,7 +1466,7 @@ function showPage(name, lottoId) {
   if(name === 'documentale') renderDocumentale();
   if(name === 'analisi' && lottoId) { currentLottoId = lottoId; renderAnalisi(lottoId); }
   if(name === 'analisi' && !lottoId && currentLottoId) renderAnalisi(currentLottoId);
-  if(name === 'note' && lottoId) { currentNoteLottoId = lottoId; renderNote(lottoId); }
+  if(name === 'note' && lottoId) { currentNoteLottoId = lottoId; currentNoteIsSoccida = !!(meta && meta.soccida); renderNote(lottoId, currentNoteIsSoccida); }
   if(name === 'stampa' && lottoId) { currentLottoId = lottoId; renderStampa(lottoId); }
   window.scrollTo(0,0);
 }
@@ -2367,6 +2367,17 @@ function renderDetail(socId) {
     html += `<button onclick="apriVenditeDirette(${soc.id})" type="button" style="width:100%;margin-bottom:10px;padding:10px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);font-size:12px;font-family:var(--font);font-weight:500;cursor:pointer;text-align:left;display:flex;align-items:center;justify-content:space-between;color:var(--text);">
       <span>📋 Vendite dirette</span>
       <span style="color:var(--text2);">${allVenditeDirette.filter(v=>v.soccida_id===soc.id).length} voci ›</span>
+    </button>`;
+  }
+
+  // SABBIONERA: bottone "Note generali" per tracciare visite/passaggi non legati a un lotto specifico —
+  // riusa esattamente la pagina/markup di apriNote (stesso stile referto-card, stessa tendina GSAP),
+  // ma le note sono salvate con lotto_id NULL e filtrate per soccida
+  if(soc.nome === 'SABBIONERA') {
+    const countGenerali = (allNoteVet||[]).filter(n => n.soccida === 'SABBIONERA' && !n.lotto_id).length;
+    html += `<button onclick="apriNoteSoccida(${soc.id})" type="button" style="width:100%;margin-bottom:10px;padding:10px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);font-size:12px;font-family:var(--font);font-weight:500;cursor:pointer;text-align:left;display:flex;align-items:center;justify-content:space-between;color:var(--text);">
+      <span>📝 Note generali</span>
+      <span style="color:var(--text2);">${countGenerali} voci ›</span>
     </button>`;
   }
 
@@ -3596,19 +3607,32 @@ function apriNote(lottoId, tornaFn) {
   showPage('note', lottoId);
 }
 
-function renderNote(lottoId) {
-  currentNoteLottoId = lottoId;
-  const lotto = allLotti.find(l => l.id === lottoId);
-  const soc = lotto ? allSoccide.find(s => s.id === lotto.soccida_id) : null;
-  const note = (allNoteVet||[]).filter(n => n.lotto_id === lottoId).sort((a,b) => b.data_nota.localeCompare(a.data_nota));
+// Note generali di soccida (non legate a un lotto) — stessa identica pagina/markup di apriNote,
+// usa lotto_id NULL su note_veterinario filtrato per nome soccida. Es. SABBIONERA "quando passo".
+function apriNoteSoccida(socId, tornaFn) {
+  _noteTornaFn = tornaFn || (() => showPage('detail', socId));
+  showPage('note', socId, { soccida: true });
+}
+
+let currentNoteIsSoccida = false;
+
+function renderNote(id, isSoccida) {
+  currentNoteLottoId = id;
+  currentNoteIsSoccida = !!isSoccida;
+
+  const lotto = isSoccida ? null : allLotti.find(l => l.id === id);
+  const soc = isSoccida ? allSoccide.find(s => s.id === id) : (lotto ? allSoccide.find(s => s.id === lotto.soccida_id) : null);
+  const note = isSoccida
+    ? (allNoteVet||[]).filter(n => n.soccida === soc?.nome && !n.lotto_id).sort((a,b) => b.data_nota.localeCompare(a.data_nota))
+    : (allNoteVet||[]).filter(n => n.lotto_id === id).sort((a,b) => b.data_nota.localeCompare(a.data_nota));
 
   let html = `<button class="back-btn" onclick="_noteTornaFn()" style="display:flex;margin:0 0 12px;">← Indietro</button>`;
   html += `<div class="izs-header" style="background:var(--amber);">
     <div class="izs-title">Note</div>
-    <div class="izs-sub">${soc?.nome || '—'} · Lotto ${lotto?.codice_banda ? lotto.codice_banda + ' · ' : ''}${lotto?.codice || '—'}</div>
+    <div class="izs-sub">${soc?.nome || '—'}${isSoccida ? ' · Note generali' : ` · Lotto ${lotto?.codice_banda ? lotto.codice_banda + ' · ' : ''}${lotto?.codice || '—'}`}</div>
   </div>`;
 
-  html += `<button onclick="apriInserisciNota(${lottoId})" style="width:100%;padding:11px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-bottom:14px;">
+  html += `<button onclick="${isSoccida ? `apriInserisciNota(null, ${id})` : `apriInserisciNota(${id})`}" style="width:100%;padding:11px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius-lg);font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;margin-bottom:14px;">
     + Inserisci nota
   </button>`;
 
@@ -3617,7 +3641,7 @@ function renderNote(lottoId) {
       <div class="referto-card">
         <div class="referto-head" style="background:var(--amber-bg);border-bottom:0.5px solid #F0DC8A;">
           <span class="referto-data" style="color:var(--amber);">${fmtDateFull(n.data_nota)}</span>
-          <span class="referto-lotto">Lotto ${lotto?.codice || '—'}</span>
+          <span class="referto-lotto">${isSoccida ? (soc?.nome || '—') : `Lotto ${lotto?.codice || '—'}`}</span>
         </div>
         <div class="referto-body">
           <div style="font-size:13px;color:var(--text);white-space:pre-wrap;">${n.testo}</div>
@@ -3625,22 +3649,25 @@ function renderNote(lottoId) {
         </div>
       </div>`).join('');
   } else {
-    html += `<div class="referto-empty">Nessuna nota registrata per questo lotto.</div>`;
+    html += `<div class="referto-empty">${isSoccida ? 'Nessuna nota generale registrata.' : 'Nessuna nota registrata per questo lotto.'}</div>`;
   }
 
   document.getElementById('note-content').innerHTML = html;
 }
 
 let _notaLottoId = null;
+let _notaSoccidaGeneraleId = null;
 let _notaFotoBlob = null;
 
-function apriInserisciNota(lottoId) {
-  _notaLottoId = lottoId;
+function apriInserisciNota(lottoId, socIdGenerale) {
+  _notaLottoId = lottoId || null;
+  _notaSoccidaGeneraleId = (!lottoId && socIdGenerale) ? socIdGenerale : null;
   _notaFotoBlob = null;
-  const lotto = allLotti.find(l => l.id === lottoId);
-  const soc = allSoccide.find(s => s.id === lotto?.soccida_id);
-  document.getElementById('modal-nota-info').textContent =
-    `${soc?.nome || '—'}${lotto?.codice_banda ? ' · ' + lotto.codice_banda : ''} · Lotto ${lotto?.codice || '—'}${lotto?.lettera_dop ? ' · ' + lotto.lettera_dop : ''}`;
+  const lotto = lottoId ? allLotti.find(l => l.id === lottoId) : null;
+  const soc = _notaSoccidaGeneraleId ? allSoccide.find(s => s.id === _notaSoccidaGeneraleId) : allSoccide.find(s => s.id === lotto?.soccida_id);
+  document.getElementById('modal-nota-info').textContent = _notaSoccidaGeneraleId
+    ? `${soc?.nome || '—'} · Nota generale`
+    : `${soc?.nome || '—'}${lotto?.codice_banda ? ' · ' + lotto.codice_banda : ''} · Lotto ${lotto?.codice || '—'}${lotto?.lettera_dop ? ' · ' + lotto.lettera_dop : ''}`;
   document.getElementById('nota-testo').value = '';
   document.getElementById('nota-data').value = new Date().toISOString().split('T')[0];
   const fotoInput = document.getElementById('nota-foto');
@@ -3662,6 +3689,7 @@ function chiudiNota() {
   gsap.to(panel, { yPercent: 100, duration: 0.32, ease: 'power2.in' });
   gsap.to(overlay, { opacity: 0, duration: 0.32, ease: 'power1.in', onComplete: () => { overlay.style.display = 'none'; } });
   _notaLottoId = null;
+  _notaSoccidaGeneraleId = null;
 }
 
 // Comprime una foto lato client prima dell'upload (canvas: max 1600px lato lungo,
@@ -3716,8 +3744,8 @@ async function salvaNota() {
   const testo = document.getElementById('nota-testo').value.trim();
   if(!data || !testo) { alert('Inserisci data e testo della nota'); return; }
 
-  const lotto = allLotti.find(l => l.id === _notaLottoId);
-  const soc = allSoccide.find(s => s.id === lotto?.soccida_id);
+  const lotto = _notaLottoId ? allLotti.find(l => l.id === _notaLottoId) : null;
+  const soc = _notaSoccidaGeneraleId ? allSoccide.find(s => s.id === _notaSoccidaGeneraleId) : allSoccide.find(s => s.id === lotto?.soccida_id);
 
   try {
     let fotoDocId = null;
@@ -3726,7 +3754,7 @@ async function salvaNota() {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/note_veterinario`, {
       method: 'POST', headers: SB_H,
       body: JSON.stringify({
-        lotto_id: _notaLottoId,
+        lotto_id: _notaLottoId || null,
         soccida: soc?.nome || '',
         data_nota: data,
         testo,
@@ -3737,7 +3765,7 @@ async function salvaNota() {
     const nuova = await r.json();
     if(Array.isArray(nuova)) allNoteVet.push(...nuova); else allNoteVet.push(nuova);
     chiudiNota();
-    if(currentNoteLottoId) renderNote(currentNoteLottoId);
+    if(currentNoteLottoId) renderNote(currentNoteLottoId, currentNoteIsSoccida);
   } catch(e) {
     alert('Errore: ' + e.message);
   }
