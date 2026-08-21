@@ -2261,8 +2261,9 @@ function renderGiroLucreziaSlot(nomeSito) {
     const mortLotto = allMortalita.filter(m => m.lotto_id === lotto.id).sort((a,b) => a.data_evento.localeCompare(b.data_evento));
     const sanLotto = allSanitario.filter(s => s.lotto_id === lotto.id);
     const totMorti = mortLotto.reduce((s,m) => s+(m.capi_morti||0), 0);
-    const trasfAcq = allTrasferimenti.find(t => t.lotto_id === lotto.id && t.tipo === 'ACQUISTO');
-    const costoAcq = trasfAcq?.costo_acquisto || null;
+    const trasfAcqAll = allTrasferimenti.filter(t => t.lotto_id === lotto.id && t.tipo === 'ACQUISTO');
+    const trasfAcq = trasfAcqAll[0] || null;
+    const costoAcq = trasfAcqAll.length ? (trasfAcqAll.reduce((s,t)=>s+(t.costo_acquisto||0),0) || null) : null;
     const costoPerCapo = costoAcq && lotto.capi_entrati ? (costoAcq / lotto.capi_entrati).toFixed(2) : null;
 
     // Header standard, identico a quello dei lotti nelle altre soccide
@@ -2470,29 +2471,46 @@ function renderDetail(socId) {
       Incremento: +${lotto.incremento_giornaliero ? lotto.incremento_giornaliero.toFixed(3) : '—'} kg/gg &nbsp;✎ modifica
     </button>`;
 
-    // Costo acquisto dal trasferimento ACQUISTO collegato
-    const trasfAcq = (allTrasferimenti||[]).find(t => t.lotto_id === lotto.id && t.tipo === 'ACQUISTO');
-    const costoAcq = trasfAcq?.costo_acquisto || null;
+    // Costo acquisto: somma di tutte le righe ACQUISTO collegate al lotto (possono essere più di una, es. arrivi scaglionati su fatture separate)
+    const trasfAcqAll = (allTrasferimenti||[]).filter(t => t.lotto_id === lotto.id && t.tipo === 'ACQUISTO');
+    const trasfAcq = trasfAcqAll[0] || null;
+    const costoAcq = trasfAcqAll.length ? (trasfAcqAll.reduce((s,t)=>s+(t.costo_acquisto||0),0) || null) : null;
     const costoPerCapo = costoAcq && lotto.capi_entrati ? (costoAcq / lotto.capi_entrati).toFixed(2) : null;
 
+    const trasfAcqMancanti = trasfAcqAll.filter(t => !t.costo_acquisto);
     if(costoAcq) {
       html += `<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:8px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-size:11px;color:var(--text2);">💰 Costo acquisto suinetti</div>
+        <div style="font-size:11px;color:var(--text2);">💰 Costo acquisto suinetti${trasfAcqAll.length > 1 ? ` (${trasfAcqAll.length} arrivi)` : ''}</div>
         <div style="text-align:right;">
           <div style="font-size:15px;font-weight:600;font-family:var(--mono);color:var(--accent);">${fmt(costoAcq)} €</div>
           <div style="font-size:10px;color:var(--text2);font-family:var(--mono);">${costoPerCapo} €/capo</div>
         </div>
       </div>`;
+      if(trasfAcqMancanti.length) {
+        html += `<div style="background:var(--amber-bg);border:0.5px solid #F0DC8A;border-radius:var(--radius);padding:8px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:11px;color:var(--amber);">⚠️ ${trasfAcqMancanti.length} arriv${trasfAcqMancanti.length===1?'o':'i'} ancora senza prezzo — totale sopra parziale</div>
+        </div>`;
+        trasfAcqMancanti.forEach(t => {
+          html += `<div style="background:var(--amber-bg);border:0.5px solid #F0DC8A;border-radius:var(--radius);padding:6px 12px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:10.5px;color:var(--amber);">Arrivo ${fmtDate(t.data_trasferimento)} · ${fmt(t.capi)} capi</div>
+            <button onclick="apriCostoAcquisto(${t.id})" style="padding:4px 10px;background:var(--amber);color:#FFF;border:none;border-radius:var(--radius);font-size:10.5px;font-family:var(--font);font-weight:500;cursor:pointer;">+ Inserisci</button>
+          </div>`;
+        });
+      }
     } else if(trasfAcq) {
       html += `<div style="background:var(--amber-bg);border:0.5px solid #F0DC8A;border-radius:var(--radius);padding:8px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
         <div style="font-size:11px;color:var(--amber);">💰 Costo acquisto — da inserire</div>
         <button onclick="apriCostoAcquisto(${trasfAcq.id})" style="padding:5px 12px;background:var(--amber);color:#FFF;border:none;border-radius:var(--radius);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">+ Inserisci</button>
       </div>`;
     }
-    if(trasfAcq && (trasfAcq.calcolo_documento_id || trasfAcq.fattura_documento_id)) {
-      html += `<div style="display:flex;gap:6px;margin-bottom:8px;">
-        ${trasfAcq.calcolo_documento_id ? `<button onclick="apriDocumento(${trasfAcq.calcolo_documento_id})" style="flex:1;background:#FDF3E7;border:0.5px solid #EAD2A8;border-radius:var(--radius);padding:6px 10px;font-size:11px;font-weight:600;color:var(--accent);cursor:pointer;font-family:var(--font);">📄 Conteggio</button>` : ''}
-        ${trasfAcq.fattura_documento_id ? `<button onclick="apriDocumento(${trasfAcq.fattura_documento_id})" style="flex:1;background:#FDF3E7;border:0.5px solid #EAD2A8;border-radius:var(--radius);padding:6px 10px;font-size:11px;font-weight:600;color:var(--accent);cursor:pointer;font-family:var(--font);">📄 Fattura</button>` : ''}
+    const docBtns = [];
+    trasfAcqAll.forEach(t => {
+      if(t.calcolo_documento_id) docBtns.push({id: t.calcolo_documento_id, label: '📄 Conteggio'});
+      if(t.fattura_documento_id) docBtns.push({id: t.fattura_documento_id, label: '📄 Fattura'});
+    });
+    if(docBtns.length) {
+      html += `<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
+        ${docBtns.map(d => `<button onclick="apriDocumento(${d.id})" style="flex:1;min-width:80px;background:#FDF3E7;border:0.5px solid #EAD2A8;border-radius:var(--radius);padding:6px 10px;font-size:11px;font-weight:600;color:var(--accent);cursor:pointer;font-family:var(--font);">${d.label}</button>`).join('')}
       </div>`;
     }
 
@@ -5499,8 +5517,8 @@ function renderArchivioSoccida(socId) {
       ? ((mediaKg - lotto.media_ingresso) / ggStalla).toFixed(3) : null;
 
     // Costo acquisto e margine
-    const trasfAcqArch = (allTrasferimenti||[]).find(t => t.lotto_id === lotto.id && t.tipo === 'ACQUISTO');
-    const costoAcqArch = trasfAcqArch?.costo_acquisto || null;
+    const trasfAcqAllArch = (allTrasferimenti||[]).filter(t => t.lotto_id === lotto.id && t.tipo === 'ACQUISTO');
+    const costoAcqArch = trasfAcqAllArch.length ? (trasfAcqAllArch.reduce((s,t)=>s+(t.costo_acquisto||0),0) || null) : null;
     const margineArch = costoAcqArch && totLiq ? totLiq - costoAcqArch : null;
 
     html += `<div style="background:#FFF;border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:10px;">
@@ -5675,8 +5693,8 @@ function stampaArchivioSoccida(socId) {
       ? ((parseFloat(mediaKg) - lotto.media_ingresso) / ggStalla).toFixed(3) : '—';
 
     const [y,m,d] = lotto.data_ingresso.split('-');
-    const trasfAcqSt = (allTrasferimenti||[]).find(t => t.lotto_id === lotto.id && t.tipo === 'ACQUISTO');
-    const costoAcqSt = trasfAcqSt?.costo_acquisto || null;
+    const trasfAcqAllSt = (allTrasferimenti||[]).filter(t => t.lotto_id === lotto.id && t.tipo === 'ACQUISTO');
+    const costoAcqSt = trasfAcqAllSt.length ? (trasfAcqAllSt.reduce((s,t)=>s+(t.costo_acquisto||0),0) || null) : null;
     const margineSt = costoAcqSt && totLiq ? totLiq - costoAcqSt : null;
 
     html += `<div class="lotto">
