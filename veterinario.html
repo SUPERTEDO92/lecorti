@@ -251,9 +251,9 @@
 // ── Soccide visibili a questa pagina: le tre del Giro Lucrezia + Vezzoli e Semenza
 // (Vezzoli è ingrasso "normale" ma il veterinario segue anche quell'allevamento) ──
 const GL_SVEZZAMENTO = 'LUCREZIA SVEZZAMENTO';
-const GL_ACQUANEGRA = 'ACQUANEGRA';
+const GL_PEDROTTI = 'PEDROTTI';
 const GL_INGRASSO = 'LUCREZIA INGRASSO';
-const GL_NOMI = [GL_SVEZZAMENTO, GL_ACQUANEGRA, GL_INGRASSO];
+const GL_NOMI = [GL_SVEZZAMENTO, GL_PEDROTTI, GL_INGRASSO];
 const ALTRE_SOCCIDE = ['VEZZOLI', 'SEMENZA'];
 const SOCCIDE_MOSTRATE = [...GL_NOMI, ...ALTRE_SOCCIDE];
 const GL_GG_SVEZZAMENTO = 60;
@@ -454,8 +454,8 @@ function glSitoOccupato(nomeSito, dataRif) {
 function glSuggerisciSito(dataRif) {
   const luc = glSitoOccupato(GL_SVEZZAMENTO, dataRif);
   if(!luc.occupato) return GL_SVEZZAMENTO;
-  const acq = glSitoOccupato(GL_ACQUANEGRA, dataRif);
-  if(acq.count < 2) return GL_ACQUANEGRA;
+  const ped = glSitoOccupato(GL_PEDROTTI, dataRif);
+  if(ped.count < 3) return GL_PEDROTTI;
   return GL_SVEZZAMENTO;
 }
 function glUltimaBandaInfo() {
@@ -481,7 +481,7 @@ function renderGiroLucrezia() {
     prox.setDate(prox.getDate() + GL_GG_CICLO_BANDA);
     const proxStr = prox.toISOString().slice(0,10);
     const sito = glSuggerisciSito(proxStr);
-    const sitoLabel = sito === GL_SVEZZAMENTO ? 'Lucrezia (interno)' : 'Acquanegra';
+    const sitoLabel = sito === GL_SVEZZAMENTO ? 'Lucrezia (interno)' : 'Pedrotti';
     const oggi = new Date(); oggi.setHours(0,0,0,0);
     const scaduta = prox <= oggi;
     reminderHtml = `<div style="background:${scaduta ? 'var(--red-bg)' : 'var(--amber-bg)'};border:0.5px solid ${scaduta ? 'var(--red)' : 'var(--accent)'};border-radius:12px;padding:18px;margin-bottom:16px;">
@@ -494,10 +494,10 @@ function renderGiroLucrezia() {
   }
 
   const socLuc = allSoccide.find(s => s.nome === GL_SVEZZAMENTO);
-  const socAcq = allSoccide.find(s => s.nome === GL_ACQUANEGRA);
+  const socPed = allSoccide.find(s => s.nome === GL_PEDROTTI);
   const socIng = allSoccide.find(s => s.nome === GL_INGRASSO);
   const bandeLuc = socLuc ? allLotti.filter(l => l.soccida_id === socLuc.id && l.attivo && l.codice_banda) : [];
-  const bandeAcq = socAcq ? allLotti.filter(l => l.soccida_id === socAcq.id && l.attivo && l.codice_banda) : [];
+  const bandePed = socPed ? allLotti.filter(l => l.soccida_id === socPed.id && l.attivo && l.codice_banda) : [];
   const bandeIng = socIng ? allLotti.filter(l => l.soccida_id === socIng.id && l.attivo && l.codice_banda) : [];
 
   const slotCard = (titolo, bande, nomeSito) => {
@@ -516,7 +516,7 @@ function renderGiroLucrezia() {
   let html = reminderHtml;
   html += `<div class="section-sep">Slot svezzamento</div><div class="soccide-list">`;
   html += slotCard('Lucrezia (interno)', bandeLuc, GL_SVEZZAMENTO);
-  html += slotCard('Acquanegra (max 2 bande)', bandeAcq, GL_ACQUANEGRA);
+  html += slotCard('Pedrotti (max 3 bande)', bandePed, GL_PEDROTTI);
   html += `</div>`;
   html += `<div class="section-sep">Slot ingrasso</div><div class="soccide-list">`;
   html += slotCard('Lucrezia (ingrasso)', bandeIng, GL_INGRASSO);
@@ -538,7 +538,7 @@ function glChiudiSlot() { _glSlot = null; renderGiroLucrezia(); }
 function renderGiroLucreziaSlot(nomeSito) {
   const container = document.getElementById('girolucrezia-content');
   const soc = allSoccide.find(s => s.nome === nomeSito);
-  const label = nomeSito === GL_SVEZZAMENTO ? 'Lucrezia (interno)' : nomeSito === GL_INGRASSO ? 'Lucrezia (ingrasso)' : 'Acquanegra';
+  const label = nomeSito === GL_SVEZZAMENTO ? 'Lucrezia (interno)' : nomeSito === GL_INGRASSO ? 'Lucrezia (ingrasso)' : 'Pedrotti';
   const bande = soc ? allLotti.filter(l => l.soccida_id === soc.id && l.attivo && l.codice_banda).sort((a,b) => a.data_ingresso.localeCompare(b.data_ingresso)) : [];
 
   let html = `<button onclick="glChiudiSlot()" class="back-btn" style="display:flex;margin:0 0 12px;">← Giro Lucrezia</button>`;
