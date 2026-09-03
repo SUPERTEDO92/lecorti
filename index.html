@@ -2115,7 +2115,10 @@ function glSuggerisciSito(dataRif) {
   if(!luc.occupato) return GL_SVEZZAMENTO;
   const ped = glSitoOccupato(GL_PEDRONI, dataRif);
   if(ped.count < 3) return GL_PEDRONI;
-  return GL_SVEZZAMENTO; // entrambi i siti pieni: da verificare manualmente
+  // Anche oltre il limite logico di 3 bande "vive", Pedroni ha capacità reale 4000 suinetti
+  // (Lucrezia interno ne ospita invece 1 sola banda alla volta) — quindi resta la scelta corretta
+  // di default anche quando il conteggio logico segnala "pieno" su entrambi i siti.
+  return GL_PEDRONI;
 }
 
 // Ultima banda creata — quella la cui prima fase (ingresso a svezzamento) è più recente,
