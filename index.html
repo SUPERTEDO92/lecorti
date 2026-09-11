@@ -2474,7 +2474,7 @@ function renderDetail(socId) {
         <span style="font-size:20px;font-weight:700;color:var(--accent);font-family:var(--mono);">${fmt(totLettere)}</span>
       </div>`;
       html += `<div style="margin-top:8px;">`;
-      lettereLotto.sort((a,b)=>(a.data_at||'').localeCompare(b.data_at||'')).forEach(x => {
+      lettereLotto.sort((a,b)=> (a.lettera||'').localeCompare(b.lettera||'') || (a.data_at||'').localeCompare(b.data_at||'')).forEach(x => {
         html += `<div style="font-size:10.5px;color:var(--text2);font-family:var(--mono);">AT ${x.numero_at||'—'} del ${fmtDate(x.data_at)} · lettera ${x.lettera} · ${fmt(x.capi)} capi</div>`;
       });
       html += `</div></div>`;
