@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Le Corti — Spostamenti</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Spostamenti">
+<meta name="theme-color" content="#1A1A18">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F5F3EE;
+    --bg2: #EDEAE3;
+    --bg3: #E3DFD6;
+    --text: #1A1A18;
+    --text2: #6B6B66;
+    --text3: #9C9C96;
+    --accent: #C17B2A;
+    --accent2: #E8A84A;
+    --green: #2A7A4A;
+    --green-bg: #E8F5EE;
+    --amber: #9A6010;
+    --amber-bg: #FDF3E0;
+    --red: #A03030;
+    --red-bg: #FCEAEA;
+    --border: #D4D0C8;
+    --border2: #C4C0B8;
+    --font: 'IBM Plex Sans', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+    --radius: 6px;
+    --radius-lg: 10px;
+    --shadow-sm: 0 1px 2px rgba(26,26,24,.05), 0 1px 1px rgba(26,26,24,.03);
+    --shadow-md: 0 3px 10px rgba(26,26,24,.07), 0 1px 3px rgba(26,26,24,.05);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; overflow-anchor: none; }
+  html { overflow-anchor: none; }
+
+  /* TOPBAR — identico a index.html */
+  .topbar { position: sticky; top: 0; z-index: 250; background: var(--text); color: #F5F3EE; overflow-anchor: none; }
+  .topbar-title { padding: 12px 20px 8px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .topbar-logo { font-family: var(--mono); font-size: 15px; font-weight: 500; letter-spacing: .1em; }
+  .topbar-date { font-size: 11px; color: #888; font-family: var(--mono); }
+
+  .page { padding: 20px; max-width: 480px; margin: 0 auto; overflow-anchor: none; }
+
+  .section-sep { font-size: 10px; font-family: var(--mono); font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: .1em; padding: 16px 0 6px; }
+  .section-sep:first-child { padding-top: 4px; }
+
+  .storico-container { background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); }
+  .spost-row { padding: 11px 14px; border-bottom: 0.5px solid var(--border); display: flex; align-items: flex-start; gap: 10px; }
+  .spost-row:last-child { border-bottom: none; }
+  .spost-time { font-family: var(--mono); font-size: 12px; color: var(--text2); min-width: 42px; padding-top: 1px; }
+  .spost-main { flex: 1; min-width: 0; }
+  .spost-luogo { font-size: 13px; font-weight: 500; }
+  .spost-meta { display: flex; align-items: center; gap: 6px; margin-top: 3px; flex-wrap: wrap; }
+  .spost-badge { font-size: 10px; font-family: var(--mono); padding: 2px 7px; border-radius: 20px; font-weight: 500; background: var(--bg3); color: var(--text2); }
+  .spost-note { font-size: 11px; color: var(--text2); margin-top: 3px; }
+
+  .loading { text-align: center; padding: 40px 20px; color: var(--text2); font-size: 13px; font-family: var(--mono); }
+  .empty { text-align: center; padding: 32px 20px; color: var(--text3); font-size: 12px; background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); }
+
+  .summary-bar { font-size: 11px; color: var(--text2); padding: 2px 2px 12px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-title">
+    <span class="topbar-logo">LE CORTI — SPOSTAMENTI</span>
+    <span class="topbar-date" id="today-date"></span>
+  </div>
+</div>
+
+<div class="page">
+  <div class="summary-bar" id="spost-summary"></div>
+  <div id="spost-content"><div class="loading">Caricamento...</div></div>
+</div>
+
+<script src="lecorti-shared.js"></script>
+<script>
+document.getElementById('today-date').textContent = new Date().toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' });
+
+function fmtOra(t) {
+  if (!t) return '';
+  return t.slice(0, 5);
+}
+
+function meseAnnoLabel(dataStr) {
+  const [y, m] = dataStr.split('-');
+  const mesi = ['', 'GENNAIO', 'FEBBRAIO', 'MARZO', 'APRILE', 'MAGGIO', 'GIUGNO', 'LUGLIO', 'AGOSTO', 'SETTEMBRE', 'OTTOBRE', 'NOVEMBRE', 'DICEMBRE'];
+  return `${mesi[parseInt(m)]} ${y}`;
+}
+
+async function loadSpostamenti() {
+  const dati = await sb('spostamenti', '?select=*&order=data_spostamento.desc,ora.desc.nullslast&limit=500');
+
+  if (!Array.isArray(dati) || dati.length === 0) {
+    document.getElementById('spost-content').innerHTML = `<div class="empty">Nessuno spostamento registrato.</div>`;
+    document.getElementById('spost-summary').textContent = '';
+    return;
+  }
+
+  document.getElementById('spost-summary').textContent = `${dati.length} spostament${dati.length === 1 ? 'o' : 'i'} registrat${dati.length === 1 ? 'o' : 'i'}`;
+
+  const gruppi = {};
+  const ordineMesi = [];
+  dati.forEach(s => {
+    const key = s.data_spostamento.slice(0, 7);
+    if (!gruppi[key]) { gruppi[key] = []; ordineMesi.push(key); }
+    gruppi[key].push(s);
+  });
+
+  let html = '';
+  ordineMesi.forEach(key => {
+    html += `<div class="section-sep">${meseAnnoLabel(key + '-01')}</div><div class="storico-container">`;
+    gruppi[key].forEach(s => {
+      html += `<div class="spost-row">
+        <div class="spost-time">${fmtOra(s.ora) || '—'}</div>
+        <div class="spost-main">
+          <div class="spost-luogo">${fmtDate(s.data_spostamento)} · ${s.luogo}</div>
+          <div class="spost-meta">
+            ${s.codice_stalla ? `<span class="spost-badge">${s.codice_stalla}</span>` : ''}
+          </div>
+          ${s.note ? `<div class="spost-note">${s.note}</div>` : ''}
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+
+  document.getElementById('spost-content').innerHTML = html;
+}
+
+loadSpostamenti();
+</script>
+</body>
+</html>
