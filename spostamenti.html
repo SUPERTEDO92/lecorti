@@ -47,6 +47,9 @@
 
   .page { padding: 20px; max-width: 480px; margin: 0 auto; overflow-anchor: none; }
 
+  .back-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #FFF; cursor: pointer; background: #2A6B8A; border: none; font-family: var(--font); padding: 6px 12px; margin: 0 0 12px; border-radius: var(--radius); }
+  .back-btn:hover, .back-btn:active { opacity: .85; }
+
   .section-sep { font-size: 10px; font-family: var(--mono); font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: .1em; padding: 16px 0 6px; }
   .section-sep:first-child { padding-top: 4px; }
 
@@ -76,6 +79,7 @@
 </div>
 
 <div class="page">
+  <button class="back-btn" onclick="window.location.href='index.html'">← Gestionale</button>
   <div class="summary-bar" id="spost-summary"></div>
   <div id="spost-content"><div class="loading">Caricamento...</div></div>
 </div>
