@@ -2339,6 +2339,31 @@ function renderGiroLucreziaSlot(nomeSito) {
       </div>
     </div>`;
 
+    // Trasferimenti in uscita dal lotto — stessa identica sezione/markup usata in renderDetail(),
+    // riquadro aggiuntivo sotto lo stat-grid, mai sostitutivo (mancava qui, i capi usciti erano
+    // scalati solo silenziosamente nel calcolo "Presenti" senza comparire in nessuna riga)
+    const trasfLottoOut = (allTrasferimenti||[]).filter(t => t.lotto_id === lotto.id && t.tipo !== 'ACQUISTO').sort((a,b) => a.data_trasferimento.localeCompare(b.data_trasferimento));
+    if(trasfLottoOut.length) {
+      html += `<div class="uscite-container" style="margin-bottom:8px;">
+        <div class="uscite-header"><span class="uscite-header-text">Trasferimenti in uscita</span></div>`;
+      trasfLottoOut.forEach(t => {
+        const ggT = calcGg(lotto.data_ingresso, t.data_trasferimento);
+        const mediaT = t.kg && t.capi ? (t.kg / t.capi).toFixed(1) : '—';
+        const incrT = (ggT && t.kg && t.capi && lotto.media_ingresso) ? fmt((t.kg/t.capi - lotto.media_ingresso) / ggT, 3) : '—';
+        html += `<div class="uscita-row">
+          <div class="uscita-date">${fmtDate(t.data_trasferimento)} · → ${t.soccida_destinazione || '—'}${t.lettera_dop ? ' · ' + t.lettera_dop : ''}</div>
+          <div class="uscita-line">
+            <div class="uc"><div class="uc-label">capi</div><div class="uc-val">${fmt(t.capi)}</div></div>
+            <div class="uc"><div class="uc-label">kg</div><div class="uc-val">${fmt(t.kg)}</div></div>
+            <div class="uc"><div class="uc-label">media</div><div class="uc-val">${mediaT}</div></div>
+            <div class="uc"><div class="uc-label">gg</div><div class="uc-val">${ggT || '—'}</div></div>
+            <div class="uc"><div class="uc-label">incr.</div><div class="uc-val">${incrT}</div></div>
+          </div>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+
     // Bottoni azione — identici a quelli usati sulle altre soccide
     html += `<div style="display:flex;gap:4px;">
       <button onclick="apriInserisciMortalita(${lotto.id})" style="flex:1;padding:7px 4px;border-radius:var(--radius);border:0.5px solid var(--red);background:var(--red-bg);color:var(--red);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;">
