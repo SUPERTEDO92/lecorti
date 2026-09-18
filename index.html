@@ -2706,7 +2706,12 @@ function renderDetail(socId) {
 // STORICO
 function renderStorico() {
   const filters = document.getElementById('storico-filters');
-  const mesi = [...new Set(allUscite.map(u => u.data_uscita?.substring(0,7)).filter(Boolean))].sort().reverse();
+  const usciteNoFiorenzuola = allUscite.filter(u => {
+    const lotto = allLotti.find(l => l.id === u.lotto_id);
+    const socNome = lotto ? allSoccide.find(s => s.id === lotto.soccida_id)?.nome : u.soccida_nome;
+    return socNome !== 'FIORENZUOLA';
+  });
+  const mesi = [...new Set(usciteNoFiorenzuola.map(u => u.data_uscita?.substring(0,7)).filter(Boolean))].sort().reverse();
 
   // Popola dropdown Ilaria
   const sel = document.getElementById('ilaria-mese');
@@ -2736,6 +2741,11 @@ function filterStorico(val, el) {
 
 function renderStoricoList() {
   let rows = allUscite.filter(u => u.data_uscita);
+  rows = rows.filter(u => {
+    const lotto = allLotti.find(l => l.id === u.lotto_id);
+    const socNome = lotto ? allSoccide.find(s => s.id === lotto.soccida_id)?.nome : u.soccida_nome;
+    return socNome !== 'FIORENZUOLA';
+  });
   if(storicoFilter !== 'tutti') rows = rows.filter(u => u.data_uscita?.startsWith(storicoFilter));
 
   const q = (document.getElementById('storico-search')?.value || '').trim().toLowerCase();
