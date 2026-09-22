@@ -2809,6 +2809,38 @@ function filterStorico(val, el) {
   renderStoricoList();
 }
 
+// Allega la foto/PDF del DDT a un carico (una o più righe uscite con lo stesso DDT) — 22/09/2026
+function allegaDdtUscite(idsCsv, btn) {
+  const ids = idsCsv.split(',').map(Number);
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = 'image/*,application/pdf';
+  inp.onchange = async () => {
+    const f = inp.files && inp.files[0];
+    if(!f) return;
+    const u = allUscite.find(x => x.id === ids[0]);
+    const lotto = allLotti.find(l => l.id === u?.lotto_id);
+    const soc = allSoccide.find(s => s.id === lotto?.soccida_id);
+    const ext = f.type === 'application/pdf' ? 'pdf' : 'jpg';
+    const nome = `ddt${u?.numero_ddt || ''}_${soc?.nome || u?.soccida_nome || ''}`.toLowerCase().replace(/[^a-z0-9]+/g, '') + '.' + ext;
+    if(btn) { btn.disabled = true; btn.textContent = 'Caricamento…'; }
+    try {
+      const docId = await notaMediaUploadFile(f, nome, f.type || 'image/jpeg');
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/uscite?id=in.(${ids.join(',')})`, {
+        method: 'PATCH', headers: SB_H, body: JSON.stringify({ ddt_documento_id: docId })
+      });
+      if(!r.ok) throw new Error(await r.text());
+      allUscite.filter(x => ids.includes(x.id)).forEach(x => x.ddt_documento_id = docId);
+      showToast('✓ DDT allegato', true);
+      renderStoricoList();
+    } catch(e) {
+      if(btn) { btn.disabled = false; btn.textContent = '+ 📷 Allega DDT'; }
+      showToast('Errore: ' + e.message, false);
+    }
+  };
+  inp.click();
+}
+
 function renderStoricoList() {
   let rows = allUscite.filter(u => u.data_uscita);
   rows = rows.filter(u => {
@@ -2897,7 +2929,7 @@ function renderStoricoList() {
         </div>
         <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:2px;display:flex;align-items:center;gap:8px;">
           <span>DDT ${first.numero_ddt || '—'}</span>
-          ${first.ddt_documento_id ? `<button onclick="apriDocumento(${first.ddt_documento_id})" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:1px 8px;font-size:10px;color:var(--text2);cursor:pointer;font-family:var(--font);">📄 DDT</button>` : ''}
+          ${first.ddt_documento_id ? `<button onclick="apriDocumento(${first.ddt_documento_id})" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:1px 8px;font-size:10px;color:var(--text2);cursor:pointer;font-family:var(--font);">📄 DDT</button>` : `<button onclick="allegaDdtUscite('${righe.map(u=>u.id).join(',')}', this)" style="background:#FFF;border:0.5px dashed var(--border);border-radius:10px;padding:1px 8px;font-size:10px;color:var(--text2);cursor:pointer;font-family:var(--font);">+ 📷 Allega DDT</button>`}
           ${first.liquidazione_documento_id ? `<button onclick="apriDocumento(${first.liquidazione_documento_id})" style="background:var(--green-bg);border:0.5px solid #B8DECA;border-radius:10px;padding:1px 8px;font-size:10px;color:var(--green);cursor:pointer;font-family:var(--font);">📄 Liquidazione</button>` : ''}
           ${first.fattura_documento_id ? `<button onclick="apriDocumento(${first.fattura_documento_id})" style="background:#FDF3E7;border:0.5px solid #EAD2A8;border-radius:10px;padding:1px 8px;font-size:10px;color:var(--accent);font-weight:600;cursor:pointer;font-family:var(--font);">📄 Fattura</button>` : ''}
         </div>
