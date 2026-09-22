@@ -144,6 +144,18 @@
   }
   .detail-title { font-size: 17px; font-weight: 500; font-family: var(--mono); }
   .detail-sub { font-size: 11px; color: #AAA; margin-top: 3px; }
+  /* MANGIME (riga sotto nome soccida) */
+  .mangime-wrap { margin: 8px 0 10px; background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow: hidden; }
+  .mangime-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 12px; font-size: 12px; font-family: var(--font); cursor: pointer; color: var(--text); }
+  .mangime-row > span:last-child { text-align: right; }
+  .mangime-arrow { display: inline-block; color: var(--text2); transition: transform .2s; }
+  .mangime-wrap.open .mangime-arrow { transform: rotate(90deg); }
+  .mangime-list { display: none; border-top: 0.5px solid var(--border); max-height: 320px; overflow-y: auto; }
+  .mangime-wrap.open .mangime-list { display: block; }
+  .mangime-item { padding: 7px 12px; border-bottom: 0.5px solid var(--border); font-size: 11px; }
+  .mangime-item:last-child { border-bottom: none; }
+  .mangime-item-top { display: flex; justify-content: space-between; font-family: var(--mono); }
+  .mangime-item-desc { color: var(--text2); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px; }
   .stat-box { background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 10px 12px; box-shadow: var(--shadow-sm); }
@@ -1238,6 +1250,7 @@ function sortByDdt(a,b){
 }
 
 // State
+let allMangime = [];
 let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [], allMortalita = [], allSanitario = [], allVenditeDirette = [], allUsciteCategorie = [], allVenditeDiretteCategorie = [], allIngressi = [], allLettereDop = [], allNoteVet = [], allArchivioDoc = [];
 let storicoFilter = 'tutti';
 let currentPage = 'home';
@@ -1272,6 +1285,8 @@ async function loadAll() {
   ]);
   allIngressi = await sb('lotti_ingressi', '?order=data_ingresso.asc');
   allLettereDop = await sb('lotti_lettere_dop', '?order=id.asc');
+  // Consegne mangime (export giornaliero mangimificio, solo righe in KG) — 22/09/2026
+  try { allMangime = await sb('v_consegne_mangime', '?in_kg=eq.true&order=data_consegna.desc,numero_documento.desc,riga.asc'); if(!Array.isArray(allMangime)) allMangime = []; } catch(e) { allMangime = []; }
   renderHome();
   renderStorico();
   renderTrasferimenti();
@@ -2382,6 +2397,35 @@ function renderGiroLucreziaSlot(nomeSito) {
 }
 
 // DETAIL — riceve socId, mostra tutti i lotti della soccida in sequenza
+// ── MANGIME — riga riepilogo consegne sotto il nome soccida (22/09/2026) ──
+// Dati da v_consegne_mangime (import automatico export Ilaria delle 18). Mostra il
+// consegnato reale per soccida; la ripartizione per lotto arriverà in un secondo momento.
+function renderMangimeRow(socId) {
+  const righe = (allMangime||[]).filter(m => m.soccida_id === socId);
+  if(!righe.length) {
+    return `<div class="mangime-row" style="cursor:default;"><span>🌾 Mangime</span><span style="color:var(--text2);">nessuna consegna registrata</span></div>`;
+  }
+  const oggi = new Date();
+  const lim30 = new Date(oggi.getTime() - 30*86400000).toISOString().substring(0,10);
+  const tot30 = righe.filter(m => m.data_consegna >= lim30).reduce((s,m) => s + Number(m.quantita||0), 0);
+  const ultimaData = righe[0].data_consegna;
+  const totUltima = righe.filter(m => m.data_consegna === ultimaData).reduce((s,m) => s + Number(m.quantita||0), 0);
+  const dd = d => { const p = (d||'').split('-'); return p.length === 3 ? `${p[2]}/${p[1]}` : '—'; };
+
+  const lista = righe.slice(0, 60).map(m => `<div class="mangime-item">
+      <div class="mangime-item-top"><span>${dd(m.data_consegna)} · bolla ${m.numero_documento}</span><b>${fmt(m.quantita)} kg</b></div>
+      <div class="mangime-item-desc">${m.cod_articolo} — ${m.descrizione || ''}</div>
+    </div>`).join('');
+
+  return `<div class="mangime-wrap">
+    <div class="mangime-row" onclick="this.parentNode.classList.toggle('open')">
+      <span>🌾 Mangime</span>
+      <span><b>${fmt(tot30)} kg</b> <span style="color:var(--text2);">30 gg · ultima ${dd(ultimaData)} (${fmt(totUltima)} kg)</span> <span class="mangime-arrow">›</span></span>
+    </div>
+    <div class="mangime-list">${lista}</div>
+  </div>`;
+}
+
 function renderDetail(socId) {
   const soc = allSoccide.find(s => s.id === socId);
   if(!soc) return;
@@ -2394,7 +2438,7 @@ function renderDetail(socId) {
     <div class="detail-title">${soc.nome}</div>
   </div>`;
 
-  let html = '';
+  let html = renderMangimeRow(soc.id);
 
   if(soc.nome === 'VEZZOLI') {
     html += `<button onclick="apriVenditeDirette(${soc.id})" type="button" style="width:100%;margin-bottom:10px;padding:10px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);font-size:12px;font-family:var(--font);font-weight:500;cursor:pointer;text-align:left;display:flex;align-items:center;justify-content:space-between;color:var(--text);">
