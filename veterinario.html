@@ -273,12 +273,6 @@ let currentMortLottoId = null;
 
 document.getElementById('today-date').textContent = new Date().toLocaleDateString('it-IT', {day:'2-digit',month:'2-digit',year:'numeric'});
 
-function toggleTopbarNav() {
-  const nav = document.getElementById('topbar-nav');
-  const btn = document.getElementById('topbar-menu-btn');
-  const open = nav.classList.toggle('collapsed') === false;
-  btn.classList.toggle('open', open);
-}
 
 async function loadAll() {
   allSoccide = await sb('soccide', `?nome=in.(${SOCCIDE_MOSTRATE.map(n=>encodeURIComponent(n)).join(',')})`);

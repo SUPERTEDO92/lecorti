@@ -34,20 +34,59 @@ function fmtDateFull(d) {
   return `${parseInt(g)} ${mesi[parseInt(m)]} ${y}`;
 }
 
-// Query GET verso Supabase REST — restituisce direttamente il JSON
+// Query GET verso Supabase REST — restituisce sempre un array di righe.
+// Supabase restituisce al massimo 1000 righe per richiesta: qui si leggono a
+// pagine (limit/offset) finché arrivano tutte, così i totali non vengono
+// troncati in silenzio. In caso di errore mostra un avviso e restituisce le
+// righe lette fino a quel momento (array vuoto se nessuna).
+const SB_PAGINA = 1000;
 async function sb(table, query = '') {
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}${query}`, {
-    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-  });
-  return r.json();
+  const base = `${SUPABASE_URL}/rest/v1/${table}${query}`;
+  const sep = query.includes('?') ? '&' : '?';
+  const paginabile = !/[?&](limit|offset)=/.test(query);
+  let righe = [];
+  for (let offset = 0; ; offset += SB_PAGINA) {
+    const url = paginabile ? `${base}${sep}limit=${SB_PAGINA}&offset=${offset}` : base;
+    let r, dati;
+    try {
+      r = await fetch(url, { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } });
+      dati = await r.json();
+    } catch (e) {
+      sbErrore(table, e.message);
+      return righe;
+    }
+    if (!r.ok || !Array.isArray(dati)) {
+      sbErrore(table, (dati && (dati.message || dati.error)) || `HTTP ${r.status}`);
+      return righe;
+    }
+    righe = righe.concat(dati);
+    if (!paginabile || dati.length < SB_PAGINA) return righe;
+  }
+}
+function sbErrore(table, msg) {
+  console.error(`Lettura ${table} fallita:`, msg);
+  showToast(`⚠ Errore caricamento dati (${table}): ${msg}. I dati mostrati potrebbero essere incompleti — ricarica la pagina.`, false);
 }
 
 // Apre un documento (DDT/liquidazione/referto/fattura) collegato a un record.
 // Legge storage_path e apre il file da Supabase Storage; fallback su decodifica
 // bytea per eventuali documenti vecchi non ancora migrati a Storage.
 // Toast di conferma/errore — usa un elemento #toast presente nella pagina
+// Se la pagina non ha un #toast lo crea al volo (in basso, sopra al contenuto).
 function showToast(msg, ok) {
-  const t = document.getElementById('toast');
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.style.cssText = 'position:fixed;left:12px;right:12px;bottom:16px;z-index:5000;padding:10px 14px;border-radius:10px;font-size:13px;box-shadow:0 2px 10px rgba(0,0,0,.2);';
+    t.dataset.creato = '1';
+    t.onclick = () => t.style.display = 'none';
+    document.body.appendChild(t);
+  }
+  if (t.dataset.creato) {
+    t.style.background = ok ? '#E8F4EC' : '#FBEAEA';
+    t.style.color = ok ? '#1E6B3A' : '#9A2A2A';
+  }
   t.className = 'toast ' + (ok ? 'ok' : 'err');
   t.textContent = msg;
   t.style.display = 'block';
@@ -388,4 +427,70 @@ function notaMediaRender(n) {
       : `<button onclick="apriDocumento(${n.audio_documento_id})" style="margin-top:8px;background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:3px 10px;font-size:11px;color:var(--text2);cursor:pointer;font-family:var(--font);">🎙️ Nota vocale</button>`;
   }
   return html;
+}
+
+// --- Transizione "banconota": copre lo schermo con un cerchio verde + banconota che vola,
+// poi esegue callback() quando la copertura è completa, poi svela di nuovo il contenuto ---
+function transizioneBanconota(originEl, callback) {
+  const rect = originEl.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const cover = document.getElementById('banc-cover');
+  const bill = document.getElementById('banc-bill');
+  if(!cover || !bill) { callback(); return; }
+  const maxDim = Math.max(window.innerWidth, window.innerHeight) * 2.4;
+
+  gsap.killTweensOf([cover, bill]);
+  gsap.set(cover, { left: cx, top: cy, width: 20, height: 20, scale: 0 });
+  gsap.set(bill, { left: cx, top: cy, opacity: 0, scale: 0.3, rotate: -8 });
+
+  const tl = gsap.timeline();
+  tl.to(bill, { opacity: 1, scale: 0.75, rotate: -2, duration: 0.18, ease: 'power1.out' })
+    .to(cover, { scale: maxDim / 20, duration: 0.55, ease: 'power2.inOut' }, 0.05)
+    .to(bill, { scale: 1.15, rotate: 0, duration: 0.5, ease: 'power2.inOut' }, 0.05)
+    .call(() => { callback(); })
+    .to([cover, bill], { opacity: 0, duration: 0.3, ease: 'power2.out' }, '+=0.05')
+    .set(cover, { opacity: 1, scale: 0 })
+    .set(bill, { opacity: 0, scale: 0.3 });
+}
+
+function rubTestoCompleto(a) {
+  if(a.cod_asl) {
+    let t = a.nome + '\n' + a.indirizzo + '\nCod. Allevamento: ' + a.cod_asl + '\nCod. Parma DOP: ' + a.cod_parma;
+    if(a.piva) t += '\nP.IVA: ' + a.piva;
+    if(a.cod_fisc) t += '\nCod. Fisc.: ' + a.cod_fisc;
+    return t;
+  }
+  let t = (a.ruolo ? a.ruolo.toUpperCase() + ': ' : '') + a.nome + '\n' + a.indirizzo;
+  if(a.piva) t += '\nP.IVA: ' + a.piva;
+  if(a.cod_sdi) t += '\nCodice SDI: ' + a.cod_sdi;
+  return t;
+}
+
+function rubCopia(testo, btnEl) {
+  navigator.clipboard.writeText(testo).then(() => {
+    btnEl.classList.add('copied');
+    const orig = btnEl.textContent;
+    btnEl.textContent = '✓ Copiato';
+    setTimeout(() => { btnEl.classList.remove('copied'); btnEl.textContent = orig; }, 2000);
+  });
+}
+
+function rubFiltra() {
+  const q = document.getElementById('rub-cerca').value.toLowerCase();
+  if(!q) { rubRender(allevamenti); return; }
+  rubRender(allevamenti.filter(a =>
+    a.nome.toLowerCase().includes(q) ||
+    a.indirizzo.toLowerCase().includes(q) ||
+    (a.cod_asl || '').toLowerCase().includes(q) ||
+    (a.cod_parma || '').toLowerCase().includes(q) ||
+    (a.piva || '').toLowerCase().includes(q)
+  ));
+}
+
+function toggleTopbarNav() {
+  const nav = document.getElementById('topbar-nav');
+  const btn = document.getElementById('topbar-menu-btn');
+  const open = nav.classList.toggle('collapsed') === false;
+  btn.classList.toggle('open', open);
 }

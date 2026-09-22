@@ -200,12 +200,6 @@ function setNav(n) {
   document.getElementById('nav-soccide').classList.toggle('active', n === 'soccide');
   document.getElementById('nav-macelli').classList.toggle('active', n === 'macelli');
 }
-function toggleTopbarNav() {
-  const nav = document.getElementById('topbar-nav');
-  const btn = document.getElementById('topbar-menu-btn');
-  const open = nav.classList.toggle('collapsed') === false;
-  btn.classList.toggle('open', open);
-}
 function renderRubricaMacelli() {
   transizioneMandria(() => {
     soccidaAttiva = null;

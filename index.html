@@ -1258,12 +1258,6 @@ let _noteTornaFn = () => showPage('home');
 let _analisiTornaFn = () => showPage('home');
 let currentNoteLottoId = null;
 
-function toggleTopbarNav() {
-  const nav = document.getElementById('topbar-nav');
-  const btn = document.getElementById('topbar-menu-btn');
-  const open = nav.classList.toggle('collapsed') === false;
-  btn.classList.toggle('open', open);
-}
 let currentLottoId = null;
 
 // Init
@@ -1382,30 +1376,6 @@ function mostraErroreDebug(msg) {
 }
 
 
-// --- Transizione "banconota": copre lo schermo con un cerchio verde + banconota che vola,
-// poi esegue callback() quando la copertura è completa, poi svela di nuovo il contenuto ---
-function transizioneBanconota(originEl, callback) {
-  const rect = originEl.getBoundingClientRect();
-  const cx = rect.left + rect.width / 2;
-  const cy = rect.top + rect.height / 2;
-  const cover = document.getElementById('banc-cover');
-  const bill = document.getElementById('banc-bill');
-  if(!cover || !bill) { callback(); return; }
-  const maxDim = Math.max(window.innerWidth, window.innerHeight) * 2.4;
-
-  gsap.killTweensOf([cover, bill]);
-  gsap.set(cover, { left: cx, top: cy, width: 20, height: 20, scale: 0 });
-  gsap.set(bill, { left: cx, top: cy, opacity: 0, scale: 0.3, rotate: -8 });
-
-  const tl = gsap.timeline();
-  tl.to(bill, { opacity: 1, scale: 0.75, rotate: -2, duration: 0.18, ease: 'power1.out' })
-    .to(cover, { scale: maxDim / 20, duration: 0.55, ease: 'power2.inOut' }, 0.05)
-    .to(bill, { scale: 1.15, rotate: 0, duration: 0.5, ease: 'power2.inOut' }, 0.05)
-    .call(() => { callback(); })
-    .to([cover, bill], { opacity: 0, duration: 0.3, ease: 'power2.out' }, '+=0.05')
-    .set(cover, { opacity: 1, scale: 0 })
-    .set(bill, { opacity: 0, scale: 0.3 });
-}
 
 // --- Transizione "camion" (allineata a liquidazioni.html, 03/08/2026): arriva un camion,
 // le porte-tendina coprono lo schermo, si esegue callback(), poi si riaprono e il camion riparte ---
@@ -1684,27 +1654,7 @@ try {
   allevamenti.push(...savedRub);
 } catch(e) {}
 
-function rubTestoCompleto(a) {
-  if(a.cod_asl) {
-    let t = a.nome + '\n' + a.indirizzo + '\nCod. Allevamento: ' + a.cod_asl + '\nCod. Parma DOP: ' + a.cod_parma;
-    if(a.piva) t += '\nP.IVA: ' + a.piva;
-    if(a.cod_fisc) t += '\nCod. Fisc.: ' + a.cod_fisc;
-    return t;
-  }
-  let t = (a.ruolo ? a.ruolo.toUpperCase() + ': ' : '') + a.nome + '\n' + a.indirizzo;
-  if(a.piva) t += '\nP.IVA: ' + a.piva;
-  if(a.cod_sdi) t += '\nCodice SDI: ' + a.cod_sdi;
-  return t;
-}
 
-function rubCopia(testo, btnEl) {
-  navigator.clipboard.writeText(testo).then(() => {
-    btnEl.classList.add('copied');
-    const orig = btnEl.textContent;
-    btnEl.textContent = '✓ Copiato';
-    setTimeout(() => { btnEl.classList.remove('copied'); btnEl.textContent = orig; }, 2000);
-  });
-}
 
 function rubRender(lista) {
   const el = document.getElementById('rub-lista');
@@ -1731,17 +1681,6 @@ function rubRender(lista) {
   }).join('');
 }
 
-function rubFiltra() {
-  const q = document.getElementById('rub-cerca').value.toLowerCase();
-  if(!q) { rubRender(allevamenti); return; }
-  rubRender(allevamenti.filter(a =>
-    a.nome.toLowerCase().includes(q) ||
-    a.indirizzo.toLowerCase().includes(q) ||
-    (a.cod_asl || '').toLowerCase().includes(q) ||
-    (a.cod_parma || '').toLowerCase().includes(q) ||
-    (a.piva || '').toLowerCase().includes(q)
-  ));
-}
 
 function rubAggiungiSito() {
   const nome = document.getElementById('rub-new-nome').value.trim();
