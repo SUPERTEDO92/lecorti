@@ -254,6 +254,7 @@ async function loadAll() {
     lottiIds.length ? sb('lotti_ingressi', `?lotto_id=in.(${lottiIds.join(',')})&order=data_ingresso.asc`) : [],
     lottiIds.length ? sb('note_veterinario', `?lotto_id=in.(${lottiIds.join(',')})&order=data_nota.desc`) : [],
   ]);
+  await notaMediaPreload(allNoteVet);
 
   renderLista();
 }
@@ -534,7 +535,8 @@ function render() {
       noteLotto.forEach(n => {
         html += `<div class="simple-row" style="display:block;">
           <div class="simple-date">${fmtDate(n.data_nota)}</div>
-          <div style="font-size:12px;color:var(--text);margin-top:4px;white-space:pre-wrap;">${n.testo}</div>
+          ${n.testo ? `<div style="font-size:12px;color:var(--text);margin-top:4px;white-space:pre-wrap;">${n.testo}</div>` : ''}
+          ${notaMediaRender(n)}
         </div>`;
       });
       html += `</div>`;
