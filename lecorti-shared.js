@@ -19,6 +19,11 @@ function fmt(n, dec = 0) {
   return Number(n).toLocaleString('it-IT', { minimumFractionDigits: dec, maximumFractionDigits: dec });
 }
 
+// Escape di testo libero (note) prima di metterlo nell'HTML
+function escHtml(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 // Formattazione data da 'YYYY-MM-DD' a 'GG/MM/AAAA'
 function fmtDate(d) {
   if (!d) return '—';
