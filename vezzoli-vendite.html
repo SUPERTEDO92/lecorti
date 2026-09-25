@@ -111,6 +111,7 @@ function renderRiga(v) {
       <div class="vd-detail">${fmt(v.capi)} capi${v.peso_kg ? ' · ' + fmt(v.peso_kg,1) + ' kg' : ''}</div>
       <div class="vd-detail">Importo: ${v.prezzo != null ? '€ ' + fmt(v.prezzo,2) : '—'}${v.prezzo_kg != null ? ' · € ' + fmt(v.prezzo_kg,3) + '/kg' : ''}</div>
       ${catHtml}
+      ${v.note ? `<div class="vd-detail" style="margin-top:3px;font-style:italic;">${escHtml(v.note)}</div>` : ''}
     </div>
     <div class="vd-status" style="background:${v.pagato ? 'var(--green)' : 'var(--red-bg)'};border:0.5px solid ${v.pagato ? 'var(--green)' : 'var(--red)'};">
       <span style="color:${v.pagato ? '#FFF' : 'var(--red)'};">${v.pagato ? '✓' : '✕'}</span>
