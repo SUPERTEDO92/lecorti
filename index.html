@@ -4600,9 +4600,7 @@ function apriVenditeDirette(socId) {
   document.getElementById('vd-data').value = new Date().toISOString().slice(0,10);
   document.getElementById('vd-capi').value = '';
   document.getElementById('vd-peso').value = '';
-  document.getElementById('vd-cat1-nome').value = '';
   document.getElementById('vd-note').value = '';
-  if(_vdSecondaCategoria) toggleSecondaCategoria();
   document.getElementById('vd-riepilogo').style.display = 'none';
   document.getElementById('vd-riep-toggle').querySelector('span:last-child').textContent = '›';
   renderVenditeDirette();
@@ -4847,56 +4845,24 @@ function resetFiltroVendite() {
   renderVenditeDirette();
 }
 
-let _vdSecondaCategoria = false;
-function toggleSecondaCategoria() {
-  _vdSecondaCategoria = !_vdSecondaCategoria;
-  document.getElementById('vd-cat2').style.display = _vdSecondaCategoria ? 'block' : 'none';
-  document.getElementById('vd-toggle-cat2').textContent = _vdSecondaCategoria ? '− Rimuovi seconda categoria' : '+ Aggiungi seconda categoria (es. belli/brutti)';
-  if(!_vdSecondaCategoria) {
-    ['vd-cat2-nome','vd-cat2-capi','vd-cat2-peso'].forEach(id => document.getElementById(id).value = '');
-  }
-}
-
 async function inserisciVenditaDiretta() {
   const data = document.getElementById('vd-data').value;
-  const cat1Nome = document.getElementById('vd-cat1-nome').value.trim() || null;
-  const capi1 = parseInt(document.getElementById('vd-capi').value) || null;
-  const peso1 = parseFloat(document.getElementById('vd-peso').value) || null;
+  const capi = parseInt(document.getElementById('vd-capi').value) || null;
+  const peso_kg = parseFloat(document.getElementById('vd-peso').value) || null;
+  const note = document.getElementById('vd-note').value.trim() || null;
 
-  const cat2Nome = document.getElementById('vd-cat2-nome').value.trim();
-  const capi2 = parseInt(document.getElementById('vd-cat2-capi').value) || null;
-  const peso2 = parseFloat(document.getElementById('vd-cat2-peso').value) || null;
-  const usaCat2 = _vdSecondaCategoria && (capi2 || peso2);
-  // Con una sola categoria il nome non ha una riga in vendite_dirette_categorie: finisce nelle note per non perderlo
-  const note = [!usaCat2 ? cat1Nome : null, document.getElementById('vd-note').value.trim()].filter(Boolean).join(' · ') || null;
-
-  if(!data || !capi1) { alert('Inserisci almeno data e numero capi'); return; }
-
-  const capiTot = capi1 + (usaCat2 ? (capi2 || 0) : 0);
-  const pesoTot = (peso1 || 0) + (usaCat2 ? (peso2 || 0) : 0);
+  if(!data || !capi) { alert('Inserisci almeno data e numero capi'); return; }
 
   try {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/vendite_dirette`, {
       method: 'POST', headers: SB_H,
-      body: JSON.stringify({ soccida_id: _vdSoccidaId, data_vendita: data, capi: capiTot, peso_kg: pesoTot || null, note, pagato: false })
+      body: JSON.stringify({ soccida_id: _vdSoccidaId, data_vendita: data, capi, peso_kg, note, pagato: false })
     });
     if(!r.ok) throw new Error(await r.text());
     const [nuovo] = await r.json();
     allVenditeDirette.unshift(nuovo);
 
-    if(usaCat2) {
-      const rCat = await fetch(`${SUPABASE_URL}/rest/v1/vendite_dirette_categorie`, {
-        method: 'POST', headers: SB_H,
-        body: JSON.stringify([
-          { vendita_id: nuovo.id, categoria: cat1Nome || 'categoria 1', capi: capi1, peso_kg: peso1 },
-          { vendita_id: nuovo.id, categoria: cat2Nome || 'categoria 2', capi: capi2, peso_kg: peso2 },
-        ])
-      });
-      if(!rCat.ok) throw new Error(await rCat.text());
-    }
-
-    ['vd-cat1-nome','vd-capi','vd-peso','vd-note','vd-cat2-nome','vd-cat2-capi','vd-cat2-peso'].forEach(id => document.getElementById(id).value = '');
-    if(_vdSecondaCategoria) toggleSecondaCategoria();
+    ['vd-capi','vd-peso','vd-note'].forEach(id => document.getElementById(id).value = '');
     _vdMeseFiltro = null;
     _vdModalitaChiusura = false;
     renderVenditeDirette();
@@ -5234,25 +5200,10 @@ loadAll();
           <input type="date" id="vd-data" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
         </div>
 
-        <div id="vd-cat1" style="margin-bottom:8px;">
-          <input type="text" id="vd-cat1-nome" placeholder="Categoria (opz. es. belli)" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);margin-bottom:8px;">
-          <div style="display:flex;gap:8px;">
-            <input type="number" id="vd-capi" placeholder="N° capi" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
-            <input type="number" id="vd-peso" placeholder="Peso kg" step="0.1" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
-          </div>
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <input type="number" id="vd-capi" placeholder="N° capi" style="flex:1;min-width:0;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
+          <input type="number" id="vd-peso" placeholder="Peso kg" step="0.1" style="flex:1;min-width:0;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
         </div>
-
-        <div id="vd-cat2" style="display:none;margin-bottom:8px;">
-          <input type="text" id="vd-cat2-nome" placeholder="Categoria (es. brutti)" style="width:100%;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);margin-bottom:8px;">
-          <div style="display:flex;gap:8px;">
-            <input type="number" id="vd-cat2-capi" placeholder="N° capi" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
-            <input type="number" id="vd-cat2-peso" placeholder="Peso kg" step="0.1" style="flex:1;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
-          </div>
-        </div>
-
-        <button type="button" id="vd-toggle-cat2" onclick="toggleSecondaCategoria()" style="width:100%;padding:9px;background:none;border:1px dashed var(--border);border-radius:var(--radius);font-size:12px;font-family:var(--font);color:var(--text2);cursor:pointer;margin-bottom:12px;">
-          + Aggiungi seconda categoria (es. belli/brutti)
-        </button>
 
         <input type="text" id="vd-note" placeholder="Note (opz. es. zoppo)" style="width:100%;box-sizing:border-box;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);margin-bottom:12px;">
 
