@@ -499,7 +499,7 @@
   .bg-hero { position:fixed; inset:0; width:100%; height:100%; object-fit:cover; object-position:center center; opacity:.35; z-index:-2; pointer-events:none; }
   .row-dark { display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid #333;font-size:13px; }
   .grid-2 { display:grid;grid-template-columns:1fr 1fr;gap:8px; }
-  .modal-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center; }
+  .modal-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:260;align-items:flex-end;justify-content:center; }
 
   /* --- Transizione "banconota" (01/08/2026) --- */
   #banc-cover {
@@ -5116,7 +5116,7 @@ loadAll();
 </script>
 <!-- MODALE COSTO ACQUISTO -->
 <div id="modal-costo" class="modal-overlay">
-  <div style="background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;">
+  <div style="background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:520px;max-height:92vh;max-height:92dvh;overflow-y:auto;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
       <div id="modal-costo-title" style="font-size:14px;font-weight:500;font-family:var(--mono);">Inserisci valore</div>
       <button onclick="chiudiCostoAcquisto()" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
@@ -5212,7 +5212,7 @@ loadAll();
 
 <!-- VENDITE DIRETTE (VEZZOLI) -->
 <div id="modal-vendite" class="modal-overlay">
-  <div style="background:#FFF;border-radius:16px 16px 0 0;padding:0;width:100%;max-width:560px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;">
+  <div style="background:#FFF;border-radius:16px 16px 0 0;padding:0;width:100%;max-width:560px;max-height:92vh;max-height:92dvh;display:flex;flex-direction:column;overflow:hidden;">
     <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 18px 14px;border-bottom:0.5px solid var(--border);flex-shrink:0;">
       <div style="font-size:16px;font-weight:600;font-family:var(--mono);">Vendite dirette — VEZZOLI</div>
       <button onclick="chiudiVenditeDirette()" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:50%;width:32px;height:32px;font-size:20px;color:var(--text2);cursor:pointer;flex-shrink:0;">×</button>
@@ -5329,7 +5329,7 @@ loadAll();
 
 <!-- MODALE LIQUIDAZIONE -->
 <div id="modal-liq" class="modal-overlay">
-  <div style="background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;">
+  <div style="background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;max-height:90vh;max-height:90dvh;overflow-y:auto;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
       <div style="font-size:14px;font-weight:500;font-family:var(--mono);">Inserisci liquidazione</div>
       <button onclick="chiudiLiquidazione()" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
@@ -5919,7 +5919,7 @@ document.getElementById('modal-mod-lotto')?.addEventListener('click', function(e
 </script>
 <!-- MODALE MODIFICA USCITA -->
 <div id="modal-mod-uscita" class="modal-overlay">
-  <div style="background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;">
+  <div style="background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:520px;max-height:92vh;max-height:92dvh;overflow-y:auto;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
       <div style="font-size:14px;font-weight:500;font-family:var(--mono);">Modifica uscita</div>
       <button onclick="chiudiModificaUscita()" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
@@ -5971,7 +5971,7 @@ document.getElementById('modal-mod-lotto')?.addEventListener('click', function(e
 
 <!-- MODALE MODIFICA LOTTO -->
 <div id="modal-mod-lotto" class="modal-overlay">
-  <div style="background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;">
+  <div style="background:#FFF;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:520px;max-height:92vh;max-height:92dvh;overflow-y:auto;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
       <div style="font-size:14px;font-weight:500;font-family:var(--mono);">Modifica dati ingresso</div>
       <button onclick="chiudiModificaLotto()" style="background:none;border:none;font-size:20px;color:var(--text2);cursor:pointer;">×</button>
