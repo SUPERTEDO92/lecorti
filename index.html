@@ -2239,13 +2239,18 @@ function renderGlPrevisione() {
   const ggMm = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
   const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 
-  // Bande reali: ingresso della prima fase, una riga per ogni lotto attivo (sito dove si trovano oggi)
+  // Bande reali: ingresso della prima fase, una riga per ogni lotto ancora in svezzamento (sito dove si trovano oggi).
+  // La riga sparisce da sola quando la banda passa all'ingrasso: lotto chiuso, svuotato o in una soccida da ingrasso.
   const gruppi = glGruppiBande();
   const righe = [];
   Object.values(gruppi).forEach(fasi => {
     const prima = fasi[0];
     fasi.filter(l => l.attivo).forEach(l => {
-      righe.push({ ingresso: toDate(prima.data_ingresso), reale: true, dove: allSoccide.find(s => s.id === l.soccida_id)?.nome || '—', capi: glCapiPresenti(l) });
+      const soc = allSoccide.find(s => s.id === l.soccida_id);
+      if(soc?.tipo === 'ingrasso') return;
+      const capi = glCapiPresenti(l);
+      if(capi <= 0) return;
+      righe.push({ ingresso: toDate(prima.data_ingresso), reale: true, dove: soc?.nome || '—', capi });
     });
   });
   righe.sort((a,b) => a.ingresso - b.ingresso);
