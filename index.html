@@ -2262,8 +2262,7 @@ function renderGlPrevisione() {
   }
 
   let html = `<button onclick="glChiudiSlot()" class="back-btn" style="display:flex;margin:0 0 12px;">← Giro Lucrezia</button>`;
-  html += `<div class="detail-header" style="margin-bottom:12px;"><div class="detail-title">Previsione bande · 60 gg</div>
-    <div class="detail-sub">Data ipotetica a ${GL_GG_SVEZZAMENTO} gg dall'ingresso · bande previste ogni ${GL_GG_CICLO_BANDA} gg, ${GL_PREV_CAPI} capi ipotetici · in arancione le date già passate</div></div>`;
+  html += `<div class="detail-header" style="margin-bottom:12px;"><div class="detail-title">Previsione bande · 60 gg</div></div>`;
 
   if(!righe.length) {
     html += `<div class="empty">Nessuna banda registrata.</div>`;
@@ -2275,11 +2274,9 @@ function renderGlPrevisione() {
   const c = 'padding:6px 4px;';
   html += `<div class="ilaria-print-wrap"><table class="ilaria-table" style="min-width:0;">
     <thead><tr><th style="${c}">Ingr.</th><th style="${c}">Dove</th><th style="${c}">60 gg</th><th class="num" style="${c}">Capi</th><th style="${c}">Destinazione</th></tr></thead><tbody>`;
-  let totCapi = 0;
   righe.forEach(r => {
     const d60 = addGg(r.ingresso, GL_GG_SVEZZAMENTO);
     const passata = d60 < oggi;
-    if(r.reale) totCapi += r.capi;
     const arancio = passata ? 'color:var(--amber);font-weight:600;' : '';
     html += `<tr style="background:${r.reale ? 'var(--green-bg)' : '#FFF'};">
       <td style="${c}font-family:var(--mono)">${ggMm(r.ingresso)}</td>
@@ -2291,7 +2288,6 @@ function renderGlPrevisione() {
         style="width:100%;min-width:90px;box-sizing:border-box;padding:4px 5px;border:0.5px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:11px;background:#FFF;color:var(--text);"></td>
     </tr>`;
   });
-  html += `<tr class="tot-row"><td colspan="3" style="${c}text-align:right">Totale presenti oggi (bande reali)</td><td class="num" style="${c}">${fmt(totCapi)}</td><td style="${c}"></td></tr>`;
   html += `</tbody></table></div>`;
   // Suggerimenti: capannoni di Lucrezia + soccide da ingrasso attive (si può scrivere anche altro)
   const sugg = [...GL_DEST_SUGGERITE, ...allSoccide.filter(s => s.attiva && s.tipo === 'ingrasso').map(s => ({ v: s.nome, l: 'ingrasso' }))];
