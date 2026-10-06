@@ -2096,6 +2096,7 @@ function glUltimaBandaInfo() {
 }
 
 function renderGiroLucrezia() {
+  if(_glSlot === GL_PREVISIONE) { renderGlPrevisione(); return; }
   if(_glSlot) { renderGiroLucreziaSlot(_glSlot); return; }
   const container = document.getElementById('girolucrezia-content');
 
@@ -2148,6 +2149,16 @@ function renderGiroLucrezia() {
   html += `<div class="section-sep">Slot ingrasso</div><div class="soccide-list">`;
   html += slotCard('Lucrezia (ingrasso)', bandeIng, GL_INGRASSO);
   html += `</div>`;
+  html += `<div class="section-sep">Previsione</div><div class="soccide-list">
+    <div class="soccida-card" onclick="glApriPrevisione()">
+      <div class="dot dot-gray"></div>
+      <div class="soc-main">
+        <div class="soc-nome">📅 Previsione bande · 60 gg</div>
+        <div class="soc-meta">Data e peso a 60 giorni, capi presenti</div>
+      </div>
+      <span class="soc-arrow">&#8250;</span>
+    </div>
+  </div>`;
 
   // Storico bande concluse (tutte le fasi già passate all'ingrasso)
   const gruppi = glGruppiBande();
@@ -2184,6 +2195,85 @@ function glApriSlotConAnimazione(nomeSito) {
 function glChiudiSlot() {
   _glSlot = null;
   renderGiroLucrezia();
+}
+
+// ── Previsione bande: data e peso a 60 gg (sola lettura, ricalcolata dai dati a ogni apertura) ──
+const GL_PREVISIONE = '__PREVISIONE__';
+const GL_PREV_INCREMENTO = 0.4;  // kg/capo/die in svezzamento (indicazione di Ruben)
+const GL_PREV_PESO_INGR = 6;     // peso ipotetico all'ingresso delle bande future
+const GL_PREV_CAPI = 750;        // capi ipotetici delle bande future
+const GL_PREV_MESI = 8;          // orizzonte della previsione
+
+function glApriPrevisione() {
+  _glSlot = GL_PREVISIONE;
+  renderGlPrevisione();
+  window.scrollTo(0,0);
+}
+
+function renderGlPrevisione() {
+  const container = document.getElementById('girolucrezia-content');
+  const oggi = new Date(); oggi.setHours(0,0,0,0);
+  const toDate = s => new Date(s + 'T00:00:00');
+  const addGg = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+  const ggMm = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+
+  // Bande reali: ingresso e peso della prima fase, una riga per ogni lotto attivo (sito dove si trovano oggi)
+  const gruppi = glGruppiBande();
+  const righe = [];
+  Object.values(gruppi).forEach(fasi => {
+    const prima = fasi[0];
+    fasi.filter(l => l.attivo).forEach(l => {
+      righe.push({ ingresso: toDate(prima.data_ingresso), peso: parseFloat(prima.media_ingresso) || 0,
+        reale: true, dove: allSoccide.find(s => s.id === l.soccida_id)?.nome || '—', capi: glCapiPresenti(l) });
+    });
+  });
+  righe.sort((a,b) => a.ingresso - b.ingresso);
+
+  // Bande future: ogni 21 gg dall'ultima banda, con peso e capi ipotetici
+  const ultima = glUltimaBandaInfo();
+  if(ultima) {
+    const fine = addGg(oggi, 0); fine.setMonth(fine.getMonth() + GL_PREV_MESI);
+    let d = addGg(toDate(ultima.dataIngresso), GL_GG_CICLO_BANDA);
+    while(d <= fine) {
+      righe.push({ ingresso: d, peso: GL_PREV_PESO_INGR, reale: false, dove: null, capi: GL_PREV_CAPI });
+      d = addGg(d, GL_GG_CICLO_BANDA);
+    }
+  }
+
+  let html = `<button onclick="glChiudiSlot()" class="back-btn" style="display:flex;margin:0 0 12px;">← Giro Lucrezia</button>`;
+  html += `<div class="detail-header" style="margin-bottom:12px;"><div class="detail-title">Previsione bande · 60 gg</div>
+    <div class="detail-sub">Incremento ${fmt(GL_PREV_INCREMENTO,3)} kg/capo/die · bande previste ogni ${GL_GG_CICLO_BANDA} gg a ${GL_PREV_PESO_INGR} kg, ${GL_PREV_CAPI} capi ipotetici · oltre i 60 gg: peso a oggi</div></div>`;
+
+  if(!righe.length) {
+    html += `<div class="empty">Nessuna banda registrata.</div>`;
+    container.innerHTML = html;
+    return;
+  }
+
+  // Stessa tabella del resoconto Ilaria, compattata per stare nello schermo del telefono
+  const c = 'padding:6px 4px;';
+  html += `<div class="ilaria-print-wrap"><table class="ilaria-table" style="min-width:0;">
+    <thead><tr><th style="${c}">Ingr.</th><th style="${c}">Dove</th><th class="num" style="${c}">Kg ingr.</th><th style="${c}">60 gg</th><th class="num" style="${c}">Kg</th><th class="num" style="${c}">Capi</th></tr></thead><tbody>`;
+  let totCapi = 0;
+  righe.forEach(r => {
+    const d60 = addGg(r.ingresso, GL_GG_SVEZZAMENTO);
+    const passata = d60 < oggi;
+    const gg = passata ? Math.round((oggi - r.ingresso) / 86400000) : GL_GG_SVEZZAMENTO;
+    const peso = r.peso + GL_PREV_INCREMENTO * gg;
+    if(r.reale) totCapi += r.capi;
+    const arancio = passata ? 'color:var(--amber);font-weight:600;' : '';
+    html += `<tr style="background:${r.reale ? 'var(--green-bg)' : '#FFF'};">
+      <td style="${c}font-family:var(--mono)">${ggMm(r.ingresso)}</td>
+      <td style="${c}">${r.dove ? escHtml(r.dove) : '<i style="color:var(--text3)">prevista</i>'}</td>
+      <td class="num" style="${c}">${fmt(r.peso,2)}</td>
+      <td style="${c}font-family:var(--mono);${arancio}">${passata ? 'oggi' : ggMm(d60)}</td>
+      <td class="num" style="${c}${arancio}">${fmt(peso,1)}</td>
+      <td class="num" style="${c}${r.reale ? 'font-weight:600;' : 'color:var(--text3);font-style:italic;'}">${fmt(r.capi)}</td>
+    </tr>`;
+  });
+  html += `<tr class="tot-row"><td colspan="5" style="${c}text-align:right">Totale presenti oggi (bande reali)</td><td class="num" style="${c}">${fmt(totCapi)}</td></tr>`;
+  html += `</tbody></table></div>`;
+  container.innerHTML = html;
 }
 
 // Ritorno da una pagina secondaria (es. Note) allo slot Giro Lucrezia specifico,
