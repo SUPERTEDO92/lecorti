@@ -2154,7 +2154,7 @@ function renderGiroLucrezia() {
       <div class="dot dot-gray"></div>
       <div class="soc-main">
         <div class="soc-nome">📅 Previsione bande · 60 gg</div>
-        <div class="soc-meta">Data e peso a 60 giorni, capi presenti</div>
+        <div class="soc-meta">Data a 60 giorni, capi presenti, destinazione</div>
       </div>
       <span class="soc-arrow">&#8250;</span>
     </div>
@@ -2197,17 +2197,38 @@ function glChiudiSlot() {
   renderGiroLucrezia();
 }
 
-// ── Previsione bande: data e peso a 60 gg (sola lettura, ricalcolata dai dati a ogni apertura) ──
+// ── Previsione bande: data ipotetica di fine svezzamento (60 gg) e destinazione, ricalcolata a ogni apertura ──
 const GL_PREVISIONE = '__PREVISIONE__';
-const GL_PREV_INCREMENTO = 0.4;  // kg/capo/die in svezzamento (indicazione di Ruben)
-const GL_PREV_PESO_INGR = 6;     // peso ipotetico all'ingresso delle bande future
 const GL_PREV_CAPI = 750;        // capi ipotetici delle bande future
 const GL_PREV_MESI = 8;          // orizzonte della previsione
 
-function glApriPrevisione() {
+// Capannoni di Lucrezia per l'ingrasso (rilievo superfici, capacità a 1 capo/mq)
+const GL_DEST_SUGGERITE = [{ v:'Lucrezia cap. 1', l:'891 posti' }, { v:'Lucrezia cap. 2', l:'948 posti' }];
+let _glDest = {};  // data_banda (AAAA-MM-GG) -> destinazione, da giro_lucrezia_destinazioni
+
+async function glApriPrevisione() {
   _glSlot = GL_PREVISIONE;
   renderGlPrevisione();
   window.scrollTo(0,0);
+  const righe = await sb('giro_lucrezia_destinazioni', '?order=data_banda');
+  _glDest = {};
+  righe.forEach(r => { _glDest[r.data_banda] = r.destinazione || ''; });
+  if(_glSlot === GL_PREVISIONE) renderGlPrevisione();
+}
+
+async function glSalvaDestinazione(dataBanda, valore) {
+  const dest = valore.trim();
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/giro_lucrezia_destinazioni?on_conflict=data_banda`, {
+      method: 'POST', headers: { ...SB_H, 'Prefer': 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify({ data_banda: dataBanda, destinazione: dest || null, aggiornato_at: new Date().toISOString() })
+    });
+    if(!r.ok) throw new Error(await r.text());
+    _glDest[dataBanda] = dest;
+    showToast(`✓ Destinazione salvata${dest ? ': ' + dest : ' (vuota)'}`, true);
+  } catch(e) {
+    showToast('⚠ Errore salvataggio destinazione: ' + e.message, false);
+  }
 }
 
 function renderGlPrevisione() {
@@ -2216,33 +2237,33 @@ function renderGlPrevisione() {
   const toDate = s => new Date(s + 'T00:00:00');
   const addGg = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
   const ggMm = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+  const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 
-  // Bande reali: ingresso e peso della prima fase, una riga per ogni lotto attivo (sito dove si trovano oggi)
+  // Bande reali: ingresso della prima fase, una riga per ogni lotto attivo (sito dove si trovano oggi)
   const gruppi = glGruppiBande();
   const righe = [];
   Object.values(gruppi).forEach(fasi => {
     const prima = fasi[0];
     fasi.filter(l => l.attivo).forEach(l => {
-      righe.push({ ingresso: toDate(prima.data_ingresso), peso: parseFloat(prima.media_ingresso) || 0,
-        reale: true, dove: allSoccide.find(s => s.id === l.soccida_id)?.nome || '—', capi: glCapiPresenti(l) });
+      righe.push({ ingresso: toDate(prima.data_ingresso), reale: true, dove: allSoccide.find(s => s.id === l.soccida_id)?.nome || '—', capi: glCapiPresenti(l) });
     });
   });
   righe.sort((a,b) => a.ingresso - b.ingresso);
 
-  // Bande future: ogni 21 gg dall'ultima banda, con peso e capi ipotetici
+  // Bande future: ogni 21 gg dall'ultima banda, con capi ipotetici
   const ultima = glUltimaBandaInfo();
   if(ultima) {
     const fine = addGg(oggi, 0); fine.setMonth(fine.getMonth() + GL_PREV_MESI);
     let d = addGg(toDate(ultima.dataIngresso), GL_GG_CICLO_BANDA);
     while(d <= fine) {
-      righe.push({ ingresso: d, peso: GL_PREV_PESO_INGR, reale: false, dove: null, capi: GL_PREV_CAPI });
+      righe.push({ ingresso: d, reale: false, dove: null, capi: GL_PREV_CAPI });
       d = addGg(d, GL_GG_CICLO_BANDA);
     }
   }
 
   let html = `<button onclick="glChiudiSlot()" class="back-btn" style="display:flex;margin:0 0 12px;">← Giro Lucrezia</button>`;
   html += `<div class="detail-header" style="margin-bottom:12px;"><div class="detail-title">Previsione bande · 60 gg</div>
-    <div class="detail-sub">Incremento ${fmt(GL_PREV_INCREMENTO,3)} kg/capo/die · bande previste ogni ${GL_GG_CICLO_BANDA} gg a ${GL_PREV_PESO_INGR} kg, ${GL_PREV_CAPI} capi ipotetici · oltre i 60 gg: peso a oggi</div></div>`;
+    <div class="detail-sub">Data ipotetica a ${GL_GG_SVEZZAMENTO} gg dall'ingresso · bande previste ogni ${GL_GG_CICLO_BANDA} gg, ${GL_PREV_CAPI} capi ipotetici · in arancione le date già passate</div></div>`;
 
   if(!righe.length) {
     html += `<div class="empty">Nessuna banda registrata.</div>`;
@@ -2253,26 +2274,28 @@ function renderGlPrevisione() {
   // Stessa tabella del resoconto Ilaria, compattata per stare nello schermo del telefono
   const c = 'padding:6px 4px;';
   html += `<div class="ilaria-print-wrap"><table class="ilaria-table" style="min-width:0;">
-    <thead><tr><th style="${c}">Ingr.</th><th style="${c}">Dove</th><th class="num" style="${c}">Kg ingr.</th><th style="${c}">60 gg</th><th class="num" style="${c}">Kg</th><th class="num" style="${c}">Capi</th></tr></thead><tbody>`;
+    <thead><tr><th style="${c}">Ingr.</th><th style="${c}">Dove</th><th style="${c}">60 gg</th><th class="num" style="${c}">Capi</th><th style="${c}">Destinazione</th></tr></thead><tbody>`;
   let totCapi = 0;
   righe.forEach(r => {
     const d60 = addGg(r.ingresso, GL_GG_SVEZZAMENTO);
     const passata = d60 < oggi;
-    const gg = passata ? Math.round((oggi - r.ingresso) / 86400000) : GL_GG_SVEZZAMENTO;
-    const peso = r.peso + GL_PREV_INCREMENTO * gg;
     if(r.reale) totCapi += r.capi;
     const arancio = passata ? 'color:var(--amber);font-weight:600;' : '';
     html += `<tr style="background:${r.reale ? 'var(--green-bg)' : '#FFF'};">
       <td style="${c}font-family:var(--mono)">${ggMm(r.ingresso)}</td>
       <td style="${c}">${r.dove ? escHtml(r.dove) : '<i style="color:var(--text3)">prevista</i>'}</td>
-      <td class="num" style="${c}">${fmt(r.peso,2)}</td>
-      <td style="${c}font-family:var(--mono);${arancio}">${passata ? 'oggi' : ggMm(d60)}</td>
-      <td class="num" style="${c}${arancio}">${fmt(peso,1)}</td>
+      <td style="${c}font-family:var(--mono);${arancio}">${ggMm(d60)}</td>
       <td class="num" style="${c}${r.reale ? 'font-weight:600;' : 'color:var(--text3);font-style:italic;'}">${fmt(r.capi)}</td>
+      <td style="${c}"><input list="gl-dest-list" value="${escHtml(_glDest[iso(r.ingresso)] || '')}" placeholder="—"
+        onchange="glSalvaDestinazione('${iso(r.ingresso)}', this.value)"
+        style="width:100%;min-width:90px;box-sizing:border-box;padding:4px 5px;border:0.5px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:11px;background:#FFF;color:var(--text);"></td>
     </tr>`;
   });
-  html += `<tr class="tot-row"><td colspan="5" style="${c}text-align:right">Totale presenti oggi (bande reali)</td><td class="num" style="${c}">${fmt(totCapi)}</td></tr>`;
+  html += `<tr class="tot-row"><td colspan="3" style="${c}text-align:right">Totale presenti oggi (bande reali)</td><td class="num" style="${c}">${fmt(totCapi)}</td><td style="${c}"></td></tr>`;
   html += `</tbody></table></div>`;
+  // Suggerimenti: capannoni di Lucrezia + soccide da ingrasso attive (si può scrivere anche altro)
+  const sugg = [...GL_DEST_SUGGERITE, ...allSoccide.filter(s => s.attiva && s.tipo === 'ingrasso').map(s => ({ v: s.nome, l: 'ingrasso' }))];
+  html += `<datalist id="gl-dest-list">${sugg.map(o => `<option value="${escHtml(o.v)}">${escHtml(o.l)}</option>`).join('')}</datalist>`;
   container.innerHTML = html;
 }
 
