@@ -2470,6 +2470,15 @@ function renderGiroLucreziaSlot(nomeSito) {
         Note${(allNoteVet.filter(n=>n.lotto_id===lotto.id)).length ? ' ('+(allNoteVet.filter(n=>n.lotto_id===lotto.id)).length+')' : ''}
       </button>
     </div>`;
+
+    // Azioni lotto — stesso identico menu di renderDetail() (mancava qui: i lotti del giro non si potevano archiviare)
+    html += `<select onchange="if(this.value==='stampa') showPage('stampa',${lotto.id}); else if(this.value==='modifica') apriModificaLotto(${lotto.id}); else if(this.value==='archivia') archiviaLotto(${lotto.id},'${lotto.codice}','${nomeSito}'); this.value='';"
+      style="width:100%;padding:8px 10px;border-radius:var(--radius);border:0.5px solid var(--accent);background:var(--amber-bg);color:var(--amber);font-size:11px;font-family:var(--font);font-weight:500;cursor:pointer;margin-top:6px;">
+      <option value="" selected>⚙ Azioni lotto ${lotto.codice}</option>
+      <option value="stampa">🖨 Stampa PDF lotto ${lotto.codice}</option>
+      <option value="modifica">✎ Modifica dati ingresso lotto ${lotto.codice}</option>
+      <option value="archivia">📦 Archivia lotto ${lotto.codice} (concludi)</option>
+    </select>`;
   });
 
   container.innerHTML = html;
@@ -5210,7 +5219,8 @@ async function salvaModificaLotto() {
       l.kg_totali_ingresso=kg; l.media_ingresso=media; l.lettera_dop=lettera; l.incremento_giornaliero=incr; }
 
     chiudiModificaLotto();
-    if(currentLottoId) renderDetail(currentLottoId);
+    if(currentPage === 'girolucrezia' && _glSlot && _glSlot !== GL_PREVISIONE) renderGiroLucreziaSlot(_glSlot);
+    else if(currentLottoId) renderDetail(currentLottoId);
     renderHome();
   } catch(e) {
     alert('Errore: ' + e.message);
@@ -5901,7 +5911,8 @@ function stampaArchivioSoccida(socId) {
 
 
 // ── ARCHIVIA LOTTO ──
-async function archiviaLotto(lottoId, codice) {
+// glSito: se il lotto è del Giro Lucrezia si torna allo slot del sito invece che in home
+async function archiviaLotto(lottoId, codice, glSito) {
   if(!confirm(`Archiviare il lotto ${codice}? Verrà impostato come non attivo e non apparirà più in home.`)) return;
   try {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/lotti?id=eq.${lottoId}`, {
@@ -5912,6 +5923,7 @@ async function archiviaLotto(lottoId, codice) {
     // Aggiorna dato locale
     const l = allLotti.find(x => x.id === lottoId);
     if(l) l.attivo = false;
+    if(glSito) { tornaAGirolucreziaSlot(glSito); return; }
     showPage('home');
     renderHome();
   } catch(e) {
