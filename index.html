@@ -2358,6 +2358,29 @@ function renderGiroLucreziaSlot(nomeSito) {
       </div>
     </div>`;
 
+    // Dettaglio arrivi (da lotti_ingressi) — stesso identico riquadro di renderDetail(): con più DDT
+    // ddt_ingresso_documento_id resta null e i documenti stanno sui singoli arrivi, senza questo non comparivano
+    const ingLotto = (allIngressi||[]).filter(i => i.lotto_id === lotto.id).map(i => {
+      const mediaRiga = (i.kg && i.capi) ? (i.kg / i.capi) : null;
+      const ggRiga = Math.floor((oggi - new Date(i.data_ingresso)) / 86400000);
+      const pesoOggiRiga = (mediaRiga !== null && lotto.incremento_giornaliero)
+        ? mediaRiga + ggRiga * lotto.incremento_giornaliero : null;
+      return { ...i, mediaRiga, pesoOggiRiga };
+    }).sort((a,b) => a.data_ingresso.localeCompare(b.data_ingresso) || a.id - b.id);
+    if(ingLotto.length) {
+      html += `<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:10px 14px;margin-bottom:8px;">`;
+      ingLotto.forEach((i) => {
+        html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid var(--border);">
+          <div>
+            <div style="font-size:12px;">Arrivo ${fmtDate(i.data_ingresso)}${i.numero_ddt ? ` · DDT ${escHtml(i.numero_ddt)}` : ''}${i.ddt_documento_id ? ` <button onclick="apriDocumento(${i.ddt_documento_id})" style="background:#FFF;border:0.5px solid var(--border);border-radius:10px;padding:1px 7px;font-size:9px;color:var(--text2);cursor:pointer;font-family:var(--font);">📄</button>` : ''}</div>
+            ${i.mediaRiga !== null ? `<div style="font-size:10px;color:var(--text2);font-family:var(--mono);margin-top:2px;">${fmt(i.mediaRiga,1)} kg/capo ingresso${i.pesoOggiRiga !== null ? ` → ~${fmt(i.pesoOggiRiga,1)} kg/capo oggi` : ''}</div>` : ''}
+          </div>
+          <span style="font-size:14px;font-weight:600;font-family:var(--mono);">${fmt(i.capi)}</span>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+
     // Banner incremento — identico a quello usato su tutte le altre soccide
     html += `<button onclick="apriModaleIncr(${lotto.id},${lotto.incremento_giornaliero||0})" type="button" style="width:100%;margin-bottom:8px;padding:8px;background:var(--accent);color:#FFF;border:none;border-radius:var(--radius);font-size:12px;font-family:var(--mono);font-weight:500;cursor:pointer;text-align:left;display:block;">
       Incremento: +${lotto.incremento_giornaliero ? lotto.incremento_giornaliero.toFixed(3) : '—'} kg/gg &nbsp;✎ modifica
