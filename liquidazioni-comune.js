@@ -11,7 +11,8 @@ function render() {
   let rows = allUscite.filter(u => u.data_uscita);
   if(filtroMese !== 'tutti') rows = rows.filter(u => u.data_uscita?.startsWith(filtroMese));
   if(filtroSoccida !== 'tutte') rows = rows.filter(u => getSoccidaNome(u) === filtroSoccida);
-  if(filtroDaFatturare) rows = rows.filter(u => !u.fattura_documento_id && u.data_uscita >= DA_FATTURARE_DA);
+  // FIORENZUOLA: suini di GRUPPO CIEMME (soccida a rapporto invertito), Le Corti non fattura
+  if(filtroDaFatturare) rows = rows.filter(u => !u.fattura_documento_id && u.data_uscita >= DA_FATTURARE_DA && !(getSoccidaNome(u) || '').toUpperCase().includes('FIORENZUOLA'));
   rows = [...rows].sort((a,b) => b.data_uscita.localeCompare(a.data_uscita));
 
   // Summary
