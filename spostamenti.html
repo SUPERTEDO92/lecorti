@@ -62,6 +62,8 @@
   .spost-meta { display: flex; align-items: center; gap: 6px; margin-top: 3px; flex-wrap: wrap; }
   .spost-badge { font-size: 10px; font-family: var(--mono); padding: 2px 7px; border-radius: 20px; font-weight: 500; background: var(--bg3); color: var(--text2); }
   .spost-time-fine { display: block; color: var(--text3); }
+  .section-sep { display: flex; align-items: center; justify-content: space-between; }
+  .pdf-btn { font-size: 10px; font-family: var(--mono); font-weight: 500; letter-spacing: .05em; color: #FFF; background: #2A6B8A; border: none; border-radius: var(--radius); padding: 3px 9px; cursor: pointer; }
   .spost-note { font-size: 11px; color: var(--text2); margin-top: 3px; }
 
   .loading { text-align: center; padding: 40px 20px; color: var(--text2); font-size: 13px; font-family: var(--mono); }
@@ -100,6 +102,22 @@ function meseAnnoLabel(dataStr) {
   return `${mesi[parseInt(m)]} ${y}`;
 }
 
+// Registro trasferte del mese (stesso PDF che arriva per mail il 1° del mese): si apre pronto da stampare o salvare in PDF
+async function stampaMese(mese) {
+  const w = window.open('', '_blank');   // aperta subito al click, altrimenti il browser la blocca
+  if (!w) { showToast('Consenti le finestre popup per stampare'); return; }
+  w.document.write('<p style="font-family:sans-serif">Preparazione registro…</p>');
+  try {
+    const r = await fetch(`${SUPABASE_URL}/functions/v1/report-trasferte?mese=${mese}`);
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error || 'errore');
+    w.document.open(); w.document.write(d.html); w.document.close();
+    setTimeout(() => w.print(), 400);
+  } catch (e) {
+    w.close();
+    showToast('Registro non disponibile: ' + e.message);
+  }
+}
 async function loadSpostamenti() {
   const dati = await sb('spostamenti', '?select=*&order=data_spostamento.desc,ora.desc.nullslast&limit=500');
 
@@ -121,7 +139,7 @@ async function loadSpostamenti() {
 
   let html = '';
   ordineMesi.forEach(key => {
-    html += `<div class="section-sep">${meseAnnoLabel(key + '-01')}</div><div class="storico-container">`;
+    html += `<div class="section-sep"><span>${meseAnnoLabel(key + '-01')}</span><button class="pdf-btn" onclick="stampaMese('${key}')">📄 PDF</button></div><div class="storico-container">`;
     gruppi[key].forEach(s => {
       html += `<div class="spost-row">
         <div class="spost-time">${fmtOra(s.ora) || '—'}${s.ora_fine && fmtOra(s.ora_fine) !== fmtOra(s.ora) ? `<span class="spost-time-fine">${fmtOra(s.ora_fine)}</span>` : ''}</div>
