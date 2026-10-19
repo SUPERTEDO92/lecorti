@@ -61,6 +61,8 @@
   .spost-luogo { font-size: 13px; font-weight: 500; }
   .spost-meta { display: flex; align-items: center; gap: 6px; margin-top: 3px; flex-wrap: wrap; }
   .spost-badge { font-size: 10px; font-family: var(--mono); padding: 2px 7px; border-radius: 20px; font-weight: 500; background: var(--bg3); color: var(--text2); }
+  .spost-badge.in-corso { background: var(--green-bg); color: var(--green); }
+  .spost-time-fine { display: block; color: var(--text3); }
   .spost-note { font-size: 11px; color: var(--text2); margin-top: 3px; }
 
   .loading { text-align: center; padding: 40px 20px; color: var(--text2); font-size: 13px; font-family: var(--mono); }
@@ -99,6 +101,15 @@ function meseAnnoLabel(dataStr) {
   return `${mesi[parseInt(m)]} ${y}`;
 }
 
+// visita automatica di oggi con l'ultima posizione da meno di 20 minuti = sei ancora lì
+function inCorso(s) {
+  if (!s.automatico || !s.ora_fine) return false;
+  const oggi = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' });
+  if (s.data_spostamento !== oggi) return false;
+  const adesso = new Date().toLocaleTimeString('it-IT', { timeZone: 'Europe/Rome', hour12: false });
+  const min = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+  return min(adesso) - min(s.ora_fine) <= 20;
+}
 async function loadSpostamenti() {
   const dati = await sb('spostamenti', '?select=*&order=data_spostamento.desc,ora.desc.nullslast&limit=500');
 
@@ -123,13 +134,15 @@ async function loadSpostamenti() {
     html += `<div class="section-sep">${meseAnnoLabel(key + '-01')}</div><div class="storico-container">`;
     gruppi[key].forEach(s => {
       html += `<div class="spost-row">
-        <div class="spost-time">${fmtOra(s.ora) || '—'}</div>
+        <div class="spost-time">${fmtOra(s.ora) || '—'}${s.ora_fine && fmtOra(s.ora_fine) !== fmtOra(s.ora) ? `<span class="spost-time-fine">${fmtOra(s.ora_fine)}</span>` : ''}</div>
         <div class="spost-main">
-          <div class="spost-luogo">${fmtDate(s.data_spostamento)} · ${s.luogo}</div>
+          <div class="spost-luogo">${fmtDate(s.data_spostamento)} · ${escHtml(s.luogo)}</div>
           <div class="spost-meta">
-            ${s.codice_stalla ? `<span class="spost-badge">${s.codice_stalla}</span>` : ''}
+            ${inCorso(s) ? `<span class="spost-badge in-corso">● in corso</span>` : ''}
+            ${s.codice_stalla ? `<span class="spost-badge">${escHtml(s.codice_stalla)}</span>` : ''}
+            ${s.automatico ? `<span class="spost-badge">GPS</span>` : ''}
           </div>
-          ${s.note ? `<div class="spost-note">${s.note}</div>` : ''}
+          ${s.note ? `<div class="spost-note">${escHtml(s.note)}</div>` : ''}
         </div>
       </div>`;
     });
@@ -140,6 +153,7 @@ async function loadSpostamenti() {
 }
 
 loadSpostamenti();
+setInterval(loadSpostamenti, 120000);   // aggiornamento automatico ogni 2 minuti
 </script>
 </body>
 </html>
