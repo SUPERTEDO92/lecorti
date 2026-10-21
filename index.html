@@ -2519,10 +2519,15 @@ function renderMangimeRow(socId) {
 
 // €/capo a colpo d'occhio (IVA incl.): quanto costa un suinetto e quanto incasso per ogni capo uscito
 // (uscite liquidate + trasferimenti/vendite con valore). Usato da renderDetail e dal Giro Lucrezia.
+// Costo d'acquisto €/capo di un lotto (IVA incl.), dalle sole righe ACQUISTO con prezzo
+function costoCapoLotto(lottoId) {
+  const acq = (allTrasferimenti||[]).filter(t => t.lotto_id === lottoId && t.tipo === 'ACQUISTO' && t.costo_acquisto);
+  const capi = acq.reduce((s,t) => s+(t.capi||0), 0);
+  return capi ? acq.reduce((s,t) => s+Number(t.costo_acquisto), 0) / capi : null;
+}
+
 function htmlEuroCapo(lotto, uscite, trasfAcqAll) {
-  const acqPrezzati = trasfAcqAll.filter(t => t.costo_acquisto);
-  const capiAcq = acqPrezzati.reduce((s,t) => s+(t.capi||0), 0);
-  const costoCapo = capiAcq ? acqPrezzati.reduce((s,t) => s+Number(t.costo_acquisto), 0) / capiAcq : null;
+  const costoCapo = costoCapoLotto(lotto.id);
   const usciteLiq = uscite.filter(u => u.liquidazione && u.capi);
   const trasfVal = (allTrasferimenti||[]).filter(t => t.lotto_id === lotto.id && t.tipo !== 'ACQUISTO' && t.valore && t.capi);
   const capiInc = usciteLiq.reduce((s,u) => s+u.capi, 0) + trasfVal.reduce((s,t) => s+t.capi, 0);
@@ -3065,6 +3070,18 @@ function renderStoricoList() {
           <div class="sc"><div class="sc-label">tot. fattura</div><div class="sc-val green">${totLiqG ? fmt(totLiqG) + ' €' : '—'}</div></div>
         </div>
         ${(() => {
+          // €/capo del carico: incasso, costo del suinetto (lotto/i di origine) e margine — IVA incl.
+          const costi = righe.map(u => costoCapoLotto(u.lotto_id));
+          const costoG = costi.every(c => c !== null) && totCapiG ? righe.reduce((s,u,i) => s + costi[i]*(u.capi||0), 0) / totCapiG : null;
+          const incassoG = tuttiLiquidati ? valoreCapoG : null;
+          const margineG = (costoG !== null && incassoG !== null) ? incassoG - costoG : null;
+          return `<div class="storico-line" style="margin-top:4px;">
+            <div class="sc"><div class="sc-label">incasso €/capo</div><div class="sc-val green">${incassoG !== null ? fmt(incassoG,2) : '—'}</div></div>
+            <div class="sc"><div class="sc-label">costo €/capo</div><div class="sc-val" style="color:var(--accent);">${costoG !== null ? fmt(costoG,2) : '—'}</div></div>
+            <div class="sc"><div class="sc-label">margine €/capo</div><div class="sc-val" style="font-weight:600;color:${margineG === null ? 'var(--text3)' : margineG >= 0 ? 'var(--green)' : 'var(--red)'};">${margineG !== null ? fmt(margineG,2) : '—'}</div></div>
+          </div>`;
+        })()}
+        ${(() => {
           const catLabel = { scrofa: 'Scrofa', seconda_scelta: '2ª scelta', misto: 'Misto', distrutto: 'Distrutto' };
           const catRows = allUsciteCategorie.filter(c => righe.some(u => u.id === c.uscita_id));
           if(catRows.length) {
@@ -3326,7 +3343,8 @@ function renderTrasferimenti() {
         </div>
         ${isVend ? '' : `<div class="trasf-line" style="margin-top:4px;">
           <div class="tc"><div class="tc-label">valore</div><div class="tc-val ${t.costo_acquisto ? 'green' : ''}">${t.costo_acquisto ? fmt(t.costo_acquisto)+' €' : '—'}</div></div>
-          <div class="tc"><div class="tc-label">€/capo</div><div class="tc-val ${t.costo_acquisto ? 'green' : ''}">${t.costo_acquisto && t.capi ? fmt(t.costo_acquisto/t.capi,0)+' €' : '—'}</div></div>
+          <div class="tc"><div class="tc-label">€/capo</div><div class="tc-val ${t.costo_acquisto ? 'green' : ''}">${t.costo_acquisto && t.capi ? fmt(t.costo_acquisto/t.capi,2)+' €' : '—'}</div></div>
+          ${t.tipo === 'TRASFERIMENTO' ? (() => { const c = costoCapoLotto(t.lotto_id); return `<div class="tc"><div class="tc-label">costo suinetto €/capo</div><div class="tc-val" style="color:var(--accent);">${c !== null ? fmt(c,2)+' €' : '—'}</div></div>`; })() : ''}
         </div>`}
         ${isVend ? `<div class="trasf-line" style="margin-top:4px;">
           <div class="tc"><div class="tc-label">prezzo ingresso</div><div class="tc-val ${t.costo_acquisto ? '' : ''}">${t.costo_acquisto ? fmt(t.costo_acquisto)+' €' : '—'}</div></div>
@@ -3334,8 +3352,9 @@ function renderTrasferimenti() {
           <div class="tc"><div class="tc-label">margine</div><div class="tc-val" style="color:${margine == null ? 'var(--text2)' : margine >= 0 ? 'var(--green)' : '#B0453A'};font-weight:600;">${margine != null ? fmt(margine)+' €' : '—'}</div></div>
         </div>
         <div class="trasf-line" style="margin-top:4px;">
-          <div class="tc"><div class="tc-label">ingresso €/capo</div><div class="tc-val">${t.costo_acquisto && t.capi ? fmt(t.costo_acquisto/t.capi,0)+' €' : '—'}</div></div>
-          <div class="tc"><div class="tc-label">uscita €/capo</div><div class="tc-val green">${t.valore && t.capi ? fmt(t.valore/t.capi,0)+' €' : '—'}</div></div>
+          <div class="tc"><div class="tc-label">ingresso €/capo</div><div class="tc-val">${t.costo_acquisto && t.capi ? fmt(t.costo_acquisto/t.capi,2)+' €' : '—'}</div></div>
+          <div class="tc"><div class="tc-label">uscita €/capo</div><div class="tc-val green">${t.valore && t.capi ? fmt(t.valore/t.capi,2)+' €' : '—'}</div></div>
+          <div class="tc"><div class="tc-label">margine €/capo</div><div class="tc-val" style="color:${margine == null ? 'var(--text2)' : margine >= 0 ? 'var(--green)' : '#B0453A'};font-weight:600;">${margine != null && t.capi ? fmt(margine/t.capi,2)+' €' : '—'}</div></div>
         </div>` : ''}
         ${isVend
           ? `<div style="display:flex;gap:6px;margin-top:6px;">
