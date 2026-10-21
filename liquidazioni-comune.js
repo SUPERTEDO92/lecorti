@@ -69,8 +69,8 @@ function render() {
       const totCapiG = righe.reduce((s,r) => s+(r.capi||0), 0);
       const totKgG = righe.reduce((s,r) => s+(parseFloat(r.kg_totali)||0), 0);
       const totLiqG = righe.reduce((s,r) => s+(r.liquidazione||0), 0);
-      const totLordoG = righe.reduce((s,r) => s+(r.liquidazione_lorda||0), 0);
-      const totScontiG = righe.reduce((s,r) => s+(r.sconto_peso||0)+(r.sconto_merce||0), 0);
+      // liquidazione = netto incassato; la trattenuta capitale sociale (OPAS) si toglie dopo la fattura
+      const totTrattG = righe.reduce((s,r) => s+(Number(r.trattenuta_capitale_sociale)||0), 0);
       const media = totCapiG && totKgG ? (totKgG / totCapiG).toFixed(1) : '—';
       const prezzoMedio = totKgG ? righe.reduce((s,r) => s+((r.prezzo_kg||0)*(parseFloat(r.kg_totali)||0)),0)/totKgG : null;
       const tuttiLiquidati = righe.every(r => r.liquidazione);
@@ -80,10 +80,10 @@ function render() {
       if(tuttiLiquidati) {
         dettaglioLiq = `<div class="liq-netto">
           <div>
-            <div class="liq-netto-label">Liquidazione netta</div>
-            ${totScontiG > 0 ? `<div style="font-size:10px;color:var(--green);margin-top:1px;">Lordo ${fmt(totLordoG)} € · Sconti ${fmt(totScontiG)} €</div>` : ''}
+            <div class="liq-netto-label">Totale fattura <span style="font-size:11px;">IVA 10% incl.</span></div>
+            ${totTrattG > 0 ? `<div style="font-size:10px;color:var(--green);margin-top:1px;">Trattenuta capitale sociale −${fmt(totTrattG, 2)} € · netto incassato ${fmt(totLiqG, 2)} €</div>` : ''}
           </div>
-          <div class="liq-netto-val">${fmt(totLiqG)} €</div>
+          <div class="liq-netto-val" style="font-size:22px;white-space:nowrap;">${fmt(totLiqG + totTrattG, 2)} €</div>
         </div>`;
       } else if(qualcunoLiquidato) {
         dettaglioLiq = `<div class="liq-netto">
@@ -349,15 +349,20 @@ function toggleTrasfDaFatturare() {
   renderTrasf();
 }
 
-// Riga del conto (acquisto o vendita): totale IVA inclusa → imponibile, €/kg, €/capo
+// Riga del conto (acquisto o vendita): €/kg e totale fattura IVA inclusa
 function trasfRigaConto(label, totale, t) {
   const ivaPct = Number(t.calcolo_prezzo?.iva_pct) || 10;
-  if(totale == null) return `<div class="tg" style="text-align:left;"><div class="tg-label">${label}</div><div class="tg-val" style="font-size:13px;color:var(--amber);">da definire</div></div><div></div><div></div><div></div>`;
-  const imp = Number(totale) / (1 + ivaPct / 100);
-  return `<div class="tg" style="text-align:left;"><div class="tg-label">${label}</div><div class="tg-val" style="font-size:13px;">${t.kg ? fmt(imp / t.kg, 3) + ' €/kg' : '—'}</div></div>
-    <div class="tg"><div class="tg-label">€/capo</div><div class="tg-val" style="font-size:13px;">${t.capi ? fmt(imp / t.capi, 2) : '—'}</div></div>
-    <div class="tg"><div class="tg-label">Imponibile</div><div class="tg-val" style="font-size:13px;">${fmt(imp, 2)}</div></div>
-    <div class="tg"><div class="tg-label">Tot. IVA ${ivaPct}%</div><div class="tg-val green" style="font-size:13px;">${fmt(totale, 2)}</div></div>`;
+  // lattonzoli a prezzo cadauno: mostra €/capo, l'€/kg non ha senso
+  const prezzoCad = Number(t.calcolo_prezzo?.prezzo_cad);
+  const eurKg = totale == null ? ''
+    : prezzoCad ? fmt(prezzoCad, 2) + ' €/capo'
+    : t.kg ? fmt(Number(totale) / (1 + ivaPct / 100) / t.kg, 3) + ' €/kg' : '';
+  return `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">
+    <div><span class="tg-label">${label}</span>${eurKg ? `<span style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-left:6px;">${eurKg}</span>` : ''}</div>
+    ${totale != null
+      ? `<div style="font-family:var(--mono);font-size:15px;font-weight:600;color:var(--green);">${fmt(totale, 2)} € <span style="font-size:10px;font-weight:400;color:var(--text3);">IVA ${ivaPct}% incl.</span></div>`
+      : `<div style="font-family:var(--mono);font-size:13px;color:var(--amber);">da definire</div>`}
+  </div>`;
 }
 
 function trasfStatoFatture(t) {
@@ -503,7 +508,7 @@ function renderTrasf() {
               : (t.costo_acquisto ? fmt(t.costo_acquisto) + ' €' : '—')
           }</div></div>
         </div>
-        ${(isVend || t.costo_acquisto != null) ? `<div class="trasf-grid" style="margin-top:8px;padding-top:8px;border-top:0.5px dashed var(--border);row-gap:8px;">
+        ${(isVend || t.costo_acquisto != null) ? `<div style="margin-top:8px;padding-top:8px;border-top:0.5px dashed var(--border);display:flex;flex-direction:column;gap:6px;">
           ${trasfRigaConto('Acquisto', t.costo_acquisto, t)}
           ${isVend ? trasfRigaConto('Vendita', t.valore, t) : ''}
         </div>` : ''}
