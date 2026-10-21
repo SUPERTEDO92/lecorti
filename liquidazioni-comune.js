@@ -164,6 +164,7 @@ function stampaTrasferimenti() {
     });
   if(filtroMeseTrasf !== 'tutti') lista = lista.filter(t => t.data_trasferimento.startsWith(filtroMeseTrasf));
   if(filtroTipoTrasf !== 'tutti') lista = lista.filter(t => t.tipo === filtroTipoTrasf);
+  if(filtroTrasfDaFatturare) lista = lista.filter(trasfDaFatturare);
   lista.sort((a,b) => b.data_trasferimento.localeCompare(a.data_trasferimento));
 
   const byMonth = {};
@@ -328,6 +329,52 @@ function getSoccidaNome(u) {
 }
 
 // ── TRASFERIMENTI (sola lettura, per Ilaria) ──
+// Ilaria controlla da qui la fatturazione: per ogni movimento con prezzo mostra
+// acquisto e vendita (€/kg, imponibile, totale) e lo stato delle fatture.
+let filtroTrasfDaFatturare = false;
+
+// Movimento interno = parte da una soccida del gestionale (non si fattura)
+function trasfInterno(t) {
+  return allSoccide.some(s => s.nome === t.soccida_partenza);
+}
+
+// Vendita con prezzo definito ma senza fattura di vendita collegata
+function trasfDaFatturare(t) {
+  return t.tipo === 'VENDITA' && t.valore != null && !t.fattura_vendita_documento_id && t.data_trasferimento >= DA_FATTURARE_DA;
+}
+
+function toggleTrasfDaFatturare() {
+  filtroTrasfDaFatturare = !filtroTrasfDaFatturare;
+  document.getElementById('toggle-fatt-trasf').classList.toggle('active', filtroTrasfDaFatturare);
+  renderTrasf();
+}
+
+// Riga del conto (acquisto o vendita): totale IVA inclusa → imponibile, €/kg, €/capo
+function trasfRigaConto(label, totale, t) {
+  const ivaPct = Number(t.calcolo_prezzo?.iva_pct) || 10;
+  if(totale == null) return `<div class="tg" style="text-align:left;"><div class="tg-label">${label}</div><div class="tg-val" style="font-size:13px;color:var(--amber);">da definire</div></div><div></div><div></div><div></div>`;
+  const imp = Number(totale) / (1 + ivaPct / 100);
+  return `<div class="tg" style="text-align:left;"><div class="tg-label">${label}</div><div class="tg-val" style="font-size:13px;">${t.kg ? fmt(imp / t.kg, 3) + ' €/kg' : '—'}</div></div>
+    <div class="tg"><div class="tg-label">€/capo</div><div class="tg-val" style="font-size:13px;">${t.capi ? fmt(imp / t.capi, 2) : '—'}</div></div>
+    <div class="tg"><div class="tg-label">Imponibile</div><div class="tg-val" style="font-size:13px;">${fmt(imp, 2)}</div></div>
+    <div class="tg"><div class="tg-label">Tot. IVA ${ivaPct}%</div><div class="tg-val green" style="font-size:13px;">${fmt(totale, 2)}</div></div>`;
+}
+
+function trasfStatoFatture(t) {
+  const isVend = t.tipo === 'VENDITA';
+  const esterno = isVend || (t.tipo === 'ACQUISTO' && !trasfInterno(t));
+  if(!esterno) return '';
+  let out = '';
+  if(t.fattura_documento_id) out += `<div class="liq-netto"><div class="liq-netto-label" style="font-size:12px;">✓ Fattura fornitore ricevuta</div></div>`;
+  else if(t.costo_acquisto != null) out += `<div class="liq-pending" style="font-size:12.5px;">⏳ Fattura fornitore da ricevere — controllarla con il conteggio di acquisto</div>`;
+  else out += `<div class="liq-pending" style="font-size:12.5px;">⏳ Prezzo di acquisto ancora da definire</div>`;
+  if(isVend) {
+    if(t.fattura_vendita_documento_id) out += `<div class="liq-netto"><div class="liq-netto-label" style="font-size:12px;">✓ Fattura di vendita emessa</div></div>`;
+    else if(trasfDaFatturare(t)) out += `<div style="margin-top:8px;background:#FDF3E0;border:0.5px solid #F0C870;border-radius:var(--radius);padding:6px 10px;font-size:14px;font-weight:600;color:#9A6010;display:flex;justify-content:space-between;align-items:center;gap:6px;"><span>🧾 Da fatturare a: ${escHtml(t.soccida_destinazione || '—')}</span><span style="font-family:var(--mono);">${fmt(t.valore, 2)} €</span></div>`;
+    else if(t.valore == null) out += `<div class="liq-pending" style="font-size:12.5px;">⏳ Prezzo di vendita da definire — non fatturare ancora</div>`;
+  }
+  return out;
+}
 function buildChipsTrasf() {
   const mesi = [...new Set(allTrasferimenti.map(t => t.data_trasferimento?.substring(0,7)).filter(Boolean))].sort().reverse();
   let html = `<div class="chip active" onclick="setFiltroTrasf('tutti',this)">Tutti</div>`;
@@ -391,12 +438,12 @@ function renderTrasf() {
 
   const totCapi = lista.reduce((s,t) => s+(t.capi||0), 0);
   const totKg = lista.reduce((s,t) => s+(t.kg||0), 0);
-  const totVendite = lista.filter(t => t.tipo === 'VENDITA').length;
+  const daFatt = lista.filter(trasfDaFatturare);
   document.getElementById('summary-trasf').innerHTML = `
     <div class="sum-box"><div class="sum-label">movimenti</div><div class="sum-val">${lista.length}</div></div>
     <div class="sum-box"><div class="sum-label">capi</div><div class="sum-val">${fmt(totCapi)}</div></div>
     <div class="sum-box"><div class="sum-label">kg</div><div class="sum-val">${fmt(totKg)}</div></div>
-    <div class="sum-box"><div class="sum-label">vendite</div><div class="sum-val">${totVendite}</div></div>`;
+    <div class="sum-box"><div class="sum-label">da fatturare</div><div class="sum-val${daFatt.length ? '' : ' green'}">${daFatt.length}</div></div>`;
 
   if(!lista.length) {
     document.getElementById('list-trasf').innerHTML = `<div class="empty">Nessun movimento nel periodo selezionato.</div>`;
@@ -456,10 +503,11 @@ function renderTrasf() {
               : (t.costo_acquisto ? fmt(t.costo_acquisto) + ' €' : '—')
           }</div></div>
         </div>
-        ${isVend ? `<div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:0.5px dashed var(--border);font-size:12px;font-family:var(--mono);">
-          <span style="color:var(--text2);">ingresso: ${t.costo_acquisto ? fmt(t.costo_acquisto) + ' €' : '—'}</span>
-          <span style="color:var(--green);">uscita: ${t.valore ? fmt(t.valore) + ' €' : '—'}</span>
+        ${(isVend || t.costo_acquisto != null) ? `<div class="trasf-grid" style="margin-top:8px;padding-top:8px;border-top:0.5px dashed var(--border);row-gap:8px;">
+          ${trasfRigaConto('Acquisto', t.costo_acquisto, t)}
+          ${isVend ? trasfRigaConto('Vendita', t.valore, t) : ''}
         </div>` : ''}
+        ${trasfStatoFatture(t)}
       </div>`;
     }).join('');
   });
