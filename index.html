@@ -2070,13 +2070,7 @@ function glSitoOccupato(nomeSito, dataRif) {
   return { occupato: attivi.length > 0, count: attivi.length };
 }
 function glSuggerisciSito(dataRif) {
-  const luc = glSitoOccupato(GL_SVEZZAMENTO, dataRif);
-  if(!luc.occupato) return GL_SVEZZAMENTO;
-  const ped = glSitoOccupato(GL_PEDRONI, dataRif);
-  if(ped.count < 3) return GL_PEDRONI;
-  // Anche oltre il limite logico di 3 bande "vive", Pedroni ha capacità reale 4000 suinetti
-  // (Lucrezia interno ne ospita invece 1 sola banda alla volta) — quindi resta la scelta corretta
-  // di default anche quando il conteggio logico segnala "pieno" su entrambi i siti.
+  // Dal 23/10/2026 lo svezzamento interno Lucrezia è chiuso (Ruben): tutta la produzione va a Pedroni
   return GL_PEDRONI;
 }
 
@@ -2109,7 +2103,7 @@ function renderGiroLucrezia() {
     prox.setDate(prox.getDate() + GL_GG_CICLO_BANDA);
     const proxStr = prox.toISOString().slice(0,10);
     const sito = glSuggerisciSito(proxStr);
-    const sitoLabel = sito === GL_SVEZZAMENTO ? 'Lucrezia (interno)' : 'Pedroni';
+    const sitoLabel = 'Pedroni';
     const oggi = new Date(); oggi.setHours(0,0,0,0);
     const scaduta = prox <= oggi;
     reminderHtml = `<div style="background:${scaduta ? 'var(--red-bg)' : 'var(--amber-bg)'};border:0.5px solid ${scaduta ? 'var(--red)' : 'var(--accent)'};border-radius:12px;padding:18px;margin-bottom:16px;">
@@ -2122,10 +2116,8 @@ function renderGiroLucrezia() {
   }
 
   // Slot fissi
-  const socLuc = allSoccide.find(s => s.nome === GL_SVEZZAMENTO);
   const socPed = allSoccide.find(s => s.nome === GL_PEDRONI);
   const socIng = allSoccide.find(s => s.nome === GL_INGRASSO);
-  const bandeLuc = socLuc ? allLotti.filter(l => l.soccida_id === socLuc.id && l.attivo && l.codice_banda) : [];
   const bandePed = socPed ? allLotti.filter(l => l.soccida_id === socPed.id && l.attivo && l.codice_banda) : [];
   const bandeIng = socIng ? allLotti.filter(l => l.soccida_id === socIng.id && l.attivo && l.codice_banda) : [];
 
@@ -2144,7 +2136,6 @@ function renderGiroLucrezia() {
 
   let html = reminderHtml;
   html += `<div class="section-sep">Slot svezzamento</div><div class="soccide-list">`;
-  html += slotCard('Lucrezia (interno)', bandeLuc, GL_SVEZZAMENTO);
   html += slotCard('Pedroni', bandePed, GL_PEDRONI);
   html += `</div>`;
   html += `<div class="section-sep">Slot ingrasso</div><div class="soccide-list">`;
