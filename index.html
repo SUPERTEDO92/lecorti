@@ -1242,10 +1242,12 @@ function ddtSortKey(u){
   const m = String(u.numero_ddt||'').match(/\d+/);
   return m ? parseInt(m[0],10) : Infinity;
 }
+// Prima per data, poi per numero DDT (i blocchetti DDT possono ripartire da capo)
 function sortByDdt(a,b){
+  const d = String(a.data_uscita||'').localeCompare(String(b.data_uscita||''));
+  if(d) return d;
   const ka = ddtSortKey(a), kb = ddtSortKey(b);
-  if(ka !== kb) return ka - kb;
-  return String(a.data_uscita||'').localeCompare(String(b.data_uscita||''));
+  return ka === kb ? 0 : (ka < kb ? -1 : 1);
 }
 
 // State
