@@ -2599,13 +2599,13 @@ function renderDetail(socId) {
 
     // Dettaglio arrivi — riquadro aggiuntivo sotto l'header standard, mai sostitutivo
     if(ingLotto.length) {
-      html += `<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:10px 14px;margin-bottom:8px;">`;
+      html += `<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:6px 12px;margin-bottom:6px;">`;
       ingLotto.forEach((i) => {
         const p = { mediaRiga: i.mediaRiga, pesoOggiRiga: i.pesoOggiRiga };
-        html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid var(--border);">
+        html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:0.5px solid var(--border);">
           <div>
-            <div style="font-size:12px;">Arrivo ${fmtDate(i.data_ingresso)}${i.capannone ? ` · <strong style="text-transform:uppercase;">${i.capannone}</strong>` : ''}${i.ddt_documento_id ? ` <button onclick="apriDocumento(${i.ddt_documento_id})" style="background:#FFF;border:0.5px solid var(--border);border-radius:10px;padding:1px 7px;font-size:9px;color:var(--text2);cursor:pointer;font-family:var(--font);">📄</button>` : ''}</div>
-            ${p.mediaRiga !== null ? `<div style="font-size:10px;color:var(--text2);font-family:var(--mono);margin-top:2px;">${fmt(p.mediaRiga,1)} kg/capo ingresso${p.pesoOggiRiga !== null ? ` → ~${fmt(p.pesoOggiRiga,1)} kg/capo oggi` : ''}</div>` : ''}
+            <div style="font-size:12px;">Arrivo ${fmtDate(i.data_ingresso)}${i.capannone ? ` · <strong style="text-transform:uppercase;">${i.capannone}</strong>` : ''}${i.ddt_documento_id ? ` <button onclick="apriDocumento(${i.ddt_documento_id})" style="background:#FFF;border:0.5px solid var(--border);border-radius:10px;padding:0 6px;font-size:9px;line-height:1.5;color:var(--text2);cursor:pointer;font-family:var(--font);">📄</button>` : ''}</div>
+            ${p.mediaRiga !== null ? `<div style="font-size:10px;color:var(--text2);font-family:var(--mono);margin-top:0;">${fmt(p.mediaRiga,1)} kg/capo ingresso${p.pesoOggiRiga !== null ? ` → ~${fmt(p.pesoOggiRiga,1)} kg/capo oggi` : ''}</div>` : ''}
           </div>
           <span style="font-size:14px;font-weight:600;font-family:var(--mono);">${fmt(i.capi)}</span>
         </div>`;
@@ -2619,21 +2619,21 @@ function renderDetail(socId) {
       const perLettera = {};
       lettereLotto.forEach(x => { perLettera[x.lettera] = (perLettera[x.lettera]||0) + (x.capi||0); });
       const totLettere = Object.values(perLettera).reduce((a,b)=>a+b,0);
-      html += `<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:10px 14px;margin-bottom:8px;">
-        <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Dettaglio lettere DOP</div>`;
+      html += `<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:6px 12px;margin-bottom:6px;">
+        <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">Dettaglio lettere DOP</div>`;
       Object.keys(perLettera).sort().forEach(let_ => {
-        html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:0.5px solid var(--border);">
+        html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:1px 0;border-bottom:0.5px solid var(--border);">
           <span style="font-size:12px;">Lettera <strong>${let_}</strong></span>
           <span style="font-size:14px;font-weight:600;font-family:var(--mono);">${fmt(perLettera[let_])}</span>
         </div>`;
       });
-      html += `<div style="display:flex;justify-content:space-between;align-items:center;padding-top:6px;">
+      html += `<div style="display:flex;justify-content:space-between;align-items:center;padding-top:2px;">
         <span style="font-size:13px;font-weight:600;">Totale</span>
-        <span style="font-size:20px;font-weight:700;color:var(--accent);font-family:var(--mono);">${fmt(totLettere)}</span>
+        <span style="font-size:17px;font-weight:700;color:var(--accent);font-family:var(--mono);">${fmt(totLettere)}</span>
       </div>`;
-      html += `<div style="margin-top:8px;">`;
+      html += `<div style="margin-top:3px;line-height:1.45;">`;
       lettereLotto.sort((a,b)=> (a.lettera||'').localeCompare(b.lettera||'') || (a.data_at||'').localeCompare(b.data_at||'')).forEach(x => {
-        html += `<div style="font-size:10.5px;color:var(--text2);font-family:var(--mono);">AT ${x.numero_at||'—'} del ${fmtDate(x.data_at)} · lettera ${x.lettera} · ${fmt(x.capi)} capi</div>`;
+        html += `<div style="font-size:10px;color:var(--text2);font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">AT ${x.numero_at||'—'} del ${fmtDate(x.data_at)} · lettera ${x.lettera} · ${fmt(x.capi)} capi</div>`;
       });
       html += `</div></div>`;
     }
