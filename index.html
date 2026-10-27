@@ -2382,10 +2382,10 @@ function renderGiroLucreziaSlot(nomeSito) {
     // Valore banda — stesso box "costo acquisto" già usato sugli altri lotti
     if(costoAcq) {
       html += `<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:8px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-size:11px;color:var(--text2);">💰 Valore banda</div>
-        <div style="text-align:right;">
+        <div style="font-size:11px;color:var(--text2);line-height:1.35;">💰 Valore banda<div style="font-size:10px;font-family:var(--mono);">IVA incl.</div></div>
+        <div style="text-align:right;white-space:nowrap;">
           <div style="font-size:15px;font-weight:600;font-family:var(--mono);color:var(--accent);">${fmt(costoCapoLotto(lotto.id),2)} €/capo</div>
-          <div style="font-size:10px;color:var(--text2);font-family:var(--mono);">totale ${fmt(costoAcq)} € · IVA incl.</div>
+          <div style="font-size:10px;color:var(--text2);font-family:var(--mono);">totale ${fmt(costoAcq)} €</div>
         </div>
       </div>`;
     } else if(trasfAcq) {
@@ -2654,10 +2654,10 @@ function renderDetail(socId) {
     const trasfAcqMancanti = trasfAcqAll.filter(t => !t.costo_acquisto);
     if(costoAcq) {
       html += `<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:8px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-size:11px;color:var(--text2);">💰 Costo acquisto suinetti${trasfAcqAll.length > 1 ? ` (${trasfAcqAll.length} arrivi)` : ''}</div>
-        <div style="text-align:right;">
+        <div style="font-size:11px;color:var(--text2);line-height:1.35;">💰 Costo acquisto suinetti<div style="font-size:10px;font-family:var(--mono);">${trasfAcqAll.length > 1 ? `${trasfAcqAll.length} arrivi · ` : ''}IVA incl.</div></div>
+        <div style="text-align:right;white-space:nowrap;">
           <div style="font-size:15px;font-weight:600;font-family:var(--mono);color:var(--accent);">${fmt(costoCapoLotto(lotto.id),2)} €/capo</div>
-          <div style="font-size:10px;color:var(--text2);font-family:var(--mono);">totale ${fmt(costoAcq)} € · IVA incl.</div>
+          <div style="font-size:10px;color:var(--text2);font-family:var(--mono);">totale ${fmt(costoAcq)} €</div>
         </div>
       </div>`;
       if(trasfAcqMancanti.length) {
