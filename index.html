@@ -1254,7 +1254,7 @@ function sortByDdt(a,b){
 
 // State
 let allMangime = [];
-let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [], allMortalita = [], allSanitario = [], allVenditeDirette = [], allUsciteCategorie = [], allVenditeDiretteCategorie = [], allIngressi = [], allLettereDop = [], allNoteVet = [], allArchivioDoc = [];
+let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [], allMortalita = [], allSanitario = [], allVenditeDirette = [], allUsciteCategorie = [], allVenditeDiretteCategorie = [], allIngressi = [], allLettereDop = [], allNoteVet = [], allArchivioDoc = [], allPrelievi = [];
 let storicoFilter = 'tutti';
 let currentPage = 'home';
 let _noteTornaFn = () => showPage('home');
@@ -1282,6 +1282,8 @@ async function loadAll() {
   ]);
   allIngressi = await sb('lotti_ingressi', '?order=data_ingresso.asc');
   allLettereDop = await sb('lotti_lettere_dop', '?order=id.asc');
+  // Prelievi a scaglioni di una vendita in blocco (es. 50 capi a BERTESAGO PIETRO) — 02/11/2026
+  try { allPrelievi = await sb('uscite_prelievi', '?order=data_prelievo.asc'); if(!Array.isArray(allPrelievi)) allPrelievi = []; } catch(e) { allPrelievi = []; }
   // Consegne mangime (export giornaliero mangimificio, solo righe in KG) — 22/09/2026
   try { allMangime = await sb('v_consegne_mangime', '?in_kg=eq.true&order=data_consegna.desc,numero_documento.desc,riga.asc'); if(!Array.isArray(allMangime)) allMangime = []; } catch(e) { allMangime = []; }
   renderHome();
@@ -2755,20 +2757,44 @@ function renderDetail(socId) {
     if(uscite.length) {
       html += `<div class="uscite-container" style="margin-bottom:8px">
         <div class="uscite-header"><span class="uscite-header-text">Uscite lotto ${lotto.codice}</span></div>`;
-      html += uscite.map(u => `
+      html += uscite.map(u => {
+        // Vendita in blocco ritirata a scaglioni: i kg/importi sono la somma dei prelievi,
+        // media e incremento non hanno senso sulla riga (i capi pesati sono solo quelli già ritirati)
+        const prel = (allPrelievi||[]).filter(p => p.uscita_id === u.id);
+        const capiPrel = prel.reduce((a,p) => a + (p.capi||0), 0);
+        let r = `
         <div class="uscita-row">
-          <div class="uscita-date">${fmtDate(u.data_uscita)}${u.numero_ddt ? ' · DDT ' + u.numero_ddt : ''} · ${u.macello || '—'}${u.numero_modello4 ? ' · Mod.4 ' + escHtml(u.numero_modello4) : ''}</div>
+          <div class="uscita-date">${fmtDate(u.data_uscita)}${u.numero_ddt ? ' · DDT ' + u.numero_ddt : ''} · ${escHtml(u.macello || u.cessionario || '—')}${u.numero_modello4 ? ' · Mod.4 ' + escHtml(u.numero_modello4) : ''}</div>
           <div class="uscita-line">
             <div class="uc narrow"><div class="uc-label">capi</div><div class="uc-val">${fmt(u.capi)}</div></div>
             <div class="uc"><div class="uc-label">kg</div><div class="uc-val">${fmt(u.kg_totali)}</div></div>
-            <div class="uc"><div class="uc-label">media</div><div class="uc-val">${u.kg_totali && u.capi ? fmt(u.kg_totali/u.capi,1) : '—'}</div></div>
+            <div class="uc"><div class="uc-label">media</div><div class="uc-val">${prel.length ? '—' : (u.kg_totali && u.capi ? fmt(u.kg_totali/u.capi,1) : '—')}</div></div>
             <div class="uc narrow"><div class="uc-label">gg</div><div class="uc-val">${calcGgStr(u, lotto)}</div></div>
-            <div class="uc"><div class="uc-label">incr.</div><div class="uc-val">${calcIncr(u, lotto)}</div></div>
+            <div class="uc"><div class="uc-label">incr.</div><div class="uc-val">${prel.length ? '—' : calcIncr(u, lotto)}</div></div>
             <div class="uc wide"><div class="uc-label">liquid. €</div><div class="uc-val green">${u.liquidazione ? fmt(u.liquidazione) : '—'}</div></div>
-            <div class="uc"><div class="uc-label">€/capo</div><div class="uc-val green">${u.liquidazione && u.capi ? fmt(u.liquidazione/u.capi) : '—'}</div></div>
-          </div>
-
-        </div>`).join('');
+            <div class="uc"><div class="uc-label">€/capo</div><div class="uc-val green">${!prel.length && u.liquidazione && u.capi ? fmt(u.liquidazione/u.capi) : '—'}</div></div>
+          </div>`;
+        if(prel.length) {
+          r += `<details style="margin-top:6px;">
+            <summary style="font-size:11px;color:var(--amber);cursor:pointer;">Ritiri ${escHtml(u.cessionario || '')}: ${capiPrel} capi su ${fmt(u.capi)} (${fmt(u.capi - capiPrel)} ancora in stalla)</summary>
+            <div style="overflow-x:auto;margin-top:4px;"><table style="width:100%;border-collapse:collapse;font-size:10px;font-family:var(--mono);">
+              <tr style="color:var(--text2);text-align:right;"><th style="text-align:left;padding:3px;">data</th><th style="text-align:left;padding:3px;">doc.</th><th style="padding:3px;">capi</th><th style="padding:3px;">kg</th><th style="padding:3px;">media</th><th style="padding:3px;">CUN</th><th style="padding:3px;">€/kg</th><th style="padding:3px;">imponib. €</th></tr>
+              ${prel.map(p => `<tr style="border-top:0.5px solid var(--border);text-align:right;">
+                <td style="text-align:left;padding:3px;">${fmtDate(p.data_prelievo)}</td>
+                <td style="text-align:left;padding:3px;">${escHtml(p.documento || '—')}${p.numero_modello4 ? '<br><span style="color:var(--text2)">Mod.4 ' + escHtml(p.numero_modello4) + '</span>' : ''}</td>
+                <td style="padding:3px;">${fmt(p.capi)}</td>
+                <td style="padding:3px;">${fmt(p.kg)}</td>
+                <td style="padding:3px;">${p.capi ? fmt(p.kg/p.capi,1) : '—'}</td>
+                <td style="padding:3px;">${p.listino_prezzo != null ? Number(p.listino_prezzo).toFixed(3).replace('.',',') : '—'}</td>
+                <td style="padding:3px;">${p.prezzo_kg != null ? Number(p.prezzo_kg).toFixed(3).replace('.',',') : '—'}</td>
+                <td style="padding:3px;">${p.imponibile != null ? fmt(p.imponibile,2) : '—'}</td>
+              </tr>`).join('')}
+            </table></div>
+          </details>`;
+        }
+        return r + `
+        </div>`;
+      }).join('');
       html += `</div>`;
       if(totaleLiquidato > 0) {
         html += `<div class="totale-bar" style="margin-bottom:8px">
