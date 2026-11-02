@@ -115,6 +115,8 @@
   .badge-green { background: var(--green-bg); color: var(--green); }
   .badge-amber { background: var(--amber-bg); color: var(--amber); }
   .badge-gray { background: var(--bg3); color: var(--text2); }
+  .badge-red { background: var(--red-bg); color: var(--red); }
+  .dot-red { background: var(--red); }
   .soc-arrow { color: var(--text3); font-size: 16px; }
 
   /* SECTION LABELS */
@@ -704,6 +706,14 @@
   </div>
 </div>
 
+<!-- ORDINI MANGIME (proposte da consumi stimati, 02/11/2026) -->
+<div class="page" id="page-ordini">
+  <img src="img/bg-home-piglets.jpg" alt="" class="bg-hero">
+  <div style="padding:14px;">
+    <div id="ordini-content"><div class="loading">Caricamento...</div></div>
+  </div>
+</div>
+
 <!-- CALCOLO PREZZO SUINETTI -->
 <div class="page" id="page-calcolo">
   <img src="img/bg-home-piglets.jpg" alt="" class="bg-hero">
@@ -1254,6 +1264,7 @@ function sortByDdt(a,b){
 
 // State
 let allMangime = [];
+let allProposteOrdini = [];
 let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [], allMortalita = [], allSanitario = [], allVenditeDirette = [], allUsciteCategorie = [], allVenditeDiretteCategorie = [], allIngressi = [], allLettereDop = [], allNoteVet = [], allArchivioDoc = [], allPrelievi = [];
 let storicoFilter = 'tutti';
 let currentPage = 'home';
@@ -1286,6 +1297,8 @@ async function loadAll() {
   try { allPrelievi = await sb('uscite_prelievi', '?order=data_prelievo.asc'); if(!Array.isArray(allPrelievi)) allPrelievi = []; } catch(e) { allPrelievi = []; }
   // Consegne mangime (export giornaliero mangimificio, solo righe in KG) — 22/09/2026
   try { allMangime = await sb('v_consegne_mangime', '?in_kg=eq.true&order=data_consegna.desc,numero_documento.desc,riga.asc'); if(!Array.isArray(allMangime)) allMangime = []; } catch(e) { allMangime = []; }
+  // Proposte ordini mangime (consumi stimati da curva tarata) — 02/11/2026
+  try { allProposteOrdini = ordinaProposte(await sb('v_proposte_ordini_mangime', '')); } catch(e) { allProposteOrdini = []; }
   renderHome();
   renderStorico();
   renderTrasferimenti();
@@ -1455,6 +1468,7 @@ function showPage(name, lottoId, meta) {
   if(name === 'rubrica' && !window._rubricaInit) { window._rubricaInit = true; rubRender(allevamenti); }
   if(name === 'girolucrezia') { _glSlot = null; renderGiroLucrezia(); }
   if(name === 'documentale') renderDocumentale();
+  if(name === 'ordini') renderOrdini();
   if(name === 'analisi' && lottoId) { currentLottoId = lottoId; renderAnalisi(lottoId); }
   if(name === 'analisi' && !lottoId && currentLottoId) renderAnalisi(currentLottoId);
   if(name === 'note' && lottoId) { currentNoteLottoId = lottoId; currentNoteIsSoccida = !!(meta && meta.soccida); renderNote(lottoId, currentNoteIsSoccida); }
@@ -1974,7 +1988,7 @@ function renderHome() {
   const ingrasso = socWithLotti.filter(s => s.tipo === 'ingrasso' || s.tipo === 'mista');
   const svezzamento = socWithLotti.filter(s => s.tipo === 'svezzamento');
 
-  let html = '';
+  let html = renderOrdiniCard();
 
   html += `<div class="section-sep">Scrofaia</div><div class="soccide-list">
     <div class="soccida-card" onclick="apriGiroLucreziaConAnimazione()">
@@ -2480,6 +2494,116 @@ function renderGiroLucreziaSlot(nomeSito) {
   });
 
   container.innerHTML = html;
+}
+
+// ── ORDINI MANGIME — proposte da v_proposte_ordini_mangime (02/11/2026) ──
+// Per gli allevamenti in ordini_mangime_config: scorta stimata nei silos (consegne dal nuovo export
+// meno consumo da curva tarata sul sito, FEROLDA dal foglio di razionamento) e data entro cui ordinare.
+// "✅ Ordinato" scrive in ordini_mangime_fatti: la proposta resta ORDINATO finché il carico non risulta consegnato.
+const ORDINI_STATO = {
+  'ORDINA OGGI':    { badge: 'badge-red',   dot: 'dot-red',   testo: 'Ordina oggi' },
+  'ORDINA DOMANI':  { badge: 'badge-amber', dot: 'dot-amber', testo: 'Ordina domani' },
+  'ORDINATO':       { badge: 'badge-green', dot: 'dot-green', testo: 'Ordinato' },
+  'OK':             { badge: 'badge-green', dot: 'dot-green', testo: 'OK' },
+  'IN ATTESA DATI': { badge: 'badge-gray',  dot: 'dot-gray',  testo: 'In attesa dati' },
+  'NESSUN CONSUMO': { badge: 'badge-gray',  dot: 'dot-gray',  testo: 'Nessun consumo' },
+};
+const PORTALE_B2B = 'https://b2b.scotuzzi.it/products/cart';
+
+function ordinaProposte(righe) {
+  if(!Array.isArray(righe)) return [];
+  const rango = st => ({'ORDINA OGGI':0,'ORDINA DOMANI':1,'ORDINATO':2,'OK':3}[st] ?? 4);
+  return righe.sort((a,b) => rango(a.stato) - rango(b.stato) || (a.ordinare_entro||'9').localeCompare(b.ordinare_entro||'9') || a.soccida.localeCompare(b.soccida));
+}
+
+function renderOrdiniCard() {
+  if(!allProposteOrdini.length) return '';
+  const oggi = allProposteOrdini.filter(p => p.stato === 'ORDINA OGGI').length;
+  const domani = allProposteOrdini.filter(p => p.stato === 'ORDINA DOMANI').length;
+  const dot = oggi ? 'dot-red' : domani ? 'dot-amber' : 'dot-green';
+  const meta = oggi || domani
+    ? [oggi ? `${oggi} da ordinare oggi` : '', domani ? `${domani} domani` : ''].filter(Boolean).join(' · ')
+    : `${allProposteOrdini.length} allevamenti · niente da ordinare`;
+  const badge = oggi ? `<span class="soc-badge badge-red">${oggi}</span>` : domani ? `<span class="soc-badge badge-amber">${domani}</span>` : '';
+  return `<div class="section-sep">Mangime</div><div class="soccide-list">
+    <div class="soccida-card" onclick="showPage('ordini')">
+      <div class="dot ${dot}"></div>
+      <div class="soc-main">
+        <div class="soc-nome">🛒 Ordini mangime</div>
+        <div class="soc-meta">${meta}</div>
+      </div>
+      ${badge}
+      <span class="soc-arrow">&#8250;</span>
+    </div>
+  </div>`;
+}
+
+function renderOrdini() {
+  const el = document.getElementById('ordini-content');
+  const dd = d => { const p = (d||'').split('-'); return p.length === 3 ? `${p[2]}/${p[1]}` : '—'; };
+  const t = kg => kg == null ? '—' : `${fmt(Number(kg)/1000, 1)} t`;
+  if(!allProposteOrdini.length) { el.innerHTML = `<div class="empty">Nessun allevamento configurato per le proposte d'ordine.</div>`; return; }
+  let html = `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;">
+      <div class="section-sep" style="padding:0;">Proposte ordini mangime · ${new Date().toLocaleDateString('it-IT')}</div>
+      <a href="${PORTALE_B2B}" target="_blank" rel="noopener" class="back-btn" style="margin:0;text-decoration:none;">🛒 Portale B2B</a>
+    </div>`;
+  html += allProposteOrdini.map(p => {
+    const st = ORDINI_STATO[p.stato] || ORDINI_STATO['OK'];
+    const attesa = p.stato === 'IN ATTESA DATI' || p.stato === 'NESSUN CONSUMO';
+    const riga = (lab, val) => `<div class="mangime-item"><div class="mangime-item-top"><span>${lab}</span><b>${val}</b></div></div>`;
+    const testo = (lab, val) => val ? `<div class="mangime-item"><div style="color:var(--text2);">${lab}</div><div style="margin-top:2px;">${escHtml(val)}</div></div>` : '';
+    let dettaglio = '';
+    if(!attesa) {
+      dettaglio += riga('Scorta stimata nei silos', `${t(p.scorta_kg)} · ${fmt(p.giorni_autonomia, 1)} gg`);
+      dettaglio += riga('Finisce circa il', dd(p.data_esaurimento));
+      dettaglio += riga(`Ordinare entro (${p.giorni_anticipo} gg prima)`, dd(p.ordinare_entro));
+      dettaglio += riga('Consumo stimato', `${t(p.consumo_gg_kg)}/giorno`);
+      dettaglio += riga('Carico tipico', t(p.carico_tipico_kg));
+      dettaglio += riga('Ultima consegna', p.ultima_consegna ? `${dd(p.ultima_consegna)} · ${t(p.ultima_consegna_kg)}` : '—');
+    } else {
+      dettaglio += riga('Consumo da curva', `${t(p.consumo_curva_gg_kg)}/giorno`);
+    }
+    dettaglio += testo('Lotti presenti', p.lotti);
+    dettaglio += testo('Articoli consegnati negli ultimi 30 gg', p.articoli);
+    dettaglio += testo('Calcolo', p.taratura + (p.fattore != null ? ` (fattore ${fmt(p.fattore, 2)})` : ''));
+    dettaglio += testo('⚠ Avvisi', p.avvisi);
+    if(p.ultimo_ordine) dettaglio += riga('Ultimo ordine segnato', `${dd(p.ultimo_ordine)}${p.ultimo_ordine_kg ? ' · ' + t(p.ultimo_ordine_kg) : ''}`);
+    const sommario = attesa ? 'in attesa del nuovo export'
+      : p.stato === 'ORDINATO' ? `ordinato il ${dd(p.ultimo_ordine)} · scorta ${t(p.scorta_kg)}`
+      : `scorta ${t(p.scorta_kg)} · ${fmt(p.giorni_autonomia, 1)} gg · entro ${dd(p.ordinare_entro)}`;
+    const bottone = attesa ? '' : `<div class="mangime-item" style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="back-btn" style="margin:0;background:var(--green);" onclick="segnaOrdinato(${p.soccida_id}, ${p.carico_tipico_kg || 'null'}, this)">✅ Ordinato</button>
+      </div>`;
+    return `<div class="mangime-wrap${p.stato === 'ORDINA OGGI' || p.stato === 'ORDINA DOMANI' ? ' open' : ''}">
+      <div class="mangime-row" onclick="this.parentNode.classList.toggle('open')">
+        <span style="display:flex;align-items:center;gap:8px;"><span class="dot ${st.dot}"></span><b>${escHtml(p.soccida)}</b></span>
+        <span><span class="soc-badge ${st.badge}">${st.testo}</span> <span style="color:var(--text2);">${sommario}</span> <span class="mangime-arrow">›</span></span>
+      </div>
+      <div class="mangime-list" style="max-height:none;">${dettaglio}${bottone}</div>
+    </div>`;
+  }).join('');
+  el.innerHTML = html;
+}
+
+async function segnaOrdinato(socId, kg, btn) {
+  const val = prompt('Quanti kg hai ordinato? (lascia vuoto se non serve)', kg ? String(kg) : '');
+  if(val === null) return;
+  const num = val.trim() ? Number(val.replace(/\./g, '').replace(',', '.')) : null;
+  btn.disabled = true;
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/ordini_mangime_fatti`, {
+      method: 'POST', headers: SB_H,
+      body: JSON.stringify({ soccida_id: socId, kg: (num && !isNaN(num)) ? num : null }),
+    });
+    if(!r.ok) throw new Error(await r.text());
+    allProposteOrdini = ordinaProposte(await sb('v_proposte_ordini_mangime', ''));
+    showToast('Ordine segnato', true);
+    renderOrdini();
+    renderHome();
+  } catch(e) {
+    btn.disabled = false;
+    showToast('⚠ Ordine non salvato: ' + e.message, false);
+  }
 }
 
 // DETAIL — riceve socId, mostra tutti i lotti della soccida in sequenza
