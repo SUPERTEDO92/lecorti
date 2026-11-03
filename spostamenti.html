@@ -70,6 +70,14 @@
   .empty { text-align: center; padding: 32px 20px; color: var(--text3); font-size: 12px; background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); }
 
   .summary-bar { font-size: 11px; color: var(--text2); padding: 2px 2px 12px; }
+
+  /* chip identici a index.html (STORICO) */
+  .filter-bar { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 2px; margin-bottom: 10px; }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  .chip { font-size: 11px; font-family: var(--mono); padding: 4px 10px; border-radius: 20px; border: 0.5px solid var(--border2); background: #FFF; color: var(--text2); white-space: nowrap; cursor: pointer; transition: all .1s; }
+  .chip.active { background: var(--text); color: #FFF; border-color: var(--text); }
+  .spost-row.cliccabile { cursor: pointer; }
+  .spost-importo { font-family: var(--mono); font-size: 13px; font-weight: 500; white-space: nowrap; padding-top: 1px; }
 </style>
 </head>
 <body>
@@ -83,6 +91,10 @@
 
 <div class="page">
   <button class="back-btn" onclick="window.location.href='index.html'">← Gestionale</button>
+  <div class="filter-bar" id="spost-tabs">
+    <div class="chip active" onclick="setVista('visite', this)">🚗 Visite</div>
+    <div class="chip" onclick="setVista('pranzi', this)">🧾 Pranzi</div>
+  </div>
   <div class="summary-bar" id="spost-summary"></div>
   <div id="spost-content"><div class="loading">Caricamento...</div></div>
 </div>
@@ -108,14 +120,7 @@ function stampaMese(mese) {
 }
 const fmtEuro = n => '€ ' + Number(n).toFixed(2).replace('.', ',');
 async function loadSpostamenti() {
-  const [dati, speseRaw] = await Promise.all([
-    sb('spostamenti', '?select=*&order=data_spostamento.desc,ora.desc.nullslast&limit=500'),
-    sb('spese_trasferta', '?select=*&order=data_spesa.desc,ora.desc.nullslast&limit=500'),
-  ]);
-  const spese = Array.isArray(speseRaw) ? speseRaw : [];
-  // pranzi del giorno: badge sulla prima visita di quel giorno (ordine decrescente = ultima riga del giorno)
-  const spesePerGiorno = {};
-  spese.forEach(p => (spesePerGiorno[p.data_spesa] = spesePerGiorno[p.data_spesa] || []).push(p));
+  const dati = await sb('spostamenti', '?select=*&order=data_spostamento.desc,ora.desc.nullslast&limit=500');
 
   if (!Array.isArray(dati) || dati.length === 0) {
     document.getElementById('spost-content').innerHTML = `<div class="empty">Nessuno spostamento registrato.</div>`;
@@ -135,15 +140,8 @@ async function loadSpostamenti() {
 
   let html = '';
   ordineMesi.forEach(key => {
-    const pranziMese = spese.filter(p => p.data_spesa.startsWith(key));
-    const totMese = pranziMese.reduce((a, p) => a + Number(p.importo), 0);
-    html += `<div class="section-sep"><span>${meseAnnoLabel(key + '-01')}</span><button class="pdf-btn" onclick="stampaMese('${key}')">📄 PDF</button></div>`;
-    if (pranziMese.length) html += `<div class="summary-bar">🧾 ${pranziMese.length} pranz${pranziMese.length === 1 ? 'o' : 'i'} in trasferta · ${fmtEuro(totMese)}</div>`;
-    html += `<div class="storico-container">`;
-    const ultimaDelGiorno = {};
-    gruppi[key].forEach((s, i) => { ultimaDelGiorno[s.data_spostamento] = i; });
-    gruppi[key].forEach((s, i) => {
-      const pranzi = ultimaDelGiorno[s.data_spostamento] === i ? (spesePerGiorno[s.data_spostamento] || []) : [];
+    html += `<div class="section-sep"><span>${meseAnnoLabel(key + '-01')}</span><button class="pdf-btn" onclick="stampaMese('${key}')">📄 PDF</button></div><div class="storico-container">`;
+    gruppi[key].forEach(s => {
       html += `<div class="spost-row">
         <div class="spost-time">${fmtOra(s.ora) || '—'}${s.ora_fine && fmtOra(s.ora_fine) !== fmtOra(s.ora) ? `<span class="spost-time-fine">${fmtOra(s.ora_fine)}</span>` : ''}</div>
         <div class="spost-main">
@@ -151,7 +149,6 @@ async function loadSpostamenti() {
           <div class="spost-meta">
             ${s.codice_stalla ? `<span class="spost-badge">${escHtml(s.codice_stalla)}</span>` : ''}
             ${s.automatico ? `<span class="spost-badge">GPS</span>` : ''}
-            ${pranzi.map(p => `<button class="pdf-btn" ${p.documento_id ? `onclick="apriDocumento(${p.documento_id})"` : 'disabled'} title="${escHtml(p.locale || 'Pranzo')}">🧾 ${fmtEuro(p.importo)}</button>`).join('')}
           </div>
           ${s.note ? `<div class="spost-note">${escHtml(s.note)}</div>` : ''}
         </div>
@@ -161,6 +158,52 @@ async function loadSpostamenti() {
   });
 
   document.getElementById('spost-content').innerHTML = html;
+}
+
+// Sottosezione Pranzi in trasferta (scontrino + ricevuta del bancomat, foto unica): tocco sulla riga = apre la foto
+async function loadPranzi() {
+  const dati = await sb('spese_trasferta', '?select=*&order=data_spesa.desc,ora.desc.nullslast&limit=500');
+  const summary = document.getElementById('spost-summary');
+  if (!Array.isArray(dati) || dati.length === 0) {
+    document.getElementById('spost-content').innerHTML = `<div class="empty">Nessun pranzo registrato. Manda a Claude in chat la foto dello scontrino e della ricevuta del bancomat.</div>`;
+    summary.textContent = '';
+    return;
+  }
+  summary.textContent = `${dati.length} pranz${dati.length === 1 ? 'o' : 'i'} registrat${dati.length === 1 ? 'o' : 'i'}`;
+  const gruppi = {}, ordineMesi = [];
+  dati.forEach(p => {
+    const key = p.data_spesa.slice(0, 7);
+    if (!gruppi[key]) { gruppi[key] = []; ordineMesi.push(key); }
+    gruppi[key].push(p);
+  });
+  let html = '';
+  ordineMesi.forEach(key => {
+    const tot = gruppi[key].reduce((a, p) => a + Number(p.importo), 0);
+    html += `<div class="section-sep"><span>${meseAnnoLabel(key + '-01')} · ${fmtEuro(tot)}</span><button class="pdf-btn" onclick="stampaMese('${key}')">📄 PDF</button></div><div class="storico-container">`;
+    gruppi[key].forEach(p => {
+      html += `<div class="spost-row${p.documento_id ? ' cliccabile' : ''}"${p.documento_id ? ` onclick="apriDocumento(${p.documento_id})"` : ''}>
+        <div class="spost-time">${fmtOra(p.ora) || '—'}</div>
+        <div class="spost-main">
+          <div class="spost-luogo">${fmtDate(p.data_spesa)} · ${escHtml(p.locale || 'Pranzo')}</div>
+          <div class="spost-meta">
+            ${p.paese ? `<span class="spost-badge">${escHtml(p.paese)}</span>` : ''}
+            ${p.tipo_pagamento ? `<span class="spost-badge">${escHtml(p.tipo_pagamento)}</span>` : ''}
+            ${p.documento_id ? `<span class="spost-badge">🧾 FOTO</span>` : ''}
+          </div>
+        </div>
+        <div class="spost-importo">${fmtEuro(p.importo)}</div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  document.getElementById('spost-content').innerHTML = html;
+}
+
+function setVista(vista, el) {
+  document.querySelectorAll('#spost-tabs .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('spost-content').innerHTML = `<div class="loading">Caricamento...</div>`;
+  if (vista === 'pranzi') loadPranzi(); else loadSpostamenti();
 }
 
 loadSpostamenti();
