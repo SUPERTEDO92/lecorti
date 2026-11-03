@@ -102,24 +102,20 @@ function meseAnnoLabel(dataStr) {
   return `${mesi[parseInt(m)]} ${y}`;
 }
 
-// Registro trasferte del mese (stesso PDF che arriva per mail il 1° del mese): si apre pronto da stampare o salvare in PDF
-async function stampaMese(mese) {
-  const w = window.open('', '_blank');   // aperta subito al click, altrimenti il browser la blocca
-  if (!w) { showToast('Consenti le finestre popup per stampare'); return; }
-  w.document.write('<p style="font-family:sans-serif">Preparazione registro…</p>');
-  try {
-    const r = await fetch(`${SUPABASE_URL}/functions/v1/report-trasferte?mese=${mese}`);
-    const d = await r.json();
-    if (!d.ok) throw new Error(d.error || 'errore');
-    w.document.open(); w.document.write(d.html); w.document.close();
-    setTimeout(() => w.print(), 400);
-  } catch (e) {
-    w.close();
-    showToast('Registro non disponibile: ' + e.message);
-  }
+// Registro trasferte del mese (stesso PDF che arriva per mail il 1° del mese): registro, pranzi in trasferta e foto degli scontrini
+function stampaMese(mese) {
+  window.open(`${SUPABASE_URL}/functions/v1/report-trasferte?mese=${mese}&formato=pdf`, '_blank');
 }
+const fmtEuro = n => '€ ' + Number(n).toFixed(2).replace('.', ',');
 async function loadSpostamenti() {
-  const dati = await sb('spostamenti', '?select=*&order=data_spostamento.desc,ora.desc.nullslast&limit=500');
+  const [dati, speseRaw] = await Promise.all([
+    sb('spostamenti', '?select=*&order=data_spostamento.desc,ora.desc.nullslast&limit=500'),
+    sb('spese_trasferta', '?select=*&order=data_spesa.desc,ora.desc.nullslast&limit=500'),
+  ]);
+  const spese = Array.isArray(speseRaw) ? speseRaw : [];
+  // pranzi del giorno: badge sulla prima visita di quel giorno (ordine decrescente = ultima riga del giorno)
+  const spesePerGiorno = {};
+  spese.forEach(p => (spesePerGiorno[p.data_spesa] = spesePerGiorno[p.data_spesa] || []).push(p));
 
   if (!Array.isArray(dati) || dati.length === 0) {
     document.getElementById('spost-content').innerHTML = `<div class="empty">Nessuno spostamento registrato.</div>`;
@@ -139,8 +135,15 @@ async function loadSpostamenti() {
 
   let html = '';
   ordineMesi.forEach(key => {
-    html += `<div class="section-sep"><span>${meseAnnoLabel(key + '-01')}</span><button class="pdf-btn" onclick="stampaMese('${key}')">📄 PDF</button></div><div class="storico-container">`;
-    gruppi[key].forEach(s => {
+    const pranziMese = spese.filter(p => p.data_spesa.startsWith(key));
+    const totMese = pranziMese.reduce((a, p) => a + Number(p.importo), 0);
+    html += `<div class="section-sep"><span>${meseAnnoLabel(key + '-01')}</span><button class="pdf-btn" onclick="stampaMese('${key}')">📄 PDF</button></div>`;
+    if (pranziMese.length) html += `<div class="summary-bar">🧾 ${pranziMese.length} pranz${pranziMese.length === 1 ? 'o' : 'i'} in trasferta · ${fmtEuro(totMese)}</div>`;
+    html += `<div class="storico-container">`;
+    const ultimaDelGiorno = {};
+    gruppi[key].forEach((s, i) => { ultimaDelGiorno[s.data_spostamento] = i; });
+    gruppi[key].forEach((s, i) => {
+      const pranzi = ultimaDelGiorno[s.data_spostamento] === i ? (spesePerGiorno[s.data_spostamento] || []) : [];
       html += `<div class="spost-row">
         <div class="spost-time">${fmtOra(s.ora) || '—'}${s.ora_fine && fmtOra(s.ora_fine) !== fmtOra(s.ora) ? `<span class="spost-time-fine">${fmtOra(s.ora_fine)}</span>` : ''}</div>
         <div class="spost-main">
@@ -148,6 +151,7 @@ async function loadSpostamenti() {
           <div class="spost-meta">
             ${s.codice_stalla ? `<span class="spost-badge">${escHtml(s.codice_stalla)}</span>` : ''}
             ${s.automatico ? `<span class="spost-badge">GPS</span>` : ''}
+            ${pranzi.map(p => `<button class="pdf-btn" ${p.documento_id ? `onclick="apriDocumento(${p.documento_id})"` : 'disabled'} title="${escHtml(p.locale || 'Pranzo')}">🧾 ${fmtEuro(p.importo)}</button>`).join('')}
           </div>
           ${s.note ? `<div class="spost-note">${escHtml(s.note)}</div>` : ''}
         </div>
