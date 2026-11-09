@@ -150,7 +150,7 @@
 const NOME_SOCCIDA = 'VEZZOLI';
 
 let soccidaId = null;
-let allLotti = [], allMortalita = [];
+let allLotti = [], allMortalita = [], allUscite = [], allTrasf = [];
 let _mortLottoId = null;
 
 async function loadAll() {
@@ -161,13 +161,15 @@ async function loadAll() {
   }
   soccidaId = soccide[0].id;
 
-  [allLotti, allMortalita] = await Promise.all([
-    sb('lotti', `?soccida_id=eq.${soccidaId}&attivo=eq.true&order=data_ingresso.desc`),
-    sb('mortalita', `?order=data_evento.desc`),
-  ]);
-
+  allLotti = await sb('lotti', `?soccida_id=eq.${soccidaId}&attivo=eq.true&order=data_ingresso.desc`);
   const lottiIds = allLotti.map(l => l.id);
-  allMortalita = allMortalita.filter(m => lottiIds.includes(m.lotto_id));
+  const inLotti = lottiIds.length ? `lotto_id=in.(${lottiIds.join(',')})` : 'lotto_id=eq.0';
+  // presenti come in index.html: entrati - morti - uscite - trasferimenti in uscita
+  [allMortalita, allUscite, allTrasf] = await Promise.all([
+    sb('mortalita', `?${inLotti}&order=data_evento.desc`),
+    sb('uscite', `?${inLotti}&select=lotto_id,capi`),
+    sb('trasferimenti', `?${inLotti}&tipo=eq.TRASFERIMENTO&select=lotto_id,capi`),
+  ]);
 
   document.getElementById('header-agg').textContent = `${allLotti.length} lotto${allLotti.length !== 1 ? 'i' : ''} attivo${allLotti.length !== 1 ? 'i' : ''} · agg. ${new Date().toLocaleDateString('it-IT')}`;
   render();
@@ -187,7 +189,9 @@ function render() {
     const ingresso = new Date(lotto.data_ingresso);
     const gg = Math.floor((oggi - ingresso) / 86400000);
     const totMorti = mortLotto.reduce((s,m) => s+(m.capi_morti||0), 0);
-    const presenti = (lotto.capi_entrati||0) - totMorti;
+    const capiUsciti = allUscite.filter(u => u.lotto_id === lotto.id).reduce((s,u) => s+(u.capi||0), 0);
+    const capiTrasf = allTrasf.filter(t => t.lotto_id === lotto.id).reduce((s,t) => s+(t.capi||0), 0);
+    const presenti = (lotto.capi_entrati||0) - totMorti - capiUsciti - capiTrasf;
     const prevPeso = lotto.media_ingresso && lotto.incremento_giornaliero
       ? Math.round(lotto.media_ingresso + gg * lotto.incremento_giornaliero) : null;
 
@@ -203,6 +207,7 @@ function render() {
       <div style="text-align:right">
         <div style="font-size:18px;font-weight:500;color:var(--green);font-family:var(--mono)">${fmt(presenti)}</div>
         <div style="font-size:10px;color:var(--text2)">presenti</div>
+        ${capiUsciti + capiTrasf ? `<div style="font-size:10px;color:var(--text2)">${fmt(capiUsciti + capiTrasf)} usciti</div>` : ''}
       </div>
     </div>
 
