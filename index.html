@@ -5732,11 +5732,11 @@ function renderDocumentale() {
         <div style="font-size:14px;font-weight:600;">${d.titolo}</div>
         ${scadenzaBadge}
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:${d.descrizione ? '8px' : '0'};font-size:11px;color:var(--text2);">
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;font-size:11px;color:var(--text2);">
         ${d.sottocategoria ? `<span style="background:var(--bg2);border-radius:8px;padding:2px 8px;">${d.sottocategoria}</span>` : ''}
         ${soc ? `<span style="background:var(--bg2);border-radius:8px;padding:2px 8px;">${soc.nome}</span>` : ''}
       </div>
-      ${d.descrizione ? `<div style="font-size:12px;color:var(--text2);margin-bottom:8px;white-space:pre-wrap;">${d.descrizione}</div>` : ''}
+      <!-- descrizione non mostrata (Ruben 10/11/2026: basta il titolo, il contenuto si vede nel PDF). Resta nel DB. -->
       ${d.documento_id
         ? `<button onclick="apriDocumento(${d.documento_id})" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:5px 12px;font-size:11px;color:var(--text2);cursor:pointer;font-family:var(--font);">📄 Apri documento</button>`
         : `<div style="font-size:11px;color:var(--text3);font-style:italic;">Documento non ancora caricato</div>`}
