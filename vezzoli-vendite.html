@@ -58,7 +58,7 @@
 <script>
 const NOME_SOCCIDA = 'VEZZOLI';
 
-let allVenditeDirette = [], allVenditeDiretteCategorie = [];
+let allVenditeDirette = [], allVenditeDiretteCategorie = [], allScorte = [];
 
 async function loadAll() {
   const soccide = await sb('soccide', `?nome=eq.${encodeURIComponent(NOME_SOCCIDA)}`);
@@ -73,6 +73,10 @@ async function loadAll() {
   allVenditeDiretteCategorie = venditaIds.length
     ? await sb('vendite_dirette_categorie', `?vendita_id=in.(${venditaIds.join(',')})`)
     : [];
+  try {
+    allScorte = await sb('v_vendite_dirette_scorte', `?soccida_id=eq.${soccidaId}&order=ordine.asc`);
+    if(!Array.isArray(allScorte)) allScorte = [];
+  } catch(e) { allScorte = []; }
 
   const aperte = allVenditeDirette.filter(v => !v.chiuso);
   document.getElementById('header-agg').textContent = `${aperte.length} vendit${aperte.length !== 1 ? 'e' : 'a'} aperte · agg. ${new Date().toLocaleDateString('it-IT')}`;
@@ -84,11 +88,11 @@ function render() {
   const aperte = allVenditeDirette.filter(v => !v.chiuso);
   const chiuse = allVenditeDirette.filter(v => v.chiuso);
 
-  let html = '';
+  let html = renderScorte(allScorte.filter(s => s.attiva));
   if(!aperte.length) {
-    html = '<div class="vd-card"><div class="empty">Nessuna vendita aperta — conto sistemato.</div></div>';
+    html += '<div class="vd-card"><div class="empty">Nessuna vendita aperta — conto sistemato.</div></div>';
   } else {
-    html = `<div class="vd-card">` + aperte.map(v => renderRiga(v)).join('') + `</div>`;
+    html += `<div class="vd-card">` + aperte.map(v => renderRiga(v)).join('') + `</div>`;
   }
 
   if(chiuse.length) {
@@ -111,6 +115,7 @@ function renderRiga(v) {
       <div class="vd-detail">${fmt(v.capi)} capi${v.peso_kg ? ' · ' + fmt(v.peso_kg,1) + ' kg' : ''}</div>
       <div class="vd-detail">Importo: ${v.prezzo != null ? '€ ' + fmt(v.prezzo,2) : '—'}${v.prezzo_kg != null ? ' · € ' + fmt(v.prezzo_kg,3) + '/kg' : ''}</div>
       ${catHtml}
+      ${scortaTag(v)}
       ${v.note ? `<div class="vd-detail" style="margin-top:3px;font-style:italic;">${escHtml(v.note)}</div>` : ''}
     </div>
     <div class="vd-status" style="background:${v.pagato ? 'var(--green)' : 'var(--red-bg)'};border:0.5px solid ${v.pagato ? 'var(--green)' : 'var(--red)'};">
@@ -118,6 +123,34 @@ function renderRiga(v) {
     </div>
   </div>
 `;
+}
+
+function scortaTag(v) {
+  const sc = v.scorta_id ? allScorte.find(s => s.id === v.scorta_id) : null;
+  return sc ? `<div class="vd-detail" style="margin-top:3px;color:var(--accent);font-weight:600;">Lotto ${escHtml(sc.lotto_codice || '')} · ${escHtml(sc.categoria)}</div>` : '';
+}
+// Lotto chiuso da vendere in vendita diretta (v_vendite_dirette_scorte), sola lettura — 10/11/2026
+function renderScorte(scorte) {
+  if(!scorte || !scorte.length) return '';
+  const lotti = [...new Set(scorte.map(s => s.lotto_codice || ''))];
+  return lotti.map(cod => {
+    const righe = scorte.filter(s => (s.lotto_codice || '') === cod);
+    const tot = righe.reduce((a,s) => a + (s.capi_residui||0), 0);
+    const iniz = righe.reduce((a,s) => a + (s.capi_iniziali||0), 0);
+    return `<div style="background:#FFF;border:0.5px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;">
+        <div style="font-size:14px;font-weight:700;">🐷 ${cod ? 'Lotto ' + escHtml(cod) + ' ' : ''}da vendere</div>
+        <div style="font-size:22px;font-weight:700;font-family:var(--mono);">${fmt(tot)} <span style="font-size:11px;font-weight:400;color:var(--text2);">capi</span></div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px;">
+        ${righe.map(s => `<div style="flex:1;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:7px 8px;">
+          <div style="font-size:10px;color:var(--text2);font-family:var(--mono);">${escHtml(s.categoria).toUpperCase()}</div>
+          <div style="font-size:17px;font-weight:700;font-family:var(--mono);color:${s.capi_residui < 0 ? 'var(--red)' : 'var(--text)'};">${fmt(s.capi_residui)}<span style="font-size:10px;font-weight:400;color:var(--text2);"> / ${fmt(s.capi_iniziali)}</span></div>
+        </div>`).join('')}
+      </div>
+      <div style="font-size:11px;color:var(--text2);margin-top:6px;">Contati il ${fmtDate(righe[0].data_conta)}: ${fmt(iniz)} capi · venduti ${fmt(iniz - tot)}</div>
+    </div>`;
+  }).join('');
 }
 
 function toggleStorico() {

@@ -109,6 +109,8 @@
     <div class="vd-banner-title"><span>📋 Vendite dirette</span><span>›</span></div>
   </a>
 
+  <div id="scorte"></div>
+
   <div class="section-title">Lotti attivi</div>
   <div id="content"><div class="loading">Caricamento dati…</div></div>
 </div>
@@ -160,6 +162,11 @@ async function loadAll() {
     return;
   }
   soccidaId = soccide[0].id;
+
+  try {
+    const scorte = await sb('v_vendite_dirette_scorte', `?soccida_id=eq.${soccidaId}&attiva=eq.true&order=ordine.asc`);
+    document.getElementById('scorte').innerHTML = renderScorte(Array.isArray(scorte) ? scorte : []);
+  } catch(e) {}
 
   allLotti = await sb('lotti', `?soccida_id=eq.${soccidaId}&attivo=eq.true&order=data_ingresso.desc`);
   const lottiIds = allLotti.map(l => l.id);
@@ -252,6 +259,30 @@ function render() {
   });
 
   document.getElementById('content').innerHTML = html;
+}
+
+// Lotto chiuso da vendere in vendita diretta (v_vendite_dirette_scorte), sola lettura — 10/11/2026
+function renderScorte(scorte) {
+  if(!scorte || !scorte.length) return '';
+  const lotti = [...new Set(scorte.map(s => s.lotto_codice || ''))];
+  return lotti.map(cod => {
+    const righe = scorte.filter(s => (s.lotto_codice || '') === cod);
+    const tot = righe.reduce((a,s) => a + (s.capi_residui||0), 0);
+    const iniz = righe.reduce((a,s) => a + (s.capi_iniziali||0), 0);
+    return `<div style="background:#FFF;border:0.5px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;">
+        <div style="font-size:14px;font-weight:700;">🐷 ${cod ? 'Lotto ' + escHtml(cod) + ' ' : ''}da vendere</div>
+        <div style="font-size:22px;font-weight:700;font-family:var(--mono);">${fmt(tot)} <span style="font-size:11px;font-weight:400;color:var(--text2);">capi</span></div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px;">
+        ${righe.map(s => `<div style="flex:1;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:7px 8px;">
+          <div style="font-size:10px;color:var(--text2);font-family:var(--mono);">${escHtml(s.categoria).toUpperCase()}</div>
+          <div style="font-size:17px;font-weight:700;font-family:var(--mono);color:${s.capi_residui < 0 ? 'var(--red)' : 'var(--text)'};">${fmt(s.capi_residui)}<span style="font-size:10px;font-weight:400;color:var(--text2);"> / ${fmt(s.capi_iniziali)}</span></div>
+        </div>`).join('')}
+      </div>
+      <div style="font-size:11px;color:var(--text2);margin-top:6px;">Contati il ${fmtDate(righe[0].data_conta)}: ${fmt(iniz)} capi · venduti ${fmt(iniz - tot)}</div>
+    </div>`;
+  }).join('');
 }
 
 document.getElementById('modal-mort').addEventListener('click', function(e) {
