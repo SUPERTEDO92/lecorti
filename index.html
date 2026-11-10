@@ -208,6 +208,20 @@
   /* STORICO */
   .filter-bar { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 2px; margin-bottom: 10px; }
   .filter-bar::-webkit-scrollbar { display: none; }
+  /* Toggle "Da fatturare" (come liquidazioni.html di Ilaria) */
+  .toggle-fatt {
+    flex-shrink: 0; display: flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-radius: var(--radius); border: 0.5px solid var(--border);
+    background: #FFF; font-size: 12.5px; font-family: var(--font); font-weight: 500;
+    color: var(--text2); cursor: pointer; white-space: nowrap; user-select: none;
+  }
+  .toggle-fatt .box {
+    width: 14px; height: 14px; border-radius: 4px; border: 1.2px solid var(--border);
+    display: flex; align-items: center; justify-content: center; background: #FFF;
+  }
+  .toggle-fatt.active { background: #FDF3E7; border-color: #EAD2A8; color: #C17B2A; }
+  .toggle-fatt.active .box { background: #C17B2A; border-color: #C17B2A; }
+  .toggle-fatt.active .box::after { content: '✓'; color: #FFF; font-size: 10px; font-weight: 700; }
   .chip {
     font-size: 11px; font-family: var(--mono); padding: 4px 10px;
     border-radius: 20px; border: 0.5px solid var(--border2);
@@ -1183,8 +1197,9 @@
     </div>
   </div>
   <div class="filter-bar" id="storico-filters"></div>
-  <div style="padding:0 14px 10px;">
-    <input type="text" id="storico-search" placeholder="🔍 Cerca DDT, macello, cessionario, soccida, lotto, note..." oninput="renderStoricoList()" style="width:100%;padding:9px 12px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;">
+  <div style="padding:0 14px 10px;display:flex;gap:8px;align-items:center;">
+    <input type="text" id="storico-search" placeholder="🔍 Cerca DDT, macello, cessionario, soccida, lotto, note..." oninput="renderStoricoList()" style="flex:1;min-width:0;padding:9px 12px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;">
+    <div class="toggle-fatt" id="storico-toggle-fatt" onclick="toggleStoricoDaFatturare()"><span class="box"></span> Da fatturare</div>
   </div>
   <div class="summary-bar" id="storico-summary"></div>
   <div class="storico-container" id="storico-list">
@@ -1267,6 +1282,8 @@ let allMangime = [];
 let allProposteOrdini = [];
 let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [], allMortalita = [], allSanitario = [], allVenditeDirette = [], allUsciteCategorie = [], allVenditeDiretteCategorie = [], allIngressi = [], allLettereDop = [], allNoteVet = [], allArchivioDoc = [], allPrelievi = [];
 let storicoFilter = 'tutti';
+let storicoDaFatturare = false;
+const STORICO_DA_FATTURARE_DA = '2026-07-01'; // come DA_FATTURARE_DA di liquidazioni.html
 let currentPage = 'home';
 let _noteTornaFn = () => showPage('home');
 let _analisiTornaFn = () => showPage('home');
@@ -3045,6 +3062,12 @@ function renderStorico() {
   renderStoricoList();
 }
 
+function toggleStoricoDaFatturare() {
+  storicoDaFatturare = !storicoDaFatturare;
+  document.getElementById('storico-toggle-fatt').classList.toggle('active', storicoDaFatturare);
+  renderStoricoList();
+}
+
 function filterStorico(val, el) {
   storicoFilter = val;
   document.querySelectorAll('#storico-filters .chip').forEach(c => c.classList.remove('active'));
@@ -3092,6 +3115,8 @@ function renderStoricoList() {
     return socNome !== 'FIORENZUOLA';
   });
   if(storicoFilter !== 'tutti') rows = rows.filter(u => u.data_uscita?.startsWith(storicoFilter));
+  // Da fatturare: stesso filtro di Ilaria (senza fattura collegata, dal 01/07/2026, FIORENZUOLA già esclusa)
+  if(storicoDaFatturare) rows = rows.filter(u => !u.fattura_documento_id && u.data_uscita >= STORICO_DA_FATTURARE_DA);
 
   const q = (document.getElementById('storico-search')?.value || '').trim().toLowerCase();
   if(q) {
