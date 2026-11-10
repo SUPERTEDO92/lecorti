@@ -1280,7 +1280,7 @@ function sortByDdt(a,b){
 // State
 let allMangime = [];
 let allProposteOrdini = [];
-let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [], allMortalita = [], allSanitario = [], allVenditeDirette = [], allUsciteCategorie = [], allVenditeDiretteCategorie = [], allIngressi = [], allLettereDop = [], allNoteVet = [], allArchivioDoc = [], allPrelievi = [];
+let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [], allMortalita = [], allSanitario = [], allVenditeDirette = [], allUsciteCategorie = [], allVenditeDiretteCategorie = [], allIngressi = [], allLettereDop = [], allNoteVet = [], allArchivioDoc = [], allPrelievi = [], allScorteVD = [];
 let storicoFilter = 'tutti';
 let storicoDaFatturare = false;
 const STORICO_DA_FATTURARE_DA = '2026-07-01'; // come DA_FATTURARE_DA di liquidazioni.html
@@ -1312,6 +1312,8 @@ async function loadAll() {
   allLettereDop = await sb('lotti_lettere_dop', '?order=id.asc');
   // Prelievi a scaglioni di una vendita in blocco (es. 50 capi a BERTESAGO PIETRO) — 02/11/2026
   try { allPrelievi = await sb('uscite_prelievi', '?order=data_prelievo.asc'); if(!Array.isArray(allPrelievi)) allPrelievi = []; } catch(e) { allPrelievi = []; }
+  // Scorte da vendere in vendita diretta (es. lotto 01/26 VEZZOLI chiuso e venduto un po' alla volta) — 10/11/2026
+  try { allScorteVD = await sb('v_vendite_dirette_scorte', '?attiva=eq.true&order=ordine.asc'); if(!Array.isArray(allScorteVD)) allScorteVD = []; } catch(e) { allScorteVD = []; }
   // Consegne mangime (export giornaliero mangimificio, solo righe in KG) — 22/09/2026
   try { allMangime = await sb('v_consegne_mangime', '?in_kg=eq.true&order=data_consegna.desc,numero_documento.desc,riga.asc'); if(!Array.isArray(allMangime)) allMangime = []; } catch(e) { allMangime = []; }
   // Proposte ordini mangime (consumi stimati da curva tarata) — 02/11/2026
@@ -2679,6 +2681,7 @@ function renderDetail(socId) {
       <span>📋 Vendite dirette</span>
       <span style="color:var(--text2);">${allVenditeDirette.filter(v=>v.soccida_id===soc.id).length} voci ›</span>
     </button>`;
+    html += renderScorteVD(soc.id, true);
   }
 
   // SABBIONERA: bottone "Note generali" per tracciare visite/passaggi non legati a un lotto specifico —
@@ -4935,6 +4938,62 @@ let _vdMeseFiltro = null; // 'YYYY-MM' oppure null = conto aperto
 let _vdModalitaChiusura = false;
 let _vdSelezionate = new Set();
 
+// Scorte da vendere (v_vendite_dirette_scorte): residuo per categoria = contati alla conta − vendite collegate
+function scorteVD(socId) {
+  return (allScorteVD||[]).filter(s => s.soccida_id === socId);
+}
+function renderScorteVD(socId, cliccabile) {
+  const sc = scorteVD(socId);
+  if(!sc.length) return '';
+  const lotti = [...new Set(sc.map(s => s.lotto_codice || ''))];
+  return lotti.map(cod => {
+    const righe = sc.filter(s => (s.lotto_codice || '') === cod);
+    const tot = righe.reduce((a,s) => a + (s.capi_residui||0), 0);
+    const iniz = righe.reduce((a,s) => a + (s.capi_iniziali||0), 0);
+    return `<div ${cliccabile ? `onclick="apriVenditeDirette(${socId})"` : ''} style="${cliccabile ? 'cursor:pointer;' : ''}margin-bottom:10px;padding:10px 12px;background:var(--amber-bg);border:0.5px solid var(--accent);border-radius:var(--radius-lg);">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;">
+        <span style="font-size:12px;font-weight:600;">🐷 ${cod ? 'Lotto ' + escHtml(cod) + ' ' : ''}da vendere</span>
+        <span style="font-size:18px;font-weight:600;font-family:var(--mono);">${fmt(tot)} <span style="font-size:11px;font-weight:400;color:var(--text2);">capi</span></span>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:6px;">
+        ${righe.map(s => `<div style="flex:1;background:#FFF;border:0.5px solid var(--border);border-radius:var(--radius);padding:6px 8px;">
+          <div style="font-size:10px;color:var(--text2);font-family:var(--mono);">${escHtml(s.categoria).toUpperCase()}</div>
+          <div style="font-size:15px;font-weight:600;font-family:var(--mono);color:${s.capi_residui < 0 ? 'var(--red)' : 'var(--text)'};">${fmt(s.capi_residui)}<span style="font-size:10px;font-weight:400;color:var(--text2);"> / ${fmt(s.capi_iniziali)}</span></div>
+        </div>`).join('')}
+      </div>
+      <div style="font-size:10px;color:var(--text2);margin-top:5px;">Contati il ${fmtDate(righe[0].data_conta)}: ${fmt(iniz)} capi · venduti ${fmt(iniz - tot)}</div>
+    </div>`;
+  }).join('');
+}
+function opzioniScortaVD(socId, selId, breve) {
+  const sc = scorteVD(socId);
+  return `<option value="">— non dal lotto —</option>` + sc.map(s =>
+    `<option value="${s.id}" ${s.id === selId ? 'selected' : ''}>${breve ? '' : 'Lotto '}${escHtml(s.lotto_codice || '')} · ${escHtml(s.categoria)}${breve ? '' : ` (restano ${fmt(s.capi_residui)})`}</option>`).join('');
+}
+async function ricaricaScorteVD() {
+  try { allScorteVD = await sb('v_vendite_dirette_scorte', '?attiva=eq.true&order=ordine.asc'); if(!Array.isArray(allScorteVD)) allScorteVD = []; } catch(e) {}
+}
+function aggiornaSelectScortaVD() {
+  const wrap = document.getElementById('vd-scorta-wrap');
+  const sc = scorteVD(_vdSoccidaId);
+  wrap.style.display = sc.length ? 'block' : 'none';
+  document.getElementById('vd-scorta').innerHTML = opzioniScortaVD(_vdSoccidaId, null);
+  document.getElementById('vd-scorte-box').innerHTML = renderScorteVD(_vdSoccidaId, false);
+}
+async function salvaScortaVendita(id, valore) {
+  const scorta_id = valore ? parseInt(valore) : null;
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/vendite_dirette?id=eq.${id}`, {
+      method: 'PATCH', headers: SB_H, body: JSON.stringify({ scorta_id })
+    });
+    if(!r.ok) throw new Error(await r.text());
+    const v = allVenditeDirette.find(x => x.id === id); if(v) v.scorta_id = scorta_id;
+    await ricaricaScorteVD();
+    aggiornaSelectScortaVD();
+    renderVenditeDirette();
+  } catch(e) { alert('Errore: ' + e.message); }
+}
+
 function apriVenditeDirette(socId) {
   _vdSoccidaId = socId;
   _vdMeseFiltro = null;
@@ -4946,12 +5005,15 @@ function apriVenditeDirette(socId) {
   document.getElementById('vd-note').value = '';
   document.getElementById('vd-riepilogo').style.display = 'none';
   document.getElementById('vd-riep-toggle').querySelector('span:last-child').textContent = '›';
+  aggiornaSelectScortaVD();
   renderVenditeDirette();
   document.getElementById('modal-vendite').style.display = 'flex';
 }
 
 function chiudiVenditeDirette() {
   document.getElementById('modal-vendite').style.display = 'none';
+  // aggiorna il riquadro "da vendere" nella scheda soccida
+  if(currentLottoId === _vdSoccidaId && document.getElementById('page-detail')?.classList.contains('active')) renderDetail(currentLottoId);
 }
 
 // Dispatcher: conto aperto (editabile) / recap di un mese chiuso (sola lettura) / selezione chiusura
@@ -4985,6 +5047,7 @@ function renderListaAperta() {
             onchange="salvaPesoVendita(${v.id}, this.value)"
             style="margin-top:5px;width:100px;padding:6px 8px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:12px;font-family:var(--mono);background:var(--bg);">
           ${catHtml}
+          ${(scorteVD(_vdSoccidaId).length || v.scorta_id) ? `<select onchange="salvaScortaVendita(${v.id}, this.value)" style="margin-top:5px;width:100%;box-sizing:border-box;padding:6px 8px;border:0.5px solid ${v.scorta_id ? 'var(--accent)' : 'var(--border)'};border-radius:var(--radius);font-size:12px;font-family:var(--font);background:${v.scorta_id ? 'var(--amber-bg)' : 'var(--bg)'};">${opzioniScortaVD(_vdSoccidaId, v.scorta_id, true)}</select>` : ''}
           <input type="text" value="${escHtml(v.note || '')}" placeholder="Note"
             onchange="salvaNotaVendita(${v.id}, this.value)"
             style="margin-top:5px;width:100%;box-sizing:border-box;padding:6px 8px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:12px;font-family:var(--font);background:var(--bg);">
@@ -5193,19 +5256,26 @@ async function inserisciVenditaDiretta() {
   const capi = parseInt(document.getElementById('vd-capi').value) || null;
   const peso_kg = parseFloat(document.getElementById('vd-peso').value) || null;
   const note = document.getElementById('vd-note').value.trim() || null;
+  const scortaVal = document.getElementById('vd-scorta').value;
+  const scorta_id = scortaVal ? parseInt(scortaVal) : null;
 
   if(!data || !capi) { alert('Inserisci almeno data e numero capi'); return; }
+  if(scorta_id) {
+    const sc = (allScorteVD||[]).find(s => s.id === scorta_id);
+    if(sc && capi > sc.capi_residui && !confirm(`Nel lotto ${sc.lotto_codice} restano solo ${sc.capi_residui} ${sc.categoria.toLowerCase()}. Salvo comunque ${capi} capi?`)) return;
+  }
 
   try {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/vendite_dirette`, {
       method: 'POST', headers: SB_H,
-      body: JSON.stringify({ soccida_id: _vdSoccidaId, data_vendita: data, capi, peso_kg, note, pagato: false })
+      body: JSON.stringify({ soccida_id: _vdSoccidaId, data_vendita: data, capi, peso_kg, note, pagato: false, scorta_id })
     });
     if(!r.ok) throw new Error(await r.text());
     const [nuovo] = await r.json();
     allVenditeDirette.unshift(nuovo);
 
-    ['vd-capi','vd-peso','vd-note'].forEach(id => document.getElementById(id).value = '');
+    ['vd-capi','vd-peso','vd-note','vd-scorta'].forEach(id => document.getElementById(id).value = '');
+    if(scorta_id) { await ricaricaScorteVD(); aggiornaSelectScortaVD(); }
     _vdMeseFiltro = null;
     _vdModalitaChiusura = false;
     renderVenditeDirette();
@@ -5534,6 +5604,8 @@ loadAll();
       </button>
       <div id="vd-riepilogo" style="display:none;margin-bottom:10px;"></div>
 
+      <div id="vd-scorte-box"></div>
+
       <div id="vd-filtro-attivo" style="display:none;margin-bottom:8px;"></div>
 
       <div id="vendite-lista" style="margin-bottom:18px;"></div>
@@ -5547,6 +5619,10 @@ loadAll();
         <div style="display:flex;gap:8px;margin-bottom:8px;">
           <input type="number" id="vd-capi" placeholder="N° capi" style="flex:1;min-width:0;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
           <input type="number" id="vd-peso" placeholder="Peso kg" step="0.1" style="flex:1;min-width:0;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--mono);background:var(--bg);">
+        </div>
+
+        <div id="vd-scorta-wrap" style="display:none;margin-bottom:8px;">
+          <select id="vd-scorta" style="width:100%;box-sizing:border-box;padding:9px 10px;border:0.5px solid var(--accent);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--amber-bg);"></select>
         </div>
 
         <input type="text" id="vd-note" placeholder="Note (opz. es. zoppo)" style="width:100%;box-sizing:border-box;padding:9px 10px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--bg);margin-bottom:12px;">
