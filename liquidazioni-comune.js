@@ -8,7 +8,7 @@
 // ============================================
 
 function render() {
-  let rows = allUscite.filter(u => u.data_uscita);
+  let rows = allUscite.filter(u => u.data_uscita && !isUscitaVenditaDiretta(u));
   if(filtroMese !== 'tutti') rows = rows.filter(u => u.data_uscita?.startsWith(filtroMese));
   if(filtroSoccida !== 'tutte') rows = rows.filter(u => getSoccidaNome(u) === filtroSoccida);
   // FIORENZUOLA: suini di GRUPPO CIEMME (soccida a rapporto invertito), Le Corti non fattura

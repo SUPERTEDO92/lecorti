@@ -499,3 +499,9 @@ function toggleTopbarNav() {
   const open = nav.classList.toggle('collapsed') === false;
   btn.classList.toggle('open', open);
 }
+
+// Uscita che chiude un lotto passato in vendita diretta (es. VEZZOLI 01/26, 10/11/2026):
+// i capi si vendono un po' alla volta in vendite_dirette, quindi non è un carico da liquidare/fatturare
+function isUscitaVenditaDiretta(u) {
+  return /^VENDITA DIRETTA/i.test(u?.cessionario || '');
+}
