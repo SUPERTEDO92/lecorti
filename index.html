@@ -5954,7 +5954,11 @@ function renderArchivioSoccida(socId) {
     const capiUscTot = capiUsciti + capiTrasferiti;
     const totKg = uscite.reduce((s,u) => s+(u.kg_totali||0), 0) + trasfUscita.reduce((s,t) => s+(t.kg||0), 0);
     const totLiq = uscite.reduce((s,u) => s+(u.liquidazione||0), 0) + trasfUscita.reduce((s,t) => s+(t.costo_acquisto||0), 0);
-    const mediaKg = capiUscTot > 0 ? totKg/capiUscTot : 0;
+    // Uscite in vendita diretta (kg che crescono man mano che si vendono): fuori dalla media kg/incremento
+    const usciteVD = uscite.filter(u => isUscitaVenditaDiretta(u));
+    const capiVD = usciteVD.reduce((s,u) => s+(u.capi||0), 0);
+    const kgVD = usciteVD.reduce((s,u) => s+(u.kg_totali||0), 0);
+    const mediaKg = capiUscTot - capiVD > 0 ? (totKg - kgVD)/(capiUscTot - capiVD) : 0;
     // Data ultima uscita — considera sia macello che trasferimento
     const dateUscite = [...uscite.map(u => u.data_uscita), ...trasfUscita.map(t => t.data_trasferimento)].filter(Boolean).sort();
     const ultimaData = dateUscite[dateUscite.length-1];
@@ -5990,7 +5994,7 @@ function renderArchivioSoccida(socId) {
             <div style="font-size:16px;font-weight:600;font-family:var(--mono);">${fmt(lotto.capi_entrati)}</div>
           </div>
           <div style="text-align:center;background:var(--bg);border-radius:var(--radius);padding:6px;">
-            <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">${capiTrasferiti > 0 ? 'Trasferiti' : 'Macellati'}</div>
+            <div style="font-size:9px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);">${capiTrasferiti > 0 ? 'Trasferiti' : (capiVD ? 'Usciti' : 'Macellati')}</div>
             <div style="font-size:16px;font-weight:600;font-family:var(--mono);">${fmt(capiUscTot)}</div>
           </div>
           <div style="text-align:center;background:var(--bg);border-radius:var(--radius);padding:6px;">
@@ -6014,13 +6018,28 @@ function renderArchivioSoccida(socId) {
       </div>
       <!-- Uscite dettaglio -->
       ${uscite.length ? `<div style="padding:10px 14px;border-bottom:0.5px solid var(--border);">
-        <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);margin-bottom:6px;">Uscite macello</div>
+        <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);margin-bottom:6px;">Uscite macello${capiVD ? ' e vendita diretta' : ''}</div>
         ${uscite.map(u => {
           const ggRiga = lotto.data_ingresso && u.data_uscita
             ? Math.round((new Date(u.data_uscita) - new Date(lotto.data_ingresso)) / 86400000) : null;
-          const mediaRiga = (u.capi && u.kg_totali) ? u.kg_totali / u.capi : null;
+          const vd = isUscitaVenditaDiretta(u);
+          const mediaRiga = (!vd && u.capi && u.kg_totali) ? u.kg_totali / u.capi : null;
           const incrRiga = (ggRiga && mediaRiga && lotto.media_ingresso)
             ? ((mediaRiga - lotto.media_ingresso) / ggRiga).toFixed(3) : null;
+          if(vd) {
+            const scU = (allScorteVD||[]).filter(sc => sc.uscita_id === u.id);
+            const venduti = scU.reduce((a,sc) => a + (sc.capi_venduti||0), 0);
+            return `<div style="padding:5px 0;border-bottom:0.5px solid var(--bg2);background:var(--amber-bg);margin:0 -14px;padding-left:14px;padding-right:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:12px;"><strong>${fmtDateFull(u.data_uscita)}</strong> · 🐷 ${escHtml(u.cessionario)}</div>
+            <div style="font-size:11px;font-family:var(--mono);color:var(--text2);">${fmt(u.capi)} capi${u.kg_totali ? ' · ' + fmt(u.kg_totali) + ' kg venduti' : ''}</div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;justify-content:flex-end;gap:2px 10px;font-size:10px;font-family:var(--mono);color:var(--amber);margin-top:2px;white-space:nowrap;">
+            ${scU.length ? `<span>venduti ${fmt(venduti)} · in stalla ${fmt(u.capi - venduti)}</span>` : ''}
+            ${scU.map(sc => `<span>${escHtml(sc.categoria).toLowerCase()} ${fmt(sc.capi_residui)}</span>`).join('')}
+          </div>
+        </div>`;
+          }
           return `<div style="padding:5px 0;border-bottom:0.5px solid var(--bg2);">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div style="font-size:12px;"><strong>${fmtDateFull(u.data_uscita)}</strong>${u.numero_ddt ? ' · DDT '+u.numero_ddt : ''} · ${u.macello||'—'}</div>
