@@ -2906,18 +2906,25 @@ function renderDetail(socId) {
         // media e incremento non hanno senso sulla riga (i capi pesati sono solo quelli già ritirati)
         const prel = (allPrelievi||[]).filter(p => p.uscita_id === u.id);
         const capiPrel = prel.reduce((a,p) => a + (p.capi||0), 0);
+        // Lotto passato in vendita diretta (VEZZOLI): kg = somma delle vendite dirette collegate, media/incremento senza senso
+        const scU = (allScorteVD||[]).filter(s => s.uscita_id === u.id);
+        const vdU = scU.length > 0;
+        const capiVdU = scU.reduce((a,s) => a + (s.capi_venduti||0), 0);
         let r = `
         <div class="uscita-row">
           <div class="uscita-date">${fmtDate(u.data_uscita)}${u.numero_ddt ? ' · DDT ' + u.numero_ddt : ''} · ${escHtml(u.macello || u.cessionario || '—')}${u.numero_modello4 ? ' · Mod.4 ' + escHtml(u.numero_modello4) : ''}</div>
           <div class="uscita-line">
             <div class="uc narrow"><div class="uc-label">capi</div><div class="uc-val">${fmt(u.capi)}</div></div>
             <div class="uc"><div class="uc-label">kg</div><div class="uc-val">${fmt(u.kg_totali)}</div></div>
-            <div class="uc"><div class="uc-label">media</div><div class="uc-val">${prel.length ? '—' : (u.kg_totali && u.capi ? fmt(u.kg_totali/u.capi,1) : '—')}</div></div>
+            <div class="uc"><div class="uc-label">media</div><div class="uc-val">${prel.length || vdU ? '—' : (u.kg_totali && u.capi ? fmt(u.kg_totali/u.capi,1) : '—')}</div></div>
             <div class="uc narrow"><div class="uc-label">gg</div><div class="uc-val">${calcGgStr(u, lotto)}</div></div>
-            <div class="uc"><div class="uc-label">incr.</div><div class="uc-val">${prel.length ? '—' : calcIncr(u, lotto)}</div></div>
+            <div class="uc"><div class="uc-label">incr.</div><div class="uc-val">${prel.length || vdU ? '—' : calcIncr(u, lotto)}</div></div>
             <div class="uc wide"><div class="uc-label">liquid. €</div><div class="uc-val green">${u.liquidazione ? fmt(u.liquidazione) : '—'}</div></div>
             <div class="uc"><div class="uc-label">€/capo</div><div class="uc-val green">${!prel.length && u.liquidazione && u.capi ? fmt(u.liquidazione/u.capi) : '—'}</div></div>
           </div>`;
+        if(vdU) {
+          r += `<div style="margin-top:6px;font-size:11px;color:var(--amber);">Vendita diretta: venduti ${fmt(capiVdU)} capi su ${fmt(u.capi)} (${fmt(u.capi - capiVdU)} ancora in stalla) · ${scU.map(s => escHtml(s.categoria).toLowerCase() + ' ' + fmt(s.capi_residui)).join(' · ')}</div>`;
+        }
         if(prel.length) {
           r += `<details style="margin-top:6px;">
             <summary style="font-size:11px;color:var(--amber);cursor:pointer;">Ritiri ${escHtml(u.cessionario || '')}: ${capiPrel} capi su ${fmt(u.capi)} (${fmt(u.capi - capiPrel)} ancora in stalla)</summary>
@@ -3120,6 +3127,8 @@ function renderStoricoList() {
   if(storicoFilter !== 'tutti') rows = rows.filter(u => u.data_uscita?.startsWith(storicoFilter));
   // Da fatturare: stesso filtro di Ilaria (senza fattura collegata, dal 01/07/2026, FIORENZUOLA già esclusa)
   if(storicoDaFatturare) rows = rows.filter(u => !u.fattura_documento_id && u.data_uscita >= STORICO_DA_FATTURARE_DA);
+  // Lotto passato in vendita diretta (es. VEZZOLI 01/26): non è un carico da liquidare/fatturare, le vendite sono in vendite_dirette
+  rows = rows.filter(u => !isUscitaVenditaDiretta(u));
 
   const q = (document.getElementById('storico-search')?.value || '').trim().toLowerCase();
   if(q) {
