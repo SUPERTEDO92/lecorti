@@ -145,6 +145,12 @@
     box-shadow: var(--shadow-md);
   }
   .detail-title { font-size: 17px; font-weight: 500; font-family: var(--mono); }
+  .detail-header-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .btn-mappa { background: transparent; color: #F5F3EE; border: 1px solid rgba(245,243,238,.45); border-radius: 999px; padding: 4px 12px; font-size: 12px; font-family: var(--font); font-weight: 500; cursor: pointer; white-space: nowrap; }
+  .btn-mappa:active, .btn-mappa:hover { background: rgba(245,243,238,.12); }
+  .mappa-list { margin-top: 8px; display: none; }
+  .mappa-list.open { display: block; }
+  .mappa-item { display: block; width: 100%; text-align: left; background: rgba(245,243,238,.08); color: #F5F3EE; border: none; border-radius: 8px; padding: 7px 10px; margin-top: 4px; font-size: 12px; font-family: var(--font); cursor: pointer; }
   .detail-sub { font-size: 11px; color: #AAA; margin-top: 3px; }
   /* MANGIME (riga sotto nome soccida) */
   .mangime-wrap { margin: 8px 0 10px; background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow: hidden; }
@@ -2662,6 +2668,17 @@ function costoCapoLotto(lottoId) {
   return capi ? acq.reduce((s,t) => s+Number(t.costo_acquisto), 0) / capi : null;
 }
 
+function mappeSoccida(socId) {
+  return (allArchivioDoc || []).filter(d => d.categoria === 'soccide' && d.soccida_id === socId && d.documento_id
+    && /planimetria|mappa/i.test((d.sottocategoria || '') + ' ' + (d.titolo || '')));
+}
+function apriMappaSoccida(socId) {
+  const mappe = mappeSoccida(socId);
+  if (mappe.length === 1) { apriDocumento(mappe[0].documento_id); return; }
+  const el = document.getElementById('mappa-list-' + socId);
+  if (el) el.classList.toggle('open');
+}
+
 function renderDetail(socId) {
   const soc = allSoccide.find(s => s.id === socId);
   if(!soc) return;
@@ -2670,8 +2687,14 @@ function renderDetail(socId) {
     .sort((a,b) => a.data_ingresso.localeCompare(b.data_ingresso));
   if(!lotti.length) return;
 
+  // Bottone "Mappa": apre la planimetria della soccida dal documentale (categoria soccide, sottocategoria Planimetria…)
+  const mappe = mappeSoccida(soc.id);
   document.getElementById('detail-header-sticky').innerHTML = `<div class="detail-header">
-    <div class="detail-title">${soc.nome}</div>
+    <div class="detail-header-row">
+      <div class="detail-title">${soc.nome}</div>
+      ${mappe.length ? `<button type="button" class="btn-mappa" onclick="apriMappaSoccida(${soc.id})">🗺️ Mappa</button>` : ''}
+    </div>
+    ${mappe.length > 1 ? `<div class="mappa-list" id="mappa-list-${soc.id}">${mappe.map(d => `<button type="button" class="mappa-item" onclick="apriDocumento(${d.documento_id})">${escHtml(d.titolo || 'Planimetria')}</button>`).join('')}</div>` : ''}
   </div>`;
 
   let html = renderMangimeRow(soc.id);
