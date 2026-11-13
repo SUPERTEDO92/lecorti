@@ -769,7 +769,6 @@ function renderReferti(lottoId) {
         </div>
         <div class="referto-body">
           <div class="referto-patologia">${r.patologia}</div>
-          ${r.note_trattamento ? `<div class="referto-note">↳ ${r.note_trattamento}</div>` : ''}
           ${r.referto_documento_id ? `<button onclick="apriDocumento(${r.referto_documento_id})" style="margin-top:6px;background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:3px 10px;font-size:11px;color:var(--text2);cursor:pointer;font-family:var(--font);">📄 Apri referto PDF</button>` : ''}
         </div>
       </div>`).join('');
