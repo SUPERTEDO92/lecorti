@@ -1286,6 +1286,7 @@ function sortByDdt(a,b){
 // State
 let allMangime = [];
 let allProposteOrdini = [];
+let allOrdiniB2B = [];   // righe degli ordini B2B degli ultimi 30 gg con lo stato della consegna (v_ordini_b2b_righe) — 13/11/2026
 let allSoccide = [], allLotti = [], allUscite = [], allTrasferimenti = [], allMortalita = [], allSanitario = [], allVenditeDirette = [], allUsciteCategorie = [], allVenditeDiretteCategorie = [], allIngressi = [], allLettereDop = [], allNoteVet = [], allArchivioDoc = [], allPrelievi = [], allScorteVD = [];
 let storicoFilter = 'tutti';
 let storicoDaFatturare = false;
@@ -1324,6 +1325,8 @@ async function loadAll() {
   try { allMangime = await sb('v_consegne_mangime', '?in_kg=eq.true&order=data_consegna.desc,numero_documento.desc,riga.asc'); if(!Array.isArray(allMangime)) allMangime = []; } catch(e) { allMangime = []; }
   // Proposte ordini mangime (consumi stimati da curva tarata) — 02/11/2026
   try { allProposteOrdini = ordinaProposte(await sb('v_proposte_ordini_mangime', '')); } catch(e) { allProposteOrdini = []; }
+  // Ordini fatti sul portale B2B (letti dai PDF delle mail "Nuovo Documento") confrontati con le consegne — 13/11/2026
+  try { allOrdiniB2B = await caricaOrdiniB2B(); } catch(e) { allOrdiniB2B = []; }
   renderHome();
   renderStorico();
   renderTrasferimenti();
@@ -2545,9 +2548,10 @@ function renderOrdiniCard() {
   if(!allProposteOrdini.length) return '';
   const oggi = allProposteOrdini.filter(p => p.stato === 'ORDINA OGGI').length;
   const domani = allProposteOrdini.filter(p => p.stato === 'ORDINA DOMANI').length;
-  const dot = oggi ? 'dot-red' : domani ? 'dot-amber' : 'dot-green';
-  const meta = oggi || domani
-    ? [oggi ? `${oggi} da ordinare oggi` : '', domani ? `${domani} domani` : ''].filter(Boolean).join(' · ')
+  const ritardi = allOrdiniB2B.filter(r => /RITARDO/.test(r.stato)).length;
+  const dot = oggi || ritardi ? 'dot-red' : domani ? 'dot-amber' : 'dot-green';
+  const meta = oggi || domani || ritardi
+    ? [oggi ? `${oggi} da ordinare oggi` : '', domani ? `${domani} domani` : '', ritardi ? `${ritardi} consegne in ritardo` : ''].filter(Boolean).join(' · ')
     : `${allProposteOrdini.length} allevamenti · niente da ordinare`;
   const badge = oggi ? `<span class="soc-badge badge-red">${oggi}</span>` : domani ? `<span class="soc-badge badge-amber">${domani}</span>` : '';
   return `<div class="section-sep">Mangime</div><div class="soccide-list">
@@ -2592,8 +2596,12 @@ function renderOrdini() {
     dettaglio += testo('Articoli consegnati negli ultimi 30 gg', p.articoli);
     dettaglio += testo('Calcolo', p.taratura + (p.fattore != null ? ` (fattore ${fmt(p.fattore, 2)})` : ''));
     dettaglio += testo('⚠ Avvisi', p.avvisi);
+    if(Number(p.kg_in_arrivo) > 0) dettaglio += riga('Ordinato B2B in arrivo', `${t(p.kg_in_arrivo)} · prossimo ${dd(p.prossima_consegna)}`);
+    dettaglio += testo('Ordini B2B aperti', p.ordini_in_arrivo);
+    if(p.ordini_in_ritardo) dettaglio += testo('⚠ Consegne in ritardo', `${p.ordini_in_ritardo} righe d'ordine non ancora consegnate (vedi Ordini B2B qui sotto)`);
     if(p.ultimo_ordine) dettaglio += riga('Ultimo ordine segnato', `${dd(p.ultimo_ordine)}${p.ultimo_ordine_kg ? ' · ' + t(p.ultimo_ordine_kg) : ''}`);
     const sommario = attesa ? 'in attesa del nuovo export'
+      : p.stato === 'ORDINATO' && Number(p.kg_in_arrivo) > 0 ? `in arrivo ${t(p.kg_in_arrivo)} dal ${dd(p.prossima_consegna)} · scorta ${t(p.scorta_kg)}`
       : p.stato === 'ORDINATO' ? `ordinato il ${dd(p.ultimo_ordine)} · scorta ${t(p.scorta_kg)}`
       : `scorta ${t(p.scorta_kg)} · ${fmt(p.giorni_autonomia, 1)} gg · entro ${dd(p.ordinare_entro)}`;
     const bottone = attesa ? '' : `<div class="mangime-item" style="display:flex;gap:8px;justify-content:flex-end;">
@@ -2607,7 +2615,56 @@ function renderOrdini() {
       <div class="mangime-list" style="max-height:none;">${dettaglio}${bottone}</div>
     </div>`;
   }).join('');
+  html += renderOrdiniB2B();
   el.innerHTML = html;
+}
+
+// ── ORDINI B2B — ordini fatti sul portale Scotuzzi confrontati con le consegne (13/11/2026) ──
+// Ogni ordine Le Corti arriva via mail con il PDF: lo script Gmail lo manda a import-ordine-b2b, la vista
+// v_ordini_b2b_righe abbina ogni riga d'ordine alle consegne dello stesso allevamento e articolo.
+const B2B_STATO = {
+  'IN RITARDO':          { badge: 'badge-red',   dot: 'dot-red',   testo: 'In ritardo' },
+  'PARZIALE IN RITARDO': { badge: 'badge-red',   dot: 'dot-red',   testo: 'Parziale, in ritardo' },
+  'PARZIALE':            { badge: 'badge-amber', dot: 'dot-amber', testo: 'Parziale' },
+  'IN ARRIVO':           { badge: 'badge-amber', dot: 'dot-amber', testo: 'In arrivo' },
+  'CONSEGNATO':          { badge: 'badge-green', dot: 'dot-green', testo: 'Consegnato' },
+};
+async function caricaOrdiniB2B() {
+  const dal = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+  const r = await sb('v_ordini_b2b_righe', `?data_ordine=gte.${dal}`);
+  return Array.isArray(r) ? r : [];
+}
+function renderOrdiniB2B() {
+  if(!allOrdiniB2B.length) return '';
+  const dd = d => { const p = (d||'').split('-'); return p.length === 3 ? `${p[2]}/${p[1]}` : '—'; };
+  const t = kg => kg == null ? '—' : `${fmt(Number(kg)/1000, 1)} t`;
+  const rango = st => ({'IN RITARDO':0,'PARZIALE IN RITARDO':0,'PARZIALE':1,'IN ARRIVO':2,'CONSEGNATO':3}[st] ?? 4);
+  const ordini = {};
+  allOrdiniB2B.forEach(r => { (ordini[r.numero] = ordini[r.numero] || []).push(r); });
+  const lista = Object.values(ordini).map(righe => ({ righe, rango: Math.min(...righe.map(r => rango(r.stato))), r0: righe[0] }))
+    .sort((a, b) => a.rango - b.rango || (b.r0.consegna_richiesta || b.r0.data_ordine).localeCompare(a.r0.consegna_richiesta || a.r0.data_ordine));
+  const aperti = lista.filter(o => o.rango < 3).length;
+  let html = `<div class="section-sep" style="padding:14px 0 6px;">Ordini B2B · ultimi 30 giorni · ${aperti} da consegnare</div>`;
+  html += lista.map(({ righe, rango: rg, r0 }) => {
+    const peggiore = righe.slice().sort((a, b) => rango(a.stato) - rango(b.stato))[0];
+    const st = B2B_STATO[peggiore.stato] || B2B_STATO['IN ARRIVO'];
+    const quando = r0.consegna_richiesta ? `per il ${dd(r0.consegna_richiesta)}` : `ordinato il ${dd(r0.data_ordine)}`;
+    const dettaglio = righe.map(r => `<div class="mangime-item">
+        <div class="mangime-item-top"><span>${escHtml(r.cod_articolo)} · ${t(r.kg_ordinati)}</span><b><span class="soc-badge ${(B2B_STATO[r.stato]||st).badge}">${(B2B_STATO[r.stato]||st).testo}</span></b></div>
+        <div style="color:var(--text2);margin-top:2px;">${escHtml(r.descrizione || '')}</div>
+        <div style="margin-top:2px;">Consegnato ${t(r.kg_consegnati)}${r.ultima_consegna ? ` il ${dd(r.ultima_consegna)}` : ''}${r.bolle ? ` · bolla ${escHtml(r.bolle)}` : ''}</div>
+      </div>`).join('')
+      + `<div class="mangime-item"><div class="mangime-item-top"><span>Ordinato il</span><b>${dd(r0.data_ordine)}</b></div></div>`
+      + (r0.note ? `<div class="mangime-item"><div style="color:var(--text2);">Note dell'ordine</div><div style="margin-top:2px;">${escHtml(r0.note)}</div></div>` : '');
+    return `<div class="mangime-wrap${rg === 0 ? ' open' : ''}">
+      <div class="mangime-row" onclick="this.parentNode.classList.toggle('open')">
+        <span style="display:flex;align-items:center;gap:8px;"><span class="dot ${st.dot}"></span><b>${escHtml(r0.soccida || '?')}</b> <span style="color:var(--text2);">#${r0.numero}</span></span>
+        <span><span class="soc-badge ${st.badge}">${st.testo}</span> <span style="color:var(--text2);">${quando} · ${t(righe.reduce((a, r) => a + Number(r.kg_ordinati), 0))}</span> <span class="mangime-arrow">›</span></span>
+      </div>
+      <div class="mangime-list" style="max-height:none;">${dettaglio}</div>
+    </div>`;
+  }).join('');
+  return html;
 }
 
 async function segnaOrdinato(socId, kg, btn) {
@@ -2622,6 +2679,7 @@ async function segnaOrdinato(socId, kg, btn) {
     });
     if(!r.ok) throw new Error(await r.text());
     allProposteOrdini = ordinaProposte(await sb('v_proposte_ordini_mangime', ''));
+    try { allOrdiniB2B = await caricaOrdiniB2B(); } catch(e) {}
     showToast('Ordine segnato', true);
     renderOrdini();
     renderHome();
