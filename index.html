@@ -2567,55 +2567,80 @@ function renderOrdiniCard() {
   </div>`;
 }
 
+// Una scheda per allevamento (Ruben 13/11/2026: "raggruppa per allevamento e tieni controllato che gli ordini coprano
+// il mangime necessario"): scorta, fino a quando arriva il mangime contando gli ordini B2B ancora da consegnare
+// (data_scoperto della vista), ordini aperti con data e codice (niente descrizioni), ultime consegne.
 function renderOrdini() {
   const el = document.getElementById('ordini-content');
   const dd = d => { const p = (d||'').split('-'); return p.length === 3 ? `${p[2]}/${p[1]}` : '—'; };
   const t = kg => kg == null ? '—' : `${fmt(Number(kg)/1000, 1)} t`;
-  if(!allProposteOrdini.length) { el.innerHTML = `<div class="empty">Nessun allevamento configurato per le proposte d'ordine.</div>`; return; }
+  const giornoPrima = d => { const x = new Date(d + 'T12:00:00'); x.setDate(x.getDate() - 1); return x.toISOString().slice(0, 10); };
+  const aperti = allOrdiniB2B.filter(r => r.stato !== 'CONSEGNATO');
+  const ids = [...new Set([...allProposteOrdini.map(p => p.soccida_id), ...aperti.map(r => r.soccida_id)])].filter(Boolean);
+  if(!ids.length) { el.innerHTML = `<div class="empty">Nessun allevamento configurato per le proposte d'ordine.</div>`; return; }
+  const rango = s => s.stato === 'ORDINA OGGI' ? 0 : s.ritardi ? 1 : s.stato === 'ORDINA DOMANI' ? 2 : s.stato === 'ORDINATO' ? 3 : s.stato === 'OK' ? 4 : 5;
+  const schede = ids.map(id => {
+    const p = allProposteOrdini.find(x => x.soccida_id === id) || null;
+    const ord = aperti.filter(r => r.soccida_id === id)
+      .sort((a, b) => (a.consegna_richiesta || a.data_ordine).localeCompare(b.consegna_richiesta || b.data_ordine));
+    const s = { id, p, ord, ritardi: ord.filter(r => /RITARDO/.test(r.stato)).length,
+      nome: p ? p.soccida : (ord[0] && ord[0].soccida) || '?', stato: p ? p.stato : 'ORDINATO' };
+    s.rango = rango(s);
+    return s;
+  }).sort((a, b) => a.rango - b.rango || a.nome.localeCompare(b.nome));
+
   let html = `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;">
-      <div class="section-sep" style="padding:0;">Proposte ordini mangime · ${new Date().toLocaleDateString('it-IT')}</div>
+      <div class="section-sep" style="padding:0;">Ordini mangime · ${new Date().toLocaleDateString('it-IT')}</div>
       <a href="${PORTALE_B2B}" target="_blank" rel="noopener" class="back-btn" style="margin:0;text-decoration:none;">🛒 Portale B2B</a>
     </div>`;
-  html += allProposteOrdini.map(p => {
-    const st = ORDINI_STATO[p.stato] || ORDINI_STATO['OK'];
-    const attesa = p.stato === 'IN ATTESA DATI' || p.stato === 'NESSUN CONSUMO';
+  html += schede.map(({ id, p, ord, ritardi, nome, stato }) => {
+    const st = ORDINI_STATO[stato] || ORDINI_STATO['OK'];
+    const attesa = p && (p.stato === 'IN ATTESA DATI' || p.stato === 'NESSUN CONSUMO');
+    const stimato = p && !attesa && p.scorta_kg != null && Number(p.consumo_gg_kg) > 0;
     const riga = (lab, val) => `<div class="mangime-item"><div class="mangime-item-top"><span>${lab}</span><b>${val}</b></div></div>`;
     const testo = (lab, val) => val ? `<div class="mangime-item"><div style="color:var(--text2);">${lab}</div><div style="margin-top:2px;">${escHtml(val)}</div></div>` : '';
+    const titolo = lab => `<div class="mangime-item" style="color:var(--text2);padding-bottom:0;">${lab}</div>`;
+    let sommario;
+    if(stimato) sommario = p.data_scoperto ? `mangime fino al ${dd(giornoPrima(p.data_scoperto))} · ordina entro ${dd(p.ordinare_entro)}` : 'coperto per più di 60 giorni';
+    else if(attesa) sommario = 'in attesa del nuovo export';
+    else sommario = `${ord.length} ${ord.length === 1 ? 'consegna attesa' : 'consegne attese'}`;
     let dettaglio = '';
-    if(!attesa) {
-      dettaglio += riga('Scorta stimata nei silos', `${t(p.scorta_kg)} · ${fmt(p.giorni_autonomia, 1)} gg`);
-      dettaglio += riga('Finisce circa il', dd(p.data_esaurimento));
-      dettaglio += riga(`Ordinare entro (${p.giorni_anticipo} gg prima)`, dd(p.ordinare_entro));
-      dettaglio += riga('Consumo stimato', `${t(p.consumo_gg_kg)}/giorno`);
-      dettaglio += riga('Carico tipico', t(p.carico_tipico_kg));
-      dettaglio += riga('Ultima consegna', p.ultima_consegna ? `${dd(p.ultima_consegna)} · ${t(p.ultima_consegna_kg)}` : '—');
-    } else {
+    if(stimato) {
+      dettaglio += riga('Scorta stimata oggi', `${t(p.scorta_kg)} · ${t(p.consumo_gg_kg)}/giorno`);
+      dettaglio += riga(Number(p.kg_in_arrivo) > 0 ? 'Con gli ordini, mangime fino al' : 'Mangime fino al', p.data_scoperto ? dd(giornoPrima(p.data_scoperto)) : 'oltre 60 gg');
+      if(p.ordinare_entro) dettaglio += riga(`Ordinare entro (${p.giorni_anticipo} gg prima)`, dd(p.ordinare_entro));
+    } else if(attesa) {
       dettaglio += riga('Consumo da curva', `${t(p.consumo_curva_gg_kg)}/giorno`);
     }
-    dettaglio += testo('Lotti presenti', p.lotti);
-    dettaglio += testo('Articoli consegnati negli ultimi 30 gg', p.articoli);
-    dettaglio += testo('Calcolo', p.taratura + (p.fattore != null ? ` (fattore ${fmt(p.fattore, 2)})` : ''));
-    dettaglio += testo('⚠ Avvisi', p.avvisi);
-    if(Number(p.kg_in_arrivo) > 0) dettaglio += riga('Ordinato B2B in arrivo', `${t(p.kg_in_arrivo)} · prossimo ${dd(p.prossima_consegna)}`);
-    dettaglio += testo('Ordini B2B aperti', p.ordini_in_arrivo);
-    if(p.ordini_in_ritardo) dettaglio += testo('⚠ Consegne in ritardo', `${p.ordini_in_ritardo} righe d'ordine non ancora consegnate (vedi Ordini B2B qui sotto)`);
-    if(p.ultimo_ordine) dettaglio += riga('Ultimo ordine segnato', `${dd(p.ultimo_ordine)}${p.ultimo_ordine_kg ? ' · ' + t(p.ultimo_ordine_kg) : ''}`);
-    const sommario = attesa ? 'in attesa del nuovo export'
-      : p.stato === 'ORDINATO' && Number(p.kg_in_arrivo) > 0 ? `in arrivo ${t(p.kg_in_arrivo)} dal ${dd(p.prossima_consegna)} · scorta ${t(p.scorta_kg)}`
-      : p.stato === 'ORDINATO' ? `ordinato il ${dd(p.ultimo_ordine)} · scorta ${t(p.scorta_kg)}`
-      : `scorta ${t(p.scorta_kg)} · ${fmt(p.giorni_autonomia, 1)} gg · entro ${dd(p.ordinare_entro)}`;
-    const bottone = attesa ? '' : `<div class="mangime-item" style="display:flex;gap:8px;justify-content:flex-end;">
+    if(ord.length) {
+      dettaglio += titolo('Ordini da consegnare');
+      dettaglio += ord.map(r => {
+        const sb = B2B_STATO[r.stato] || B2B_STATO['IN ARRIVO'];
+        const quando = r.consegna_richiesta ? dd(r.consegna_richiesta) : `ord. ${dd(r.data_ordine)}`;
+        const resto = Number(r.kg_ordinati) - Number(r.kg_consegnati || 0);
+        return `<div class="mangime-item"><div class="mangime-item-top"><span>${quando} · ${escHtml(r.cod_articolo)} · ${t(resto)}</span><span class="soc-badge ${sb.badge}">${sb.testo}</span></div>${
+          Number(r.kg_consegnati) > 0 ? `<div style="color:var(--text2);margin-top:2px;">arrivati ${t(r.kg_consegnati)} su ${t(r.kg_ordinati)}</div>` : ''}</div>`;
+      }).join('');
+    }
+    const consegne = (allMangime || []).filter(m => m.soccida_id === id).slice(0, 4);
+    if(consegne.length) {
+      dettaglio += titolo('Ultime consegne');
+      dettaglio += consegne.map(m => `<div class="mangime-item"><div class="mangime-item-top"><span>${dd(m.data_consegna)} · ${escHtml(m.cod_articolo || '')}</span><b>${m.quantita_provvisoria ? 'peso da confermare' : t(m.quantita)}</b></div></div>`).join('');
+    }
+    if(p) dettaglio += testo('Lotti presenti', p.lotti);
+    if(p) dettaglio += testo('⚠ Avvisi', p.avvisi);
+    const bottone = p && !attesa ? `<div class="mangime-item" style="display:flex;gap:8px;justify-content:flex-end;">
         <button class="back-btn" style="margin:0;background:var(--green);" onclick="segnaOrdinato(${p.soccida_id}, ${p.carico_tipico_kg || 'null'}, this)">✅ Ordinato</button>
-      </div>`;
-    return `<div class="mangime-wrap${p.stato === 'ORDINA OGGI' || p.stato === 'ORDINA DOMANI' ? ' open' : ''}">
+      </div>` : '';
+    const badgeRitardo = ritardi ? ` <span class="soc-badge badge-red">${ritardi} in ritardo</span>` : '';
+    return `<div class="mangime-wrap${stato === 'ORDINA OGGI' || stato === 'ORDINA DOMANI' || ritardi ? ' open' : ''}">
       <div class="mangime-row" onclick="this.parentNode.classList.toggle('open')">
-        <span style="display:flex;align-items:center;gap:8px;"><span class="dot ${st.dot}"></span><b>${escHtml(p.soccida)}</b></span>
-        <span><span class="soc-badge ${st.badge}">${st.testo}</span> <span style="color:var(--text2);">${sommario}</span> <span class="mangime-arrow">›</span></span>
+        <span style="display:flex;align-items:center;gap:8px;"><span class="dot ${ritardi ? 'dot-red' : st.dot}"></span><b>${escHtml(nome)}</b></span>
+        <span>${p || !ritardi ? `<span class="soc-badge ${st.badge}">${st.testo}</span>` : ''}${badgeRitardo} <span style="color:var(--text2);">${sommario}</span> <span class="mangime-arrow">›</span></span>
       </div>
       <div class="mangime-list" style="max-height:none;">${dettaglio}${bottone}</div>
     </div>`;
   }).join('');
-  html += renderOrdiniB2B();
   el.innerHTML = html;
 }
 
@@ -2634,39 +2659,6 @@ async function caricaOrdiniB2B() {
   const r = await sb('v_ordini_b2b_righe', `?data_ordine=gte.${dal}`);
   return Array.isArray(r) ? r : [];
 }
-function renderOrdiniB2B() {
-  if(!allOrdiniB2B.length) return '';
-  const dd = d => { const p = (d||'').split('-'); return p.length === 3 ? `${p[2]}/${p[1]}` : '—'; };
-  const t = kg => kg == null ? '—' : `${fmt(Number(kg)/1000, 1)} t`;
-  const rango = st => ({'IN RITARDO':0,'PARZIALE IN RITARDO':0,'PARZIALE':1,'IN ARRIVO':2,'CONSEGNATO':3}[st] ?? 4);
-  const ordini = {};
-  allOrdiniB2B.forEach(r => { (ordini[r.numero] = ordini[r.numero] || []).push(r); });
-  const lista = Object.values(ordini).map(righe => ({ righe, rango: Math.min(...righe.map(r => rango(r.stato))), r0: righe[0] }))
-    .sort((a, b) => a.rango - b.rango || (b.r0.consegna_richiesta || b.r0.data_ordine).localeCompare(a.r0.consegna_richiesta || a.r0.data_ordine));
-  const aperti = lista.filter(o => o.rango < 3).length;
-  let html = `<div class="section-sep" style="padding:14px 0 6px;">Ordini B2B · ultimi 30 giorni · ${aperti} da consegnare</div>`;
-  html += lista.map(({ righe, rango: rg, r0 }) => {
-    const peggiore = righe.slice().sort((a, b) => rango(a.stato) - rango(b.stato))[0];
-    const st = B2B_STATO[peggiore.stato] || B2B_STATO['IN ARRIVO'];
-    const quando = r0.consegna_richiesta ? `per il ${dd(r0.consegna_richiesta)}` : `ordinato il ${dd(r0.data_ordine)}`;
-    const dettaglio = righe.map(r => `<div class="mangime-item">
-        <div class="mangime-item-top"><span>${escHtml(r.cod_articolo)} · ${t(r.kg_ordinati)}</span><b><span class="soc-badge ${(B2B_STATO[r.stato]||st).badge}">${(B2B_STATO[r.stato]||st).testo}</span></b></div>
-        <div style="color:var(--text2);margin-top:2px;">${escHtml(r.descrizione || '')}</div>
-        <div style="margin-top:2px;">Consegnato ${t(r.kg_consegnati)}${r.ultima_consegna ? ` il ${dd(r.ultima_consegna)}` : ''}${r.bolle ? ` · bolla ${escHtml(r.bolle)}` : ''}</div>
-      </div>`).join('')
-      + `<div class="mangime-item"><div class="mangime-item-top"><span>Ordinato il</span><b>${dd(r0.data_ordine)}</b></div></div>`
-      + (r0.note ? `<div class="mangime-item"><div style="color:var(--text2);">Note dell'ordine</div><div style="margin-top:2px;">${escHtml(r0.note)}</div></div>` : '');
-    return `<div class="mangime-wrap${rg === 0 ? ' open' : ''}">
-      <div class="mangime-row" onclick="this.parentNode.classList.toggle('open')">
-        <span style="display:flex;align-items:center;gap:8px;"><span class="dot ${st.dot}"></span><b>${escHtml(r0.soccida || '?')}</b> <span style="color:var(--text2);">#${r0.numero}</span></span>
-        <span><span class="soc-badge ${st.badge}">${st.testo}</span> <span style="color:var(--text2);">${quando} · ${t(righe.reduce((a, r) => a + Number(r.kg_ordinati), 0))}</span> <span class="mangime-arrow">›</span></span>
-      </div>
-      <div class="mangime-list" style="max-height:none;">${dettaglio}</div>
-    </div>`;
-  }).join('');
-  return html;
-}
-
 async function segnaOrdinato(socId, kg, btn) {
   const val = prompt('Quanti kg hai ordinato? (lascia vuoto se non serve)', kg ? String(kg) : '');
   if(val === null) return;
