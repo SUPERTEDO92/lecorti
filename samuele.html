@@ -28,7 +28,7 @@
   .topbar-title { padding: 12px 20px 8px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
   .topbar-logo { font-family: var(--mono); font-size: 15px; font-weight: 500; letter-spacing: .1em; white-space: nowrap; }
   .topbar-date { font-size: 11px; color: #888; font-family: var(--mono); white-space: nowrap; }
-  @media (max-width: 370px) { .topbar-date { display: none; } .topbar-logo { font-size: 14px; letter-spacing: .06em; } }
+  @media (max-width: 370px) { .topbar-date { display: none; } .topbar-logo { font-size: 14px; letter-spacing: .06em; } .solo-largo { display: none; } .stat-label { letter-spacing: 0; } .incr-banner { font-size: 11px; padding: 7px 10px; } }
   .topbar-menu-btn {
     background: rgba(255,255,255,.08); border: 0.5px solid rgba(255,255,255,.18);
     color: #F5F3EE; font-family: var(--mono); font-size: 12px;
@@ -83,38 +83,39 @@
 
   .lotto-header {
     background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius-lg);
-    padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 14px; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; gap: 8px;
   }
-  .lotto-codice { font-size: 17px; font-weight: 600; font-family: var(--mono); }
-  .lotto-sub { font-size: 13px; color: var(--text2); margin-top: 4px; }
+  .lotto-codice { font-size: 16px; font-weight: 600; font-family: var(--mono); }
+  .lotto-sub { font-size: 12px; color: var(--text2); margin-top: 1px; }
 
   .capannone-banner { background: var(--text); color: #FFF; border-radius: var(--radius); padding: 9px 14px; margin-bottom: 8px; text-align: center; font-size: 13px; font-weight: 700; font-family: var(--mono); letter-spacing: .05em; }
 
-  .stat-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 6px; margin-bottom: 10px; }
-  .stat-box { background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 10px 12px; }
+  /* 3 riquadri per riga come in index.html: entrati · presenti · giorni / peso arrivo · peso stimato · mortalità */
+  .stat-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 5px; margin-bottom: 6px; }
+  .stat-box { background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 6px 9px; min-width: 0; }
   .stat-box.hl { background: var(--green-bg); border-color: #B8DECA; }
-  .stat-label { font-size: 10px; color: var(--text2); font-family: var(--mono); text-transform: uppercase; letter-spacing: .05em; }
-  .stat-val { font-size: 18px; font-weight: 500; color: var(--text); margin-top: 2px; }
+  .stat-label { font-size: 9px; color: var(--text2); font-family: var(--mono); text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stat-val { font-size: 16px; font-weight: 500; color: var(--text); margin-top: 0; white-space: nowrap; }
   .stat-val.green { color: var(--green); }
   .stat-unit { font-size: 11px; color: var(--text2); font-weight: 300; }
 
-  .section-label { font-size: 10px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--text2); margin: 12px 0 6px; }
+  .section-label { font-size: 10px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--text2); margin: 8px 0 4px; }
 
-  .ltab { flex: 1; padding: 8px 4px; border-radius: var(--radius); border: 0.5px solid var(--border); background: var(--bg2); color: var(--text2); font-size: 12px; font-family: var(--font); font-weight: 500; cursor: pointer; }
+  .ltab { flex: 1; padding: 6px 4px; border-radius: var(--radius); border: 0.5px solid var(--border); background: var(--bg2); color: var(--text2); font-size: 12px; font-family: var(--font); font-weight: 500; cursor: pointer; }
   .ltab-active { border-color: var(--accent) !important; background: var(--accent) !important; color: #FFF !important; }
 
-  .simple-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 14px; border-bottom: 0.5px solid var(--border); background: #FFF; }
+  .simple-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 12px; border-bottom: 0.5px solid var(--border); background: #FFF; }
   .simple-row:first-child { border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
   .simple-row:last-child { border-bottom: none; border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
-  .simple-container { border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 12px; }
-  .simple-date { font-size: 13px; font-family: var(--mono); font-weight: 500; }
-  .simple-peso { font-size: 15px; font-weight: 600; font-family: var(--mono); color: var(--text); white-space: nowrap; }
+  .simple-container { border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 8px; }
+  .simple-date { font-size: 12px; font-family: var(--mono); font-weight: 500; }
+  .simple-peso { font-size: 14px; font-weight: 600; font-family: var(--mono); color: var(--text); white-space: nowrap; }
   .simple-row > :first-child { min-width: 0; }
   .simple-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
 
   /* righe uscite come in index.html (solo capi, peso, giorni, incremento: niente importi) */
-  .uscite-container { background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 12px; }
-  .uscita-row { padding: 8px 14px; border-bottom: 0.5px solid var(--border); }
+  .uscite-container { background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 8px; }
+  .uscita-row { padding: 6px 12px; border-bottom: 0.5px solid var(--border); }
   .uscita-row:last-child { border-bottom: none; }
   .uscita-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
   .uscita-date { font-size: 11px; font-weight: 500; color: var(--text); font-family: var(--mono); min-width: 0; }
@@ -128,11 +129,11 @@
   .lista-scroll { max-height: 290px; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
   .lista-scroll.note { max-height: 380px; }
   .lista-conta { font-size: 10px; font-family: var(--mono); color: var(--text3); text-align: right; margin: -6px 2px 6px; }
-  .incr-banner { width: 100%; margin-bottom: 8px; padding: 8px 12px; background: var(--accent); color: #FFF; border: none; border-radius: var(--radius); font-size: 12px; font-family: var(--mono); font-weight: 500; cursor: pointer; text-align: left; display: block; }
-  .empty { text-align: center; padding: 24px; color: var(--text3); font-size: 12px; }
+  .incr-banner { display: flex !important; justify-content: space-between; align-items: center; gap: 6px; white-space: nowrap; width: 100%; margin-bottom: 6px; padding: 7px 12px; background: var(--accent); color: #FFF; border: none; border-radius: var(--radius); font-size: 12px; font-family: var(--mono); font-weight: 500; cursor: pointer; text-align: left; display: block; }
+  .empty { text-align: center; padding: 12px; color: var(--text3); font-size: 12px; }
   .loading { text-align: center; padding: 60px 20px; color: var(--text2); font-size: 13px; font-family: var(--mono); }
 
-  .btn-mort { width: 100%; padding: 12px; background: var(--red); color: #FFF; border: none; border-radius: var(--radius-lg); font-size: 13px; font-family: var(--font); font-weight: 600; cursor: pointer; margin-bottom: 10px; }
+  .btn-mort { width: 100%; padding: 9px; background: var(--red); color: #FFF; border: none; border-radius: var(--radius-lg); font-size: 13px; font-family: var(--font); font-weight: 600; cursor: pointer; margin-bottom: 8px; }
   .btn-mort:disabled { opacity: .55; cursor: wait; }
   .btn-doc { background: var(--bg2); border: 0.5px solid var(--border); border-radius: 8px; padding: 3px 8px; font-size: 11px; color: var(--text2); cursor: pointer; font-family: var(--font); white-space: nowrap; }
   .field-label { font-size: 11px; font-family: var(--mono); color: var(--text2); margin-bottom: 4px; }
@@ -228,6 +229,19 @@ function contiLotto(lotto) {
   const usciti = allUscite.filter(u => u.lotto_id === lotto.id).reduce((s, u) => s + (u.capi || 0), 0);
   const trasferiti = allTrasferimenti.filter(t => t.lotto_id === lotto.id).reduce((s, t) => s + (t.capi || 0), 0);
   return { entrati, morti, usciti, trasferiti, presenti: entrati - morti - usciti - trasferiti };
+}
+
+// peso medio all'arrivo e peso stimato oggi: per ogni arrivo peso medio + incremento × giorni dal suo arrivo,
+// media pesata sui capi (come le righe arrivo di index.html)
+function pesiLotto(lotto, ingressi) {
+  const righe = ingressi.filter(i => i.capi && i.kg).map(i => ({ capi: i.capi, media: i.kg / i.capi, gg: giorniDa(i.data_ingresso) }));
+  if (!righe.length && lotto.media_ingresso) righe.push({ capi: 1, media: +lotto.media_ingresso, gg: giorniDa(lotto.data_ingresso) });
+  if (!righe.length) return { arrivo: null, oggi: null };
+  const tot = righe.reduce((s, r) => s + r.capi, 0);
+  const arrivo = righe.reduce((s, r) => s + r.capi * r.media, 0) / tot;
+  const inc = lotto.incremento_giornaliero;
+  const oggi = inc ? righe.reduce((s, r) => s + r.capi * (r.media + inc * r.gg), 0) / tot : null;
+  return { arrivo, oggi };
 }
 
 // giorni e incremento di un'uscita, come in index.html (calcGg / calcIncr)
@@ -505,6 +519,7 @@ function render() {
     const uscite = allUscite.filter(u => u.lotto_id === lotto.id);
     const mortLotto = allMortalita.filter(m => m.lotto_id === lotto.id);
     const c = contiLotto(lotto);
+    const pesi = pesiLotto(lotto, ingLotto);
     const gg = giorniDa(lotto.data_ingresso);
     const tab = ['referti', 'note'].includes(tabAttiva[lotto.id]) ? tabAttiva[lotto.id] : 'mortalita';
     const refLotto = allSanitario.filter(r => r.lotto_id === lotto.id);
@@ -525,12 +540,25 @@ function render() {
       html += `<div class="capannone-banner">📍 CAPANNONE: ${esc(String(lotto.capannone).toUpperCase())}</div>`;
     }
 
+    const u = n => Math.abs(n) === 1 ? 'capo' : 'capi';
     html += `<div class="stat-grid">
-      <div class="stat-box"><div class="stat-label">Capi entrati</div><div class="stat-val">${fmt(c.entrati)} <span class="stat-unit">${Math.abs(c.entrati) === 1 ? 'capo' : 'capi'}</span></div></div>
-      <div class="stat-box hl"><div class="stat-label">Presenti stimati</div><div class="stat-val green">${fmt(c.presenti)} <span class="stat-unit">${Math.abs(c.presenti) === 1 ? 'capo' : 'capi'}</span></div></div>
-      <div class="stat-box"><div class="stat-label">Giorni in stalla</div><div class="stat-val">${gg} <span class="stat-unit">gg</span></div></div>
-      <div class="stat-box"><div class="stat-label">Mortalità</div><div class="stat-val" style="color:${c.morti > 0 ? 'var(--red)' : 'inherit'}">${fmt(c.morti)} <span class="stat-unit">${Math.abs(c.morti) === 1 ? 'capo' : 'capi'}</span></div></div>
+      <div class="stat-box"><div class="stat-label">Capi entrati</div><div class="stat-val">${fmt(c.entrati)} <span class="stat-unit">${u(c.entrati)}</span></div></div>
+      <div class="stat-box hl"><div class="stat-label">Presenti</div><div class="stat-val green">${fmt(c.presenti)} <span class="stat-unit">${u(c.presenti)}</span></div></div>
+      <div class="stat-box"><div class="stat-label">Giorni</div><div class="stat-val">${fmt(gg)} <span class="stat-unit">gg</span></div></div>
+      <div class="stat-box"><div class="stat-label">Peso arrivo</div><div class="stat-val">${pesi.arrivo !== null ? fmt(pesi.arrivo, 1) : '—'} <span class="stat-unit">kg</span></div></div>
+      <div class="stat-box hl"><div class="stat-label">Peso stimato</div><div class="stat-val green">${pesi.oggi !== null ? fmt(pesi.oggi, 0) : '—'} <span class="stat-unit">kg</span></div></div>
+      <div class="stat-box"><div class="stat-label">Mortalità</div><div class="stat-val" style="color:${c.morti > 0 ? 'var(--red)' : 'inherit'}">${fmt(c.morti)} <span class="stat-unit">${u(c.morti)}</span></div></div>
     </div>`;
+
+    // INCREMENTO PONDERATO — barra fissa subito sotto i riquadri, come in index.html; tocco = modifica
+    html += `<button class="incr-banner" type="button" onclick="apriFormIncremento(${lotto.id})">
+        <span>Incremento ponderato: +${lotto.incremento_giornaliero != null ? fmt(lotto.incremento_giornaliero, 3) : '—'} kg/gg</span><span>✎<span class="solo-largo"> modifica</span></span>
+      </button>
+      <div id="form-incremento-${lotto.id}" style="display:none;" class="form-box">
+        <div class="field-label">NUOVO INCREMENTO PONDERATO (kg/gg)</div>
+        <input type="number" inputmode="decimal" step="0.001" id="i-val-${lotto.id}" class="field-input" value="${lotto.incremento_giornaliero ?? ''}" placeholder="es. 0.750">
+        <button class="btn-mort" style="margin-bottom:0;background:var(--accent);" onclick="salvaIncremento(${lotto.id}, this)">✓ Salva</button>
+      </div>`;
 
     // INGRESSO — sempre visibile, solo data + peso medio
     html += `<div class="section-label">Ingresso</div>`;
@@ -553,16 +581,6 @@ function render() {
     } else {
       html += `<div class="empty">Nessun dato di peso ingresso.</div>`;
     }
-
-    // INCREMENTO — barra fissa come in index.html, tocco = modifica
-    html += `<button class="incr-banner" type="button" onclick="apriFormIncremento(${lotto.id})">
-        Incremento: +${lotto.incremento_giornaliero != null ? fmt(lotto.incremento_giornaliero, 3) : '—'} kg/gg &nbsp;✎ modifica
-      </button>
-      <div id="form-incremento-${lotto.id}" style="display:none;" class="form-box">
-        <div class="field-label">NUOVO INCREMENTO PONDERATO (kg/gg)</div>
-        <input type="number" inputmode="decimal" step="0.001" id="i-val-${lotto.id}" class="field-input" value="${lotto.incremento_giornaliero ?? ''}" placeholder="es. 0.750">
-        <button class="btn-mort" style="margin-bottom:0;background:var(--accent);" onclick="salvaIncremento(${lotto.id}, this)">✓ Salva</button>
-      </div>`;
 
     // USCITE — capi, peso medio, giorni e incremento fatto (niente importi); la sezione compare solo se ci sono uscite
     if (uscite.length) {
