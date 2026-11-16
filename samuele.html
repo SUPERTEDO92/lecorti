@@ -69,6 +69,9 @@
   .badge-amber { background: var(--amber-bg); color: var(--amber); }
   .badge-gray { background: var(--bg3); color: var(--text2); }
   .soc-arrow { color: var(--text3); font-size: 18px; }
+  .soccida-card.manuali { background: var(--text); border-color: var(--text); color: #F5F3EE; margin-bottom: 8px; }
+  .soccida-card.manuali:hover { background: #2A2A27; border-color: #2A2A27; }
+  .soccida-card.manuali .soc-meta, .soccida-card.manuali .soc-arrow { color: #B8B4AB; }
 
   /* Header sticky pagina dettaglio */
   .detail-sticky-wrap { position: sticky; top: var(--topbar-h, 0px); z-index: 90; background: var(--bg); padding-bottom: 4px; margin: -14px -14px 10px; padding-left: 14px; padding-right: 14px; padding-top: 14px; }
@@ -185,6 +188,7 @@
   <div class="topbar-nav collapsed" id="topbar-nav">
     <button class="nav-btn active" id="nav-soccide" onclick="vaiA('soccide')">Soccide</button>
     <button class="nav-btn" id="nav-macelli" onclick="vaiA('macelli')">🏭 Macelli</button>
+    <button class="nav-btn" id="nav-manuali" onclick="vaiA('manuali')">📚 Manuali</button>
   </div>
 </div>
 
@@ -277,6 +281,7 @@ function setNav(n) {
   navAttiva = n;
   document.getElementById('nav-soccide').classList.toggle('active', n === 'soccide');
   document.getElementById('nav-macelli').classList.toggle('active', n === 'macelli');
+  document.getElementById('nav-manuali').classList.toggle('active', n === 'manuali');
 }
 // voce del menu: chiude il menu e cambia pagina con la stessa transizione delle schede
 function vaiA(n) {
@@ -284,6 +289,7 @@ function vaiA(n) {
   const nav = document.getElementById('topbar-nav');
   if (!nav.classList.contains('collapsed')) toggleTopbarNav();
   if (n === 'macelli') renderRubricaMacelli();
+  else if (n === 'manuali') apriManuali();
   else transizioneMandria(() => renderLista());
 }
 function renderRubricaMacelli() {
@@ -300,6 +306,28 @@ function renderRubricaMacelli() {
     renderMacelliCards(macelliRubrica);
   });
 }
+// ── MANUALI LE CORTI: documentale (archivio_documenti, categoria "manuali"), stesse schede del documentale di index.html.
+// Il logo/intestazione aziendale non serve a Samuele. Documenti nuovi: si aggiungono dal documentale (INSERT + import da pending/).
+let allManuali = null;
+async function apriManuali() {
+  setNav('manuali');
+  if (allManuali === null) {
+    allManuali = await sb('archivio_documenti', '?categoria=eq.manuali&documento_id=not.is.null&select=id,sottocategoria,titolo,documento_id&order=titolo.asc');
+    allManuali = allManuali.filter(d => d.sottocategoria !== 'Intestazione aziendale');
+  }
+  transizioneMandria(() => {
+    soccidaAttiva = null;
+    document.getElementById('content').innerHTML = `<div class="detail-sticky-wrap">
+      <button class="back-btn" onclick="vaiA('soccide')">← Soccide</button>
+      <div class="soccida-header"><div class="soccida-title">📚 MANUALI LE CORTI</div></div>
+    </div>` + (allManuali.length ? allManuali.map(d => `<div style="background:#FFF;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:8px;">
+        <div style="font-size:14px;font-weight:600;margin-bottom:4px;">${esc(d.titolo)}</div>
+        ${d.sottocategoria ? `<div style="margin-bottom:8px;font-size:11px;color:var(--text2);"><span style="background:var(--bg2);border-radius:8px;padding:2px 8px;">${esc(d.sottocategoria)}</span></div>` : ''}
+        <button onclick="apriDocumento(${d.documento_id})" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:5px 12px;font-size:11px;color:var(--text2);cursor:pointer;font-family:var(--font);">📄 Apri documento</button>
+      </div>`).join('') : `<div class="empty">Nessun manuale caricato.</div>`);
+  });
+}
+
 function renderMacelliCards(lista) {
   document.getElementById('mac-list').innerHTML = lista.length ? lista.map(m => `
     <div style="background:#FFF;border:0.5px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;">
@@ -359,7 +387,12 @@ async function loadAll() {
 // ── LISTA SOCCIDE (come home di index) ──
 function renderLista() {
   soccidaAttiva = null;
-  const html = `<div class="soccide-list">${SOCCIDE_MOSTRATE.map(nome => {
+  const html = `<div class="soccida-card manuali" onclick="apriManuali()">
+      <div style="font-size:18px;line-height:1;">📚</div>
+      <div class="soc-main"><div class="soc-nome">Manuali Le Corti</div><div class="soc-meta">biosicurezza, schede operative, DOP</div></div>
+      <span class="soc-arrow">&#8250;</span>
+    </div>
+    <div class="soccide-list">${SOCCIDE_MOSTRATE.map(nome => {
     const soc = allSoccide.find(s => s.nome === nome);
     if (!soc) return '';
     const lotti = allLotti.filter(l => l.soccida_id === soc.id);
