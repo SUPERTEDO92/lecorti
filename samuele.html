@@ -112,6 +112,23 @@
   .simple-row > :first-child { min-width: 0; }
   .simple-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
 
+  /* righe uscite come in index.html (solo capi, peso, giorni, incremento: niente importi) */
+  .uscite-container { background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 12px; }
+  .uscita-row { padding: 8px 14px; border-bottom: 0.5px solid var(--border); }
+  .uscita-row:last-child { border-bottom: none; }
+  .uscita-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .uscita-date { font-size: 11px; font-weight: 500; color: var(--text); font-family: var(--mono); min-width: 0; }
+  .uscita-line { display: flex; gap: 0; }
+  .uc { flex: 1; min-width: 0; }
+  .uc.narrow { flex: .65; }
+  .uc-label { font-size: 9px; color: var(--text3); font-family: var(--mono); text-transform: uppercase; }
+  .uc-val { font-size: 12px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .uc-val.green { color: var(--green); }
+  /* elenchi lunghi (mortalità, note): scorrono dentro il riquadro invece di allungare la pagina */
+  .lista-scroll { max-height: 290px; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+  .lista-scroll.note { max-height: 380px; }
+  .lista-conta { font-size: 10px; font-family: var(--mono); color: var(--text3); text-align: right; margin: -6px 2px 6px; }
+  .incr-banner { width: 100%; margin-bottom: 8px; padding: 8px 12px; background: var(--accent); color: #FFF; border: none; border-radius: var(--radius); font-size: 12px; font-family: var(--mono); font-weight: 500; cursor: pointer; text-align: left; display: block; }
   .empty { text-align: center; padding: 24px; color: var(--text3); font-size: 12px; }
   .loading { text-align: center; padding: 60px 20px; color: var(--text2); font-size: 13px; font-family: var(--mono); }
 
@@ -187,7 +204,7 @@ const PIG_SVG = '<svg viewBox="0 0 100 70" xmlns="http://www.w3.org/2000/svg" st
 
 let allSoccide = [], allLotti = [], allUscite = [], allMortalita = [], allIngressi = [], allNoteVet = [], allTrasferimenti = [];
 let soccidaAttiva = null;
-const tabAttiva = {};   // lotto_id → 'mortalita' | 'incremento' | 'note' (resta aperta dopo un salvataggio)
+const tabAttiva = {};   // lotto_id → 'mortalita' | 'note' (resta aperta dopo un salvataggio)
 
 // date locali (toISOString dà la data UTC: tra mezzanotte e l'1/2 di notte proponeva il giorno prima)
 function oggiISO() {
@@ -211,6 +228,20 @@ function contiLotto(lotto) {
   const usciti = allUscite.filter(u => u.lotto_id === lotto.id).reduce((s, u) => s + (u.capi || 0), 0);
   const trasferiti = allTrasferimenti.filter(t => t.lotto_id === lotto.id).reduce((s, t) => s + (t.capi || 0), 0);
   return { entrati, morti, usciti, trasferiti, presenti: entrati - morti - usciti - trasferiti };
+}
+
+// giorni e incremento di un'uscita, come in index.html (calcGg / calcIncr)
+function ggUscita(u, lotto) {
+  if (u.giorni_permanenza) return u.giorni_permanenza;
+  if (!lotto.data_ingresso || !u.data_uscita) return null;
+  return Math.round((new Date(u.data_uscita) - new Date(lotto.data_ingresso)) / 86400000);
+}
+function incrUscita(u, lotto) {
+  if (u.incremento) return u.incremento;
+  const gg = ggUscita(u, lotto);
+  if (!gg || !u.kg_totali || !u.capi || !lotto.media_ingresso) return null;
+  const v = (u.kg_totali / u.capi - lotto.media_ingresso) / gg;
+  return v > 0 ? v : null;   // es. scarti leggeri usciti presto: un incremento negativo non ha senso
 }
 
 // ── Rubrica macelli (sola lettura, solo slaughterhouse, niente allevamenti/fornitori) ──
@@ -295,7 +326,7 @@ async function loadAll() {
     const ids = allLotti.map(l => l.id).join(',');
 
     [allUscite, allMortalita, allIngressi, allNoteVet, allTrasferimenti] = ids ? await Promise.all([
-      sb('uscite', `?lotto_id=in.(${ids})&order=data_uscita.asc`),
+      sb('uscite', `?lotto_id=in.(${ids})&order=data_uscita.asc&select=id,lotto_id,data_uscita,numero_ddt,capi,kg_totali,giorni_permanenza,incremento,ddt_documento_id`),
       sb('mortalita', `?lotto_id=in.(${ids})&order=data_evento.desc,id.desc`),
       sb('lotti_ingressi', `?lotto_id=in.(${ids})&order=data_ingresso.asc`),
       sb('note_veterinario', `?lotto_id=in.(${ids})&order=data_nota.desc,id.desc`),
@@ -474,7 +505,7 @@ function render() {
     const mortLotto = allMortalita.filter(m => m.lotto_id === lotto.id);
     const c = contiLotto(lotto);
     const gg = giorniDa(lotto.data_ingresso);
-    const tab = tabAttiva[lotto.id] || 'mortalita';
+    const tab = tabAttiva[lotto.id] === 'note' ? 'note' : 'mortalita';
     const vis = t => t === tab ? '' : ' style="display:none;"';
 
     html += `<div class="lotto-header">
@@ -521,20 +552,33 @@ function render() {
       html += `<div class="empty">Nessun dato di peso ingresso.</div>`;
     }
 
-    // USCITE — sempre visibile, solo data + peso medio
+    // INCREMENTO — barra fissa come in index.html, tocco = modifica
+    html += `<button class="incr-banner" type="button" onclick="apriFormIncremento(${lotto.id})">
+        Incremento: +${lotto.incremento_giornaliero != null ? fmt(lotto.incremento_giornaliero, 3) : '—'} kg/gg &nbsp;✎ modifica
+      </button>
+      <div id="form-incremento-${lotto.id}" style="display:none;" class="form-box">
+        <div class="field-label">NUOVO INCREMENTO PONDERATO (kg/gg)</div>
+        <input type="number" inputmode="decimal" step="0.001" id="i-val-${lotto.id}" class="field-input" value="${lotto.incremento_giornaliero ?? ''}" placeholder="es. 0.750">
+        <button class="btn-mort" style="margin-bottom:0;background:var(--accent);" onclick="salvaIncremento(${lotto.id}, this)">✓ Salva</button>
+      </div>`;
+
+    // USCITE — capi, peso medio, giorni e incremento fatto (niente importi)
     html += `<div class="section-label">Uscite</div>`;
     if (uscite.length) {
-      html += `<div class="simple-container">` + uscite.map(u => {
-        const mediaU = (u.kg_totali && u.capi) ? (u.kg_totali / u.capi) : null;
-        return `<div class="simple-row">
-          <div>
-            <div class="simple-date">${fmtDate(u.data_uscita)}${u.numero_ddt ? ` · DDT ${esc(u.numero_ddt)}` : ''}</div>
-            ${u.capi ? `<div class="simple-sub">${capi(u.capi)}</div>` : ''}
-          </div>
-          <span style="display:flex;align-items:center;gap:6px;">
+      html += `<div class="uscite-container">` + uscite.map(u => {
+        const media = (u.kg_totali && u.capi) ? u.kg_totali / u.capi : null;
+        const gg = ggUscita(u, lotto), inc = incrUscita(u, lotto);
+        return `<div class="uscita-row">
+          <div class="uscita-top">
+            <div class="uscita-date">${fmtDate(u.data_uscita)}${u.numero_ddt ? ` · DDT ${esc(u.numero_ddt)}` : ''}</div>
             ${u.ddt_documento_id ? `<button class="btn-doc" onclick="apriDocumento(${u.ddt_documento_id})">📄 Bolla</button>` : ''}
-            <span class="simple-peso">${mediaU !== null ? fmt(mediaU, 1) + ' kg' : '—'}</span>
-          </span>
+          </div>
+          <div class="uscita-line">
+            <div class="uc narrow"><div class="uc-label">capi</div><div class="uc-val">${fmt(u.capi)}</div></div>
+            <div class="uc"><div class="uc-label">media kg</div><div class="uc-val">${media !== null ? fmt(media, 1) : '—'}</div></div>
+            <div class="uc narrow"><div class="uc-label">gg</div><div class="uc-val">${gg ?? '—'}</div></div>
+            <div class="uc"><div class="uc-label">incr. kg/gg</div><div class="uc-val green">${inc !== null ? fmt(inc, 3) : '—'}</div></div>
+          </div>
         </div>`;
       }).join('') + `</div>`;
     } else {
@@ -545,7 +589,7 @@ function render() {
     const noteLotto = allNoteVet.filter(n => n.lotto_id === lotto.id)
       .sort((a, b) => b.data_nota.localeCompare(a.data_nota) || (b.id || 0) - (a.id || 0));
     html += `<div style="display:flex;gap:4px;margin:12px 0 10px;">
-      ${[['mortalita', 'Mortalità'], ['incremento', 'Incremento'], ['note', `Note${noteLotto.length ? ' (' + noteLotto.length + ')' : ''}`]]
+      ${[['mortalita', `Mortalità${mortLotto.length ? ' (' + mortLotto.length + ')' : ''}`], ['note', `Note${noteLotto.length ? ' (' + noteLotto.length + ')' : ''}`]]
         .map(([t, label]) => `<button onclick="switchTab(${lotto.id},'${t}')" class="ltab${t === tab ? ' ltab-active' : ''}" data-lotto="${lotto.id}" data-tab="${t}">${label}</button>`).join('')}
     </div>`;
 
@@ -564,33 +608,18 @@ function render() {
         <button class="btn-mort" style="margin-bottom:0;" onclick="salvaMortalita(${lotto.id}, this)">✓ Salva</button>
       </div>`;
     if (mortLotto.length) {
-      html += `<div class="simple-container">` + mortLotto.map(m => `<div class="simple-row">
+      html += `<div class="simple-container lista-scroll">` + mortLotto.map(m => `<div class="simple-row">
           <div>
             <div class="simple-date">${fmtDate(m.data_evento)}</div>
             ${(m.trattamento || m.note) ? `<div class="simple-sub">${m.trattamento ? 'Tratt. ' + esc(m.trattamento) : ''}${m.note ? (m.trattamento ? ' · ' : '') + esc(m.note) : ''}</div>` : ''}
           </div>
           <span class="simple-peso" style="color:var(--red);white-space:nowrap;">${capi(m.capi_morti || 0)}</span>
         </div>`).join('') + `</div>`;
+      if (mortLotto.length > 5) html += `<div class="lista-conta">${mortLotto.length} registrazioni · ${capi(c.morti)} · scorri nel riquadro</div>`;
     } else {
       html += `<div class="empty">Nessuna mortalità registrata.</div>`;
     }
     html += `</div>`;
-
-    // TAB INCREMENTO — visualizza + modifica
-    html += `<div id="ltab-incremento-${lotto.id}"${vis('incremento')}>
-      <div class="incr-bar">
-        <div>
-          <div style="font-size:10px;opacity:0.8;font-family:var(--mono);text-transform:uppercase;">Incremento giornaliero ponderato</div>
-          <div class="incr-val">${lotto.incremento_giornaliero != null ? fmt(lotto.incremento_giornaliero, 3) + ' kg/gg' : '—'}</div>
-        </div>
-        <button class="incr-edit-btn" onclick="apriFormIncremento(${lotto.id})">✎ modifica</button>
-      </div>
-      <div id="form-incremento-${lotto.id}" style="display:none;" class="form-box">
-        <div class="field-label">NUOVO INCREMENTO PONDERATO (kg/gg)</div>
-        <input type="number" inputmode="decimal" step="0.001" id="i-val-${lotto.id}" class="field-input" value="${lotto.incremento_giornaliero ?? ''}" placeholder="es. 0.750">
-        <button class="btn-mort" style="margin-bottom:0;background:var(--accent);" onclick="salvaIncremento(${lotto.id}, this)">✓ Salva</button>
-      </div>
-    </div>`;
 
     // TAB NOTE — inserimento + elenco (stessa tabella note_veterinario di index.html/veterinario.html)
     html += `<div id="ltab-note-${lotto.id}"${vis('note')}>
@@ -603,7 +632,7 @@ function render() {
         <button class="btn-mort" style="margin-bottom:0;background:var(--accent);" onclick="salvaNota(${lotto.id}, this)">✓ Salva</button>
       </div>`;
     if (noteLotto.length) {
-      html += `<div class="simple-container">` + noteLotto.map(n => `<div class="simple-row" style="display:block;">
+      html += `<div class="simple-container lista-scroll note">` + noteLotto.map(n => `<div class="simple-row" style="display:block;">
           <div class="simple-date">${fmtDate(n.data_nota)}</div>
           ${n.testo ? `<div style="font-size:12px;color:var(--text);margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere;">${esc(n.testo)}</div>` : ''}
           ${notaMediaRender(n)}
@@ -621,7 +650,7 @@ function render() {
 
 function switchTab(lottoId, tab) {
   tabAttiva[lottoId] = tab;
-  ['mortalita', 'incremento', 'note'].forEach(t => {
+  ['mortalita', 'note'].forEach(t => {
     const el = document.getElementById(`ltab-${t}-${lottoId}`);
     if (el) el.style.display = t === tab ? '' : 'none';
   });
@@ -703,7 +732,6 @@ function salvaIncremento(lottoId, btn) {
     });
     if (!r.ok) throw new Error(await r.text());
     allLotti.find(l => l.id === lottoId).incremento_giornaliero = val;
-    tabAttiva[lottoId] = 'incremento';
     render();
     showToast(`✓ Incremento aggiornato — ${fmt(val, 3)} kg/gg`, true);
   });
