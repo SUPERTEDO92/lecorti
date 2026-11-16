@@ -24,10 +24,11 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; padding-bottom: 40px; }
 
-  .topbar { position: sticky; top: 0; z-index: 250; background: var(--text); color: #F5F3EE; }
+  .topbar { position: sticky; top: 0; z-index: 250; background: var(--text); color: #F5F3EE; padding-top: env(safe-area-inset-top); }
   .topbar-title { padding: 12px 20px 8px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-  .topbar-logo { font-family: var(--mono); font-size: 15px; font-weight: 500; letter-spacing: .1em; }
-  .topbar-date { font-size: 11px; color: #888; font-family: var(--mono); }
+  .topbar-logo { font-family: var(--mono); font-size: 15px; font-weight: 500; letter-spacing: .1em; white-space: nowrap; }
+  .topbar-date { font-size: 11px; color: #888; font-family: var(--mono); white-space: nowrap; }
+  @media (max-width: 370px) { .topbar-date { display: none; } .topbar-logo { font-size: 14px; letter-spacing: .06em; } }
   .topbar-menu-btn {
     background: rgba(255,255,255,.08); border: 0.5px solid rgba(255,255,255,.18);
     color: #F5F3EE; font-family: var(--mono); font-size: 12px;
@@ -52,6 +53,10 @@
     cursor: pointer; transition: all .12s;
   }
   .soccida-card:hover { border-color: var(--border2); background: var(--bg2); }
+  .soccida-card:active { transform: scale(.985); }
+  .soccida-card.spenta { opacity: .5; cursor: default; }
+  .soccida-card.spenta:hover { border-color: var(--border); background: #FFF; }
+  .soccida-card.spenta:active { transform: none; }
   .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
   .dot-green { background: var(--green); }
   .dot-amber { background: var(--accent); }
@@ -66,7 +71,7 @@
   .soc-arrow { color: var(--text3); font-size: 18px; }
 
   /* Header sticky pagina dettaglio */
-  .detail-sticky-wrap { position: sticky; top: 0; z-index: 90; background: var(--bg); padding-bottom: 4px; margin: -14px -14px 10px; padding-left: 14px; padding-right: 14px; padding-top: 14px; }
+  .detail-sticky-wrap { position: sticky; top: var(--topbar-h, 0px); z-index: 90; background: var(--bg); padding-bottom: 4px; margin: -14px -14px 10px; padding-left: 14px; padding-right: 14px; padding-top: 14px; }
   .back-btn {
     display: inline-flex; align-items: center; gap: 6px;
     font-size: 12px; font-weight: 600; color: #FFF; cursor: pointer;
@@ -103,14 +108,18 @@
   .simple-row:last-child { border-bottom: none; border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
   .simple-container { border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 12px; }
   .simple-date { font-size: 13px; font-family: var(--mono); font-weight: 500; }
-  .simple-peso { font-size: 15px; font-weight: 600; font-family: var(--mono); color: var(--text); }
+  .simple-peso { font-size: 15px; font-weight: 600; font-family: var(--mono); color: var(--text); white-space: nowrap; }
+  .simple-row > :first-child { min-width: 0; }
+  .simple-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
 
   .empty { text-align: center; padding: 24px; color: var(--text3); font-size: 12px; }
   .loading { text-align: center; padding: 60px 20px; color: var(--text2); font-size: 13px; font-family: var(--mono); }
 
   .btn-mort { width: 100%; padding: 12px; background: var(--red); color: #FFF; border: none; border-radius: var(--radius-lg); font-size: 13px; font-family: var(--font); font-weight: 600; cursor: pointer; margin-bottom: 10px; }
+  .btn-mort:disabled { opacity: .55; cursor: wait; }
+  .btn-doc { background: var(--bg2); border: 0.5px solid var(--border); border-radius: 8px; padding: 3px 8px; font-size: 11px; color: var(--text2); cursor: pointer; font-family: var(--font); white-space: nowrap; }
   .field-label { font-size: 11px; font-family: var(--mono); color: var(--text2); margin-bottom: 4px; }
-  .field-input { width: 100%; padding: 9px 10px; border: 0.5px solid var(--border); border-radius: var(--radius); font-size: 13px; font-family: var(--font); background: var(--bg); margin-bottom: 8px; }
+  .field-input { width: 100%; padding: 9px 10px; border: 0.5px solid var(--border); border-radius: var(--radius); font-size: 16px; font-family: var(--font); background: var(--bg); color: var(--text); margin-bottom: 8px; }
   .form-box { background: #FFF; border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 14px; margin-bottom: 12px; }
 
   .incr-bar { background: var(--accent); color: #FFF; border-radius: var(--radius-lg); padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
@@ -128,23 +137,19 @@
     position: absolute; left: -80px; top: 0;
     will-change: transform, opacity;
   }
-  @property --wipe2 { syntax: '<percentage>'; inherits: false; initial-value: -45%; }
   .samuele-curtain {
-    position: fixed; top: 0; bottom: 0; left: 50%;
+    position: fixed; left: 50%; bottom: 0;
     transform: translateX(-50%);
     width: 100%; max-width: 480px;
-    z-index: 200; overflow-y: auto;
+    z-index: 200; overflow: hidden;
     background: var(--bg);
-    padding: 14px 14px 40px;
+    pointer-events: none;
     --wipe2: -45%;
     -webkit-mask-image: linear-gradient(to right, transparent 0%, transparent calc(var(--wipe2) - 45%), black var(--wipe2), black 100%);
     mask-image: linear-gradient(to right, transparent 0%, transparent calc(var(--wipe2) - 45%), black var(--wipe2), black 100%);
-    animation: curtainWipe .9s cubic-bezier(.4,0,.2,1) forwards;
   }
-  @keyframes curtainWipe {
-    from { --wipe2: -45%; }
-    to   { --wipe2: 145%; }
-  }
+  .samuele-curtain-inner { position: relative; padding: 14px 14px 40px; }
+  .samuele-curtain-sfondo { position: absolute; object-fit: cover; object-position: center center; opacity: .15; pointer-events: none; }
 </style>
 </head>
 <body>
@@ -160,26 +165,53 @@
     <span class="topbar-date" id="topbar-date"></span>
   </div>
   <div class="topbar-nav collapsed" id="topbar-nav">
-    <button class="nav-btn active" id="nav-soccide" onclick="setNav('soccide'); renderLista();">Soccide</button>
-    <button class="nav-btn" id="nav-macelli" onclick="setNav('macelli'); renderRubricaMacelli();">🏭 Macelli</button>
+    <button class="nav-btn active" id="nav-soccide" onclick="vaiA('soccide')">Soccide</button>
+    <button class="nav-btn" id="nav-macelli" onclick="vaiA('macelli')">🏭 Macelli</button>
   </div>
 </div>
 
 <div class="container">
-  <div id="toast" class="toast"></div>
   <div id="content"><div class="loading">Caricamento dati…</div></div>
 </div>
 
 <script src="lecorti-shared.js"></script>
 <script>
-const SOCCIDE_MOSTRATE = ['FILIPPINI', 'MIGLIORATI', 'SCARATTI'];
+// Soccide di Samuele: nome nel DB → nome mostrato (CATERINA = Cascina Santa Caterina, aggiunta 16/11/2026)
+const SOCCIDE_MOSTRATE = ['FILIPPINI', 'MIGLIORATI', 'SCARATTI', 'CATERINA'];
+const ETICHETTE = { CATERINA: 'SANTA CATERINA' };
+const etichetta = nome => ETICHETTE[nome] || nome;
 
 // SVG maialino disegnato da zero (nessuna licenza esterna) — sostituisce l'emoji 🐖
 // (bug di rendering su Firefox Android con emoji color-font flippate+animate).
 const PIG_SVG = '<svg viewBox="0 0 100 70" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;"><ellipse cx="52" cy="40" rx="34" ry="24" fill="#F2A6A0"/><ellipse cx="20" cy="24" rx="10" ry="9" fill="#F2A6A0"/><ellipse cx="17" cy="21" rx="4.5" ry="4" fill="#D97D78"/><circle cx="34" cy="30" r="3" fill="#2A2622"/><ellipse cx="14" cy="42" rx="15" ry="13" fill="#EF9791"/><ellipse cx="9" cy="40" rx="3" ry="4" fill="#2A2622"/><ellipse cx="9" cy="46" rx="3" ry="4" fill="#2A2622"/><path d="M84 30 Q94 24 90 34 Q96 38 86 38" fill="none" stroke="#EF9791" stroke-width="4" stroke-linecap="round"/><ellipse cx="46" cy="60" rx="6" ry="4" fill="#D97D78"/><ellipse cx="66" cy="60" rx="6" ry="4" fill="#D97D78"/></svg>';
 
-let allSoccide = [], allLotti = [], allUscite = [], allMortalita = [], allIngressi = [], allNoteVet = [];
+let allSoccide = [], allLotti = [], allUscite = [], allMortalita = [], allIngressi = [], allNoteVet = [], allTrasferimenti = [];
 let soccidaAttiva = null;
+const tabAttiva = {};   // lotto_id → 'mortalita' | 'incremento' | 'note' (resta aperta dopo un salvataggio)
+
+// date locali (toISOString dà la data UTC: tra mezzanotte e l'1/2 di notte proponeva il giorno prima)
+function oggiISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function giorniDa(iso) {
+  if (!iso) return 0;
+  const [a, m, g] = iso.split('-').map(Number);
+  const oggi = new Date();
+  return Math.round((new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate()) - new Date(a, m - 1, g)) / 86400000);
+}
+const esc = s => escHtml(s ?? '');
+const capi = n => `${fmt(n)} ${Math.abs(n) === 1 ? 'capo' : 'capi'}`;
+
+// presenti = entrati − morti − usciti − trasferiti (stessa formula del gestionale)
+function contiLotto(lotto) {
+  const ing = allIngressi.filter(i => i.lotto_id === lotto.id);
+  const entrati = ing.length ? ing.reduce((s, i) => s + (i.capi || 0), 0) : (lotto.capi_entrati || 0);
+  const morti = allMortalita.filter(m => m.lotto_id === lotto.id).reduce((s, m) => s + (m.capi_morti || 0), 0);
+  const usciti = allUscite.filter(u => u.lotto_id === lotto.id).reduce((s, u) => s + (u.capi || 0), 0);
+  const trasferiti = allTrasferimenti.filter(t => t.lotto_id === lotto.id).reduce((s, t) => s + (t.capi || 0), 0);
+  return { entrati, morti, usciti, trasferiti, presenti: entrati - morti - usciti - trasferiti };
+}
 
 // ── Rubrica macelli (sola lettura, solo slaughterhouse, niente allevamenti/fornitori) ──
 const macelliRubrica = [
@@ -201,28 +233,35 @@ function setNav(n) {
   document.getElementById('nav-soccide').classList.toggle('active', n === 'soccide');
   document.getElementById('nav-macelli').classList.toggle('active', n === 'macelli');
 }
+// voce del menu: chiude il menu e cambia pagina con la stessa transizione delle schede
+function vaiA(n) {
+  setNav(n);
+  const nav = document.getElementById('topbar-nav');
+  if (!nav.classList.contains('collapsed')) toggleTopbarNav();
+  if (n === 'macelli') renderRubricaMacelli();
+  else transizioneMandria(() => renderLista());
+}
 function renderRubricaMacelli() {
   transizioneMandria(() => {
     soccidaAttiva = null;
-    const html = `<div style="margin-bottom:12px;">
-      <input type="text" id="mac-cerca" placeholder="🔍 Cerca per nome, indirizzo, codice..." oninput="macFiltra()" style="width:100%;padding:9px 12px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:#FFF;">
+    document.getElementById('content').innerHTML = `<div style="margin-bottom:12px;">
+      <input type="text" id="mac-cerca" placeholder="🔍 Cerca per nome, indirizzo, codice..." oninput="macFiltra()" style="width:100%;padding:9px 12px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:16px;font-family:var(--font);background:#FFF;color:var(--text);">
     </div>
     <div class="soccide-list" id="mac-list"></div>`;
-    document.getElementById('content').innerHTML = html;
     renderMacelliCards(macelliRubrica);
   });
 }
 function renderMacelliCards(lista) {
   document.getElementById('mac-list').innerHTML = lista.length ? lista.map(m => `
     <div style="background:#FFF;border:0.5px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;">
-      <div style="font-size:15px;font-weight:600;">${m.nome}</div>
-      <div style="font-size:12px;color:var(--text2);margin-top:2px;margin-bottom:10px;">${m.indirizzo}</div>
-      ${m.cod_asl ? `<div style="display:inline-flex;align-items:center;gap:6px;background:var(--bg2);border-radius:20px;padding:4px 10px;font-size:11px;"><span style="color:var(--text3);">Macello</span><span style="font-family:var(--mono);font-weight:500;">${m.cod_asl}</span></div>` : ''}
+      <div style="font-size:15px;font-weight:600;">${esc(m.nome)}</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:2px;margin-bottom:10px;">${esc(m.indirizzo)}</div>
+      ${m.cod_asl ? `<div style="display:inline-flex;align-items:center;gap:6px;background:var(--bg2);border-radius:20px;padding:4px 10px;font-size:11px;"><span style="color:var(--text3);">Macello</span><span style="font-family:var(--mono);font-weight:500;">${esc(m.cod_asl)}</span></div>` : ''}
     </div>`).join('') : `<div class="empty">Nessun macello trovato.</div>`;
 }
 function macFiltra() {
-  const q = document.getElementById('mac-cerca').value.toLowerCase();
-  if(!q) { renderMacelliCards(macelliRubrica); return; }
+  const q = document.getElementById('mac-cerca').value.toLowerCase().trim();
+  if (!q) { renderMacelliCards(macelliRubrica); return; }
   renderMacelliCards(macelliRubrica.filter(m =>
     m.nome.toLowerCase().includes(q) ||
     m.indirizzo.toLowerCase().includes(q) ||
@@ -232,26 +271,39 @@ function macFiltra() {
 
 document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('it-IT');
 
+// altezza della barra in alto (cambia quando si apre il menu): l'intestazione del dettaglio si ferma lì sotto
+function aggiornaAltezzaTopbar() {
+  document.documentElement.style.setProperty('--topbar-h', document.querySelector('.topbar').offsetHeight + 'px');
+}
+aggiornaAltezzaTopbar();
+if (window.ResizeObserver) new ResizeObserver(aggiornaAltezzaTopbar).observe(document.querySelector('.topbar'));
+else window.addEventListener('resize', aggiornaAltezzaTopbar);
+
 async function loadAll() {
-  allSoccide = await sb('soccide', `?nome=in.(${SOCCIDE_MOSTRATE.map(n=>encodeURIComponent(n)).join(',')})`);
-  const socIds = allSoccide.map(s => s.id);
-  if(!socIds.length) {
-    document.getElementById('content').innerHTML = '<div class="empty">Nessuna soccida trovata.</div>';
+  const content = document.getElementById('content');
+  content.innerHTML = '<div class="loading">Caricamento dati…</div>';
+  try {
+    allSoccide = await sb('soccide', `?nome=in.(${SOCCIDE_MOSTRATE.map(n => encodeURIComponent(n)).join(',')})`);
+    const socIds = allSoccide.map(s => s.id);
+    if (!socIds.length) { content.innerHTML = '<div class="empty">Nessuna soccida trovata.</div>'; return; }
+
+    allLotti = await sb('lotti', `?soccida_id=in.(${socIds.join(',')})&attivo=eq.true&order=data_ingresso.asc`);
+    const ids = allLotti.map(l => l.id).join(',');
+
+    [allUscite, allMortalita, allIngressi, allNoteVet, allTrasferimenti] = ids ? await Promise.all([
+      sb('uscite', `?lotto_id=in.(${ids})&order=data_uscita.asc`),
+      sb('mortalita', `?lotto_id=in.(${ids})&order=data_evento.desc,id.desc`),
+      sb('lotti_ingressi', `?lotto_id=in.(${ids})&order=data_ingresso.asc`),
+      sb('note_veterinario', `?lotto_id=in.(${ids})&order=data_nota.desc,id.desc`),
+      sb('trasferimenti', `?lotto_id=in.(${ids})&tipo=eq.TRASFERIMENTO&select=id,lotto_id,capi,data_trasferimento`),
+    ]) : [[], [], [], [], []];
+    await notaMediaPreload(allNoteVet);
+  } catch (e) {
+    content.innerHTML = `<div class="empty" style="color:var(--red);">Dati non caricati: ${esc(e.message || e)}<br><br>
+      <button class="incr-edit-btn" style="background:var(--text);" onclick="loadAll()">Riprova</button></div>`;
     return;
   }
-
-  allLotti = await sb('lotti', `?soccida_id=in.(${socIds.join(',')})&attivo=eq.true&order=data_ingresso.asc`);
-  const lottiIds = allLotti.map(l => l.id);
-
-  [allUscite, allMortalita, allIngressi, allNoteVet] = await Promise.all([
-    lottiIds.length ? sb('uscite', `?lotto_id=in.(${lottiIds.join(',')})&order=data_uscita.asc`) : [],
-    lottiIds.length ? sb('mortalita', `?lotto_id=in.(${lottiIds.join(',')})&order=data_evento.desc`) : [],
-    lottiIds.length ? sb('lotti_ingressi', `?lotto_id=in.(${lottiIds.join(',')})&order=data_ingresso.asc`) : [],
-    lottiIds.length ? sb('note_veterinario', `?lotto_id=in.(${lottiIds.join(',')})&order=data_nota.desc`) : [],
-  ]);
-  await notaMediaPreload(allNoteVet);
-
-  renderLista();
+  if (soccidaAttiva) render(); else renderLista();
 }
 
 // ── LISTA SOCCIDE (come home di index) ──
@@ -259,32 +311,27 @@ function renderLista() {
   soccidaAttiva = null;
   const html = `<div class="soccide-list">${SOCCIDE_MOSTRATE.map(nome => {
     const soc = allSoccide.find(s => s.nome === nome);
-    if(!soc) return '';
+    if (!soc) return '';
     const lotti = allLotti.filter(l => l.soccida_id === soc.id);
-    if(!lotti.length) {
-      return `<div class="soccida-card" style="opacity:0.5;cursor:default;">
+    if (!lotti.length) {
+      return `<div class="soccida-card spenta">
         <div class="dot dot-gray"></div>
-        <div class="soc-main"><div class="soc-nome">${nome}</div><div class="soc-meta">nessun lotto attivo</div></div>
+        <div class="soc-main"><div class="soc-nome">${esc(etichetta(nome))}</div><div class="soc-meta">nessun lotto attivo</div></div>
       </div>`;
     }
-    const totPresenti = lotti.reduce((tot, lotto) => {
-      const capiUsciti = allUscite.filter(u => u.lotto_id === lotto.id).reduce((s,u) => s+(u.capi||0), 0);
-      const capiMorti = allMortalita.filter(m => m.lotto_id === lotto.id).reduce((s,m) => s+(m.capi_morti||0), 0);
-      const ing = allIngressi.filter(i => i.lotto_id === lotto.id);
-      const base = ing.length ? ing.reduce((s,i)=>s+(i.capi||0),0) : (lotto.capi_entrati||0);
-      return tot + base - capiUsciti - capiMorti;
-    }, 0);
+    const totPresenti = lotti.reduce((tot, l) => tot + contiLotto(l).presenti, 0);
     const dot = totPresenti > 50 ? 'dot-green' : totPresenti > 10 ? 'dot-amber' : 'dot-gray';
     const badge = totPresenti > 50 ? 'badge-green' : totPresenti > 0 ? 'badge-amber' : 'badge-gray';
     const badgeText = totPresenti > 50 ? 'attivo' : totPresenti > 0 ? 'in uscita' : 'concluso';
-    const metaLotti = lotti.length > 1 ? `${lotti.length} lotti · ` : (lotti[0].codice + ' · ');
-    const lettere = [...new Set(lotti.map(l => l.lettera_dop).filter(Boolean))].join(', ');
+    const metaLotti = lotti.length > 1 ? `${lotti.length} lotti · ` : (esc(lotti[0].codice) + ' · ');
+    // lettere DOP dei lotti senza doppioni ("M · P · L" + "L" → "M · P · L")
+    const lettere = [...new Set(lotti.flatMap(l => String(l.lettera_dop || '').split(/\s*[·,]\s*/)).filter(Boolean))].join(' · ');
 
     return `<div class="soccida-card" onclick="apriSoccida('${nome}')">
       <div class="dot ${dot}"></div>
       <div class="soc-main">
-        <div class="soc-nome">${nome}</div>
-        <div class="soc-meta">${metaLotti}${fmt(totPresenti)} capi${lettere ? ' · ' + lettere : ''}</div>
+        <div class="soc-nome">${esc(etichetta(nome))}</div>
+        <div class="soc-meta">${metaLotti}${capi(totPresenti)}${lettere ? ' · ' + esc(lettere) : ''}</div>
       </div>
       <span class="soc-badge ${badge}">${badgeText}</span>
       <span class="soc-arrow">&#8250;</span>
@@ -293,23 +340,65 @@ function renderLista() {
   document.getElementById('content').innerHTML = html;
 }
 
+// ── Transizione: la pagina vecchia resta sopra come una tenda che si apre da sinistra a destra,
+// mentre passa la mandria di maialini. La tenda non è cliccabile (i tocchi vanno alla pagina nuova)
+// e una nuova transizione chiude subito quella in corso (niente tende doppie con i tocchi veloci).
+let _transizione = null;
+function chiudiTransizione() {
+  if (!_transizione) return;
+  const { curtain, herd, tweens } = _transizione;
+  tweens.forEach(t => t.kill());
+  curtain.remove();
+  if (herd) { gsap.killTweensOf(herd.querySelectorAll('span')); herd.innerHTML = ''; }
+  _transizione = null;
+}
 function transizioneMandria(azione) {
   const content = document.getElementById('content');
+  const herd = document.getElementById('piglet-herd');
+  const senzaAnimazione = typeof gsap === 'undefined' || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (typeof gsap !== 'undefined') chiudiTransizione();
+  if (senzaAnimazione) { azione(); window.scrollTo(0, 0); return; }
+
+  // tenda: copia della pagina com'era, sotto la barra in alto e alla stessa altezza di scorrimento
+  const topbarBottom = Math.max(0, document.querySelector('.topbar').getBoundingClientRect().bottom);
   const curtain = document.createElement('div');
   curtain.className = 'samuele-curtain';
-  curtain.innerHTML = content.innerHTML;
+  curtain.style.top = topbarBottom + 'px';
+  curtain.setAttribute('aria-hidden', 'true');
+  const inner = document.createElement('div');
+  inner.className = 'samuele-curtain-inner';
+  inner.innerHTML = content.innerHTML;
+  inner.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));   // niente id doppi nella pagina
+  const sticky = inner.querySelector('.detail-sticky-wrap');
+  if (sticky) sticky.style.position = 'static';
+  inner.style.transform = `translateY(${-(window.scrollY)}px)`;
+  // stessa foto di sfondo della pagina, allineata allo schermo: la tenda non si vede come un riquadro pieno
+  const sfondo = document.createElement('img');
+  sfondo.src = 'img/bg-home-piglets.jpg'; sfondo.alt = '';
+  sfondo.className = 'samuele-curtain-sfondo';
+  const largh = Math.min(window.innerWidth, 480);
+  sfondo.style.cssText = `left:${-(window.innerWidth - largh) / 2}px;top:${-topbarBottom}px;width:${window.innerWidth}px;height:${window.innerHeight}px;`;
+  curtain.appendChild(sfondo);
+  curtain.appendChild(inner);
+  // pagina scorsa: l'intestazione fissa del dettaglio resta in alto anche nella tenda
+  if (sticky && window.scrollY > 0) {
+    const fermo = sticky.cloneNode(true);
+    fermo.style.cssText = 'position:absolute;top:0;left:0;right:0;margin:0;';
+    curtain.appendChild(fermo);
+  }
   document.body.appendChild(curtain);
 
-  const herd = document.getElementById('piglet-herd');
-  if(!herd || typeof gsap === 'undefined') {
-    azione();
-    setTimeout(() => { curtain.remove(); }, 900);
-    return;
-  }
+  azione();
+  window.scrollTo(0, 0);
 
-  gsap.killTweensOf(herd.querySelectorAll('span'));
+  const tweens = [];
+  tweens.push(gsap.fromTo(curtain, { '--wipe2': '-45%' }, {
+    '--wipe2': '145%', duration: 0.9, ease: 'power2.inOut',
+    onComplete: () => { curtain.remove(); },
+  }));
+
   // 3 protagonisti (capobranco + 2 dietro, con galoppo) + 2 comparse leggere sullo sfondo
-  // (semplice traslazione, un tween solo, niente rimbalzo), coerente con index.html
+  // (semplice traslazione, niente rimbalzo), coerente con index.html
   const CONFIG = [
     { top: 40, size: 128, star: true },
     { top: 56, size: 92,  star: true },
@@ -317,45 +406,38 @@ function transizioneMandria(azione) {
     { top: 22, size: 46,  star: false },
     { top: 80, size: 40,  star: false },
   ];
-  let html = '';
-  CONFIG.forEach(c => {
-    html += `<span style="top:${c.top}%;width:${c.size}px;height:${Math.round(c.size*0.7)}px;${c.star ? '' : 'opacity:.5;'}">${PIG_SVG}</span>`;
-  });
-  herd.innerHTML = html;
+  herd.innerHTML = CONFIG.map(c => `<span style="top:${c.top}%;width:${c.size}px;height:${Math.round(c.size * 0.7)}px;">${PIG_SVG}</span>`).join('');
   const piglets = Array.from(herd.querySelectorAll('span'));
   const runX = window.innerWidth + 200;
-  let maxEnd = 0;
-  let starIdx = 0, extraIdx = 0;
+  let maxEnd = 0, starIdx = 0, extraIdx = 0;
 
   piglets.forEach((p, i) => {
-    const isStar = CONFIG[i].star;
-    if(isStar) {
+    if (CONFIG[i].star) {
       const delay = starIdx * 0.13;
       const dur = 1.05 + starIdx * 0.18;
       gsap.set(p, { x: 0, y: 0, scaleX: -1, opacity: 0 });
-      const tl = gsap.timeline({ delay });
-      tl.to(p, { opacity: 1, duration: 0.15, ease: 'power1.out' }, 0)
+      tweens.push(gsap.timeline({ delay })
+        .to(p, { opacity: 1, duration: 0.15, ease: 'power1.out' }, 0)
         .to(p, { x: runX, duration: dur, ease: 'power1.inOut' }, 0)
         .to(p, { y: -16, duration: dur / 9, ease: 'sine.inOut', yoyo: true, repeat: 8 }, 0)
-        .to(p, { opacity: 0, duration: 0.15, ease: 'power1.in' }, dur - 0.15);
+        .to(p, { opacity: 0, duration: 0.15, ease: 'power1.in' }, dur - 0.15));
       maxEnd = Math.max(maxEnd, delay + dur);
       starIdx++;
     } else {
       const delay = 0.15 + extraIdx * 0.25;
       const dur = 1.3;
       gsap.set(p, { x: 0, scaleX: -1, opacity: 0 });
-      gsap.to(p, { opacity: 0.5, duration: 0.15, delay, ease: 'power1.out' });
-      gsap.to(p, { x: runX, duration: dur, delay, ease: 'power1.inOut' });
-      gsap.to(p, { opacity: 0, duration: 0.15, delay: delay + dur - 0.15, ease: 'power1.in' });
+      tweens.push(gsap.timeline({ delay })
+        .to(p, { opacity: 0.5, duration: 0.15, ease: 'power1.out' }, 0)
+        .to(p, { x: runX, duration: dur, ease: 'power1.inOut' }, 0)
+        .to(p, { opacity: 0, duration: 0.15, ease: 'power1.in' }, dur - 0.15));
       maxEnd = Math.max(maxEnd, delay + dur);
       extraIdx++;
     }
   });
-
-  azione();
-
-  setTimeout(() => { curtain.remove(); }, 900);
-  setTimeout(() => { herd.innerHTML = ''; }, (maxEnd + 0.25) * 1000);
+  const stato = { curtain, herd, tweens };
+  tweens.push(gsap.delayedCall(maxEnd + 0.1, () => { if (_transizione === stato) { herd.innerHTML = ''; _transizione = null; } }));
+  _transizione = stato;
 }
 
 function apriSoccida(nome) {
@@ -367,75 +449,69 @@ function apriSoccida(nome) {
 function render() {
   const soc = allSoccide.find(s => s.nome === soccidaAttiva);
   const content = document.getElementById('content');
-  if(!soc) { renderLista(); return; }
+  if (!soc) { renderLista(); return; }
 
   let html = `<div class="detail-sticky-wrap">
     <button class="back-btn" onclick="transizioneMandria(() => renderLista())">← Soccide</button>
-    <div class="soccida-header"><div class="soccida-title">${soc.nome}</div></div>
+    <div class="soccida-header"><div class="soccida-title">${esc(etichetta(soc.nome))}</div></div>
   </div>`;
 
   const lotti = allLotti.filter(l => l.soccida_id === soc.id);
-  if(!lotti.length) {
-    html += `<div class="empty">Nessun lotto attivo.</div>`;
-    content.innerHTML = html;
+  if (!lotti.length) {
+    content.innerHTML = html + `<div class="empty">Nessun lotto attivo.</div>`;
     return;
   }
-
-  const oggi = new Date();
 
   lotti.forEach(lotto => {
     const ingLotto = allIngressi.filter(i => i.lotto_id === lotto.id).map(i => ({
       ...i, mediaRiga: (i.kg && i.capi) ? (i.kg / i.capi) : null
-    })).sort((a,b) => a.data_ingresso.localeCompare(b.data_ingresso));
-
+    })).sort((a, b) => a.data_ingresso.localeCompare(b.data_ingresso));
     const uscite = allUscite.filter(u => u.lotto_id === lotto.id);
     const mortLotto = allMortalita.filter(m => m.lotto_id === lotto.id);
-    const capiMorti = mortLotto.reduce((s,m) => s+(m.capi_morti||0), 0);
-    const capiUsciti = uscite.reduce((s,u) => s+(u.capi||0), 0);
-    const totIng = ingLotto.length ? ingLotto.reduce((s,i)=>s+(i.capi||0),0) : (lotto.capi_entrati||0);
-    const presenti = totIng - capiMorti - capiUsciti;
-    const gg = Math.floor((oggi - new Date(lotto.data_ingresso)) / 86400000);
+    const c = contiLotto(lotto);
+    const gg = giorniDa(lotto.data_ingresso);
+    const tab = tabAttiva[lotto.id] || 'mortalita';
+    const vis = t => t === tab ? '' : ' style="display:none;"';
 
     html += `<div class="lotto-header">
       <div>
-        <div class="lotto-codice">Lotto ${lotto.codice}</div>
-        <div class="lotto-sub">${lotto.provenienza || ''}</div>
+        <div class="lotto-codice">Lotto ${esc(lotto.codice)}</div>
+        <div class="lotto-sub">${esc(lotto.provenienza)}</div>
       </div>
       <div style="text-align:right;">
         <div style="font-size:15px;font-weight:600;font-family:var(--mono);">${fmtDate(lotto.data_ingresso)}</div>
-        ${lotto.lettera_dop ? `<div style="font-size:13px;font-weight:700;color:var(--text);margin-top:2px;">LETTERA: ${lotto.lettera_dop}</div>` : ''}
+        ${lotto.lettera_dop ? `<div style="font-size:13px;font-weight:700;color:var(--text);margin-top:2px;">LETTERA: ${esc(lotto.lettera_dop)}</div>` : ''}
       </div>
     </div>`;
 
-    if(lotto.capannone) {
-      html += `<div class="capannone-banner">📍 CAPANNONE: ${lotto.capannone.toUpperCase()}</div>`;
+    if (lotto.capannone) {
+      html += `<div class="capannone-banner">📍 CAPANNONE: ${esc(String(lotto.capannone).toUpperCase())}</div>`;
     }
 
     html += `<div class="stat-grid">
-      <div class="stat-box"><div class="stat-label">Capi entrati</div><div class="stat-val">${fmt(totIng)} <span class="stat-unit">capi</span></div></div>
-      <div class="stat-box hl"><div class="stat-label">Presenti stimati</div><div class="stat-val green">${fmt(presenti)} <span class="stat-unit">capi</span></div></div>
+      <div class="stat-box"><div class="stat-label">Capi entrati</div><div class="stat-val">${fmt(c.entrati)} <span class="stat-unit">${Math.abs(c.entrati) === 1 ? 'capo' : 'capi'}</span></div></div>
+      <div class="stat-box hl"><div class="stat-label">Presenti stimati</div><div class="stat-val green">${fmt(c.presenti)} <span class="stat-unit">${Math.abs(c.presenti) === 1 ? 'capo' : 'capi'}</span></div></div>
       <div class="stat-box"><div class="stat-label">Giorni in stalla</div><div class="stat-val">${gg} <span class="stat-unit">gg</span></div></div>
-      <div class="stat-box"><div class="stat-label">Mortalità</div><div class="stat-val" style="color:${capiMorti > 0 ? 'var(--red)' : 'inherit'}">${capiMorti} <span class="stat-unit">capi</span></div></div>
+      <div class="stat-box"><div class="stat-label">Mortalità</div><div class="stat-val" style="color:${c.morti > 0 ? 'var(--red)' : 'inherit'}">${fmt(c.morti)} <span class="stat-unit">${Math.abs(c.morti) === 1 ? 'capo' : 'capi'}</span></div></div>
     </div>`;
 
     // INGRESSO — sempre visibile, solo data + peso medio
     html += `<div class="section-label">Ingresso</div>`;
-    if(ingLotto.length) {
-      html += `<div class="simple-container">`;
-      ingLotto.forEach(i => {
-        html += `<div class="simple-row">
-          <span class="simple-date">${fmtDate(i.data_ingresso)}${i.capannone ? ` · ${i.capannone.toUpperCase()}` : ''}${i.numero_ddt ? ` · DDT ${i.numero_ddt}` : ''}</span>
+    if (ingLotto.length) {
+      html += `<div class="simple-container">` + ingLotto.map(i => `<div class="simple-row">
+          <span class="simple-date">${fmtDate(i.data_ingresso)}${i.capannone ? ` · ${esc(String(i.capannone).toUpperCase())}` : ''}${i.numero_ddt ? ` · DDT ${esc(i.numero_ddt)}` : ''}</span>
           <span style="display:flex;align-items:center;gap:6px;">
-            ${i.ddt_documento_id ? `<button onclick="apriDocumento(${i.ddt_documento_id})" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:8px;padding:3px 8px;font-size:11px;color:var(--text2);cursor:pointer;font-family:var(--font);">📄 Bolla</button>` : ''}
-            <span class="simple-peso">${i.mediaRiga !== null ? fmt(i.mediaRiga,1) + ' kg' : '—'}</span>
+            ${i.ddt_documento_id ? `<button class="btn-doc" onclick="apriDocumento(${i.ddt_documento_id})">📄 Bolla</button>` : ''}
+            <span class="simple-peso">${i.mediaRiga !== null ? fmt(i.mediaRiga, 1) + ' kg' : '—'}</span>
           </span>
-        </div>`;
-      });
-      html += `</div>`;
-    } else if(lotto.media_ingresso) {
+        </div>`).join('') + `</div>`;
+    } else if (lotto.media_ingresso) {
       html += `<div class="simple-container"><div class="simple-row">
         <span class="simple-date">${fmtDate(lotto.data_ingresso)}</span>
-        <span class="simple-peso">${fmt(lotto.media_ingresso,1)} kg</span>
+        <span style="display:flex;align-items:center;gap:6px;">
+          ${lotto.ddt_ingresso_documento_id ? `<button class="btn-doc" onclick="apriDocumento(${lotto.ddt_ingresso_documento_id})">📄 Bolla</button>` : ''}
+          <span class="simple-peso">${fmt(lotto.media_ingresso, 1)} kg</span>
+        </span>
       </div></div>`;
     } else {
       html += `<div class="empty">Nessun dato di peso ingresso.</div>`;
@@ -443,98 +519,91 @@ function render() {
 
     // USCITE — sempre visibile, solo data + peso medio
     html += `<div class="section-label">Uscite</div>`;
-    if(uscite.length) {
-      html += `<div class="simple-container">`;
-      uscite.forEach(u => {
+    if (uscite.length) {
+      html += `<div class="simple-container">` + uscite.map(u => {
         const mediaU = (u.kg_totali && u.capi) ? (u.kg_totali / u.capi) : null;
-        html += `<div class="simple-row">
-          <span class="simple-date">${fmtDate(u.data_uscita)}${u.numero_ddt ? ` · DDT ${u.numero_ddt}` : ''}</span>
+        return `<div class="simple-row">
+          <div>
+            <div class="simple-date">${fmtDate(u.data_uscita)}${u.numero_ddt ? ` · DDT ${esc(u.numero_ddt)}` : ''}</div>
+            ${u.capi ? `<div class="simple-sub">${capi(u.capi)}</div>` : ''}
+          </div>
           <span style="display:flex;align-items:center;gap:6px;">
-            ${u.ddt_documento_id ? `<button onclick="apriDocumento(${u.ddt_documento_id})" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:8px;padding:3px 8px;font-size:11px;color:var(--text2);cursor:pointer;font-family:var(--font);">📄 Bolla</button>` : ''}
-            <span class="simple-peso">${mediaU !== null ? fmt(mediaU,1) + ' kg' : '—'}</span>
+            ${u.ddt_documento_id ? `<button class="btn-doc" onclick="apriDocumento(${u.ddt_documento_id})">📄 Bolla</button>` : ''}
+            <span class="simple-peso">${mediaU !== null ? fmt(mediaU, 1) + ' kg' : '—'}</span>
           </span>
         </div>`;
-      });
-      html += `</div>`;
+      }).join('') + `</div>`;
     } else {
       html += `<div class="empty">Nessuna uscita registrata.</div>`;
     }
 
     // TABBAR Mortalità / Incremento / Note
-    const noteLotto = allNoteVet.filter(n => n.lotto_id === lotto.id).sort((a,b) => b.data_nota.localeCompare(a.data_nota));
+    const noteLotto = allNoteVet.filter(n => n.lotto_id === lotto.id)
+      .sort((a, b) => b.data_nota.localeCompare(a.data_nota) || (b.id || 0) - (a.id || 0));
     html += `<div style="display:flex;gap:4px;margin:12px 0 10px;">
-      <button onclick="switchTab(${lotto.id},'mortalita',this)" class="ltab ltab-active" data-lotto="${lotto.id}">Mortalità</button>
-      <button onclick="switchTab(${lotto.id},'incremento',this)" class="ltab" data-lotto="${lotto.id}">Incremento</button>
-      <button onclick="switchTab(${lotto.id},'note',this)" class="ltab" data-lotto="${lotto.id}">Note${noteLotto.length ? ' ('+noteLotto.length+')' : ''}</button>
+      ${[['mortalita', 'Mortalità'], ['incremento', 'Incremento'], ['note', `Note${noteLotto.length ? ' (' + noteLotto.length + ')' : ''}`]]
+        .map(([t, label]) => `<button onclick="switchTab(${lotto.id},'${t}')" class="ltab${t === tab ? ' ltab-active' : ''}" data-lotto="${lotto.id}" data-tab="${t}">${label}</button>`).join('')}
     </div>`;
 
     // TAB MORTALITA — inserimento + elenco
-    html += `<div id="ltab-mortalita-${lotto.id}">`;
-    html += `<button class="btn-mort" onclick="apriFormMortalita(${lotto.id})">🔴 Registra mortalità</button>`;
-    html += `<div id="form-mortalita-${lotto.id}" style="display:none;" class="form-box">
-      <div class="field-label">DATA</div>
-      <input type="date" id="m-data-${lotto.id}" class="field-input">
-      <div class="field-label">N° CAPI MORTI</div>
-      <input type="number" id="m-capi-${lotto.id}" class="field-input" placeholder="es. 2" min="0">
-      <div class="field-label">TRATTAMENTO (opz.)</div>
-      <input type="text" id="m-tratt-${lotto.id}" class="field-input" placeholder="es. AMO, STR, FLO…">
-      <div class="field-label">NOTE (opz.)</div>
-      <input type="text" id="m-note-${lotto.id}" class="field-input" placeholder="es. 15 scarti arrivo">
-      <button class="btn-mort" style="margin-bottom:0;" onclick="salvaMortalita(${lotto.id})">✓ Salva</button>
-    </div>`;
-    if(mortLotto.length) {
-      html += `<div class="simple-container">`;
-      mortLotto.forEach(m => {
-        html += `<div class="simple-row">
+    html += `<div id="ltab-mortalita-${lotto.id}"${vis('mortalita')}>
+      <button class="btn-mort" onclick="apriFormMortalita(${lotto.id})">🔴 Registra mortalità</button>
+      <div id="form-mortalita-${lotto.id}" style="display:none;" class="form-box">
+        <div class="field-label">DATA</div>
+        <input type="date" id="m-data-${lotto.id}" class="field-input">
+        <div class="field-label">N° CAPI MORTI</div>
+        <input type="number" inputmode="numeric" id="m-capi-${lotto.id}" class="field-input" placeholder="es. 2" min="1">
+        <div class="field-label">TRATTAMENTO (opz.)</div>
+        <input type="text" id="m-tratt-${lotto.id}" class="field-input" placeholder="es. AMO, STR, FLO…">
+        <div class="field-label">NOTE (opz.)</div>
+        <input type="text" id="m-note-${lotto.id}" class="field-input" placeholder="es. 15 scarti arrivo">
+        <button class="btn-mort" style="margin-bottom:0;" onclick="salvaMortalita(${lotto.id}, this)">✓ Salva</button>
+      </div>`;
+    if (mortLotto.length) {
+      html += `<div class="simple-container">` + mortLotto.map(m => `<div class="simple-row">
           <div>
             <div class="simple-date">${fmtDate(m.data_evento)}</div>
-            ${(m.trattamento || m.note) ? `<div style="font-size:10px;color:var(--text2);margin-top:2px;">${m.trattamento ? 'Tratt. ' + m.trattamento : ''}${m.note ? (m.trattamento ? ' · ' : '') + m.note : ''}</div>` : ''}
+            ${(m.trattamento || m.note) ? `<div class="simple-sub">${m.trattamento ? 'Tratt. ' + esc(m.trattamento) : ''}${m.note ? (m.trattamento ? ' · ' : '') + esc(m.note) : ''}</div>` : ''}
           </div>
-          <span class="simple-peso" style="color:var(--red);">${m.capi_morti || 0} capi</span>
-        </div>`;
-      });
-      html += `</div>`;
+          <span class="simple-peso" style="color:var(--red);white-space:nowrap;">${capi(m.capi_morti || 0)}</span>
+        </div>`).join('') + `</div>`;
     } else {
       html += `<div class="empty">Nessuna mortalità registrata.</div>`;
     }
     html += `</div>`;
 
     // TAB INCREMENTO — visualizza + modifica
-    html += `<div id="ltab-incremento-${lotto.id}" style="display:none;">`;
-    html += `<div class="incr-bar">
-      <div>
-        <div style="font-size:10px;opacity:0.8;font-family:var(--mono);text-transform:uppercase;">Incremento giornaliero ponderato</div>
-        <div class="incr-val">${lotto.incremento_giornaliero != null ? fmt(lotto.incremento_giornaliero,3) + ' kg/gg' : '—'}</div>
+    html += `<div id="ltab-incremento-${lotto.id}"${vis('incremento')}>
+      <div class="incr-bar">
+        <div>
+          <div style="font-size:10px;opacity:0.8;font-family:var(--mono);text-transform:uppercase;">Incremento giornaliero ponderato</div>
+          <div class="incr-val">${lotto.incremento_giornaliero != null ? fmt(lotto.incremento_giornaliero, 3) + ' kg/gg' : '—'}</div>
+        </div>
+        <button class="incr-edit-btn" onclick="apriFormIncremento(${lotto.id})">✎ modifica</button>
       </div>
-      <button class="incr-edit-btn" onclick="apriFormIncremento(${lotto.id})">✎ modifica</button>
+      <div id="form-incremento-${lotto.id}" style="display:none;" class="form-box">
+        <div class="field-label">NUOVO INCREMENTO PONDERATO (kg/gg)</div>
+        <input type="number" inputmode="decimal" step="0.001" id="i-val-${lotto.id}" class="field-input" value="${lotto.incremento_giornaliero ?? ''}" placeholder="es. 0.750">
+        <button class="btn-mort" style="margin-bottom:0;background:var(--accent);" onclick="salvaIncremento(${lotto.id}, this)">✓ Salva</button>
+      </div>
     </div>`;
-    html += `<div id="form-incremento-${lotto.id}" style="display:none;" class="form-box">
-      <div class="field-label">NUOVO INCREMENTO PONDERATO (kg/gg)</div>
-      <input type="number" step="0.001" id="i-val-${lotto.id}" class="field-input" value="${lotto.incremento_giornaliero || ''}" placeholder="es. 0.750">
-      <button class="btn-mort" style="margin-bottom:0;background:var(--accent);" onclick="salvaIncremento(${lotto.id})">✓ Salva</button>
-    </div>`;
-    html += `</div>`;
 
     // TAB NOTE — inserimento + elenco (stessa tabella note_veterinario di index.html/veterinario.html)
-    html += `<div id="ltab-note-${lotto.id}" style="display:none;">`;
-    html += `<button class="btn-mort" style="background:var(--accent);" onclick="apriFormNota(${lotto.id})">📝 Inserisci nota</button>`;
-    html += `<div id="form-nota-${lotto.id}" style="display:none;" class="form-box">
-      <div class="field-label">DATA</div>
-      <input type="date" id="n-data-${lotto.id}" class="field-input">
-      <div class="field-label">NOTA</div>
-      <textarea id="n-testo-${lotto.id}" class="field-input" rows="3" style="resize:vertical;font-family:var(--font);" placeholder="Scrivi qui la nota..."></textarea>
-      <button class="btn-mort" style="margin-bottom:0;background:var(--accent);" onclick="salvaNota(${lotto.id})">✓ Salva</button>
-    </div>`;
-    if(noteLotto.length) {
-      html += `<div class="simple-container">`;
-      noteLotto.forEach(n => {
-        html += `<div class="simple-row" style="display:block;">
+    html += `<div id="ltab-note-${lotto.id}"${vis('note')}>
+      <button class="btn-mort" style="background:var(--accent);" onclick="apriFormNota(${lotto.id})">📝 Inserisci nota</button>
+      <div id="form-nota-${lotto.id}" style="display:none;" class="form-box">
+        <div class="field-label">DATA</div>
+        <input type="date" id="n-data-${lotto.id}" class="field-input">
+        <div class="field-label">NOTA</div>
+        <textarea id="n-testo-${lotto.id}" class="field-input" rows="3" style="resize:vertical;font-family:var(--font);" placeholder="Scrivi qui la nota..."></textarea>
+        <button class="btn-mort" style="margin-bottom:0;background:var(--accent);" onclick="salvaNota(${lotto.id}, this)">✓ Salva</button>
+      </div>`;
+    if (noteLotto.length) {
+      html += `<div class="simple-container">` + noteLotto.map(n => `<div class="simple-row" style="display:block;">
           <div class="simple-date">${fmtDate(n.data_nota)}</div>
-          ${n.testo ? `<div style="font-size:12px;color:var(--text);margin-top:4px;white-space:pre-wrap;">${n.testo}</div>` : ''}
+          ${n.testo ? `<div style="font-size:12px;color:var(--text);margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere;">${esc(n.testo)}</div>` : ''}
           ${notaMediaRender(n)}
-        </div>`;
-      });
-      html += `</div>`;
+        </div>`).join('') + `</div>`;
     } else {
       html += `<div class="empty">Nessuna nota registrata.</div>`;
     }
@@ -546,104 +615,94 @@ function render() {
   content.innerHTML = html;
 }
 
-function switchTab(lottoId, tab, btn) {
-  ['mortalita','incremento','note'].forEach(t => {
+function switchTab(lottoId, tab) {
+  tabAttiva[lottoId] = tab;
+  ['mortalita', 'incremento', 'note'].forEach(t => {
     const el = document.getElementById(`ltab-${t}-${lottoId}`);
-    if(el) el.style.display = t === tab ? 'block' : 'none';
+    if (el) el.style.display = t === tab ? '' : 'none';
   });
   document.querySelectorAll(`.ltab[data-lotto="${lottoId}"]`).forEach(b => {
-    b.classList.toggle('ltab-active', b === btn);
+    b.classList.toggle('ltab-active', b.dataset.tab === tab);
   });
 }
 
-function apriFormMortalita(lottoId) {
-  const form = document.getElementById(`form-mortalita-${lottoId}`);
-  form.style.display = form.style.display === 'none' ? 'block' : 'none';
-  document.getElementById(`m-data-${lottoId}`).value = new Date().toISOString().split('T')[0];
+// apre/chiude un modulo; all'apertura propone la data di oggi e mette il cursore sul primo campo utile
+function apriModulo(formId, dataId, focusId) {
+  const form = document.getElementById(formId);
+  const apri = form.style.display === 'none';
+  form.style.display = apri ? 'block' : 'none';
+  if (!apri) return;
+  if (dataId) document.getElementById(dataId).value = oggiISO();
+  const f = document.getElementById(focusId);
+  if (f) setTimeout(() => f.focus(), 50);
+}
+function apriFormMortalita(id) { apriModulo(`form-mortalita-${id}`, `m-data-${id}`, `m-capi-${id}`); }
+function apriFormNota(id) { apriModulo(`form-nota-${id}`, `n-data-${id}`, `n-testo-${id}`); }
+function apriFormIncremento(id) { apriModulo(`form-incremento-${id}`, null, `i-val-${id}`); }
+
+// salvataggio con il bottone bloccato finché il server non risponde (niente righe doppie col doppio tocco)
+async function invia(btn, lavoro) {
+  if (btn) { if (btn.disabled) return; btn.disabled = true; btn.dataset.testo = btn.textContent; btn.textContent = 'Salvataggio…'; }
+  try { await lavoro(); }
+  catch (e) { showToast('Errore: ' + (e.message || e), false); }
+  finally { if (btn && btn.isConnected) { btn.disabled = false; btn.textContent = btn.dataset.testo; } }
+}
+async function postRiga(tabella, riga) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${tabella}`, { method: 'POST', headers: SB_H, body: JSON.stringify(riga) });
+  if (!r.ok) throw new Error(await r.text());
+  const j = await r.json();
+  return Array.isArray(j) ? j[0] : j;
 }
 
-async function salvaMortalita(lottoId) {
+function salvaMortalita(lottoId, btn) {
   const data = document.getElementById(`m-data-${lottoId}`).value;
-  const capi = parseInt(document.getElementById(`m-capi-${lottoId}`).value) || 0;
-  const tratt = document.getElementById(`m-tratt-${lottoId}`).value || null;
-  const note = document.getElementById(`m-note-${lottoId}`).value || null;
-  if(!data || capi <= 0) { showToast('Inserisci data e numero capi morti', false); return; }
-
+  const n = parseInt(document.getElementById(`m-capi-${lottoId}`).value, 10) || 0;
+  const tratt = document.getElementById(`m-tratt-${lottoId}`).value.trim() || null;
+  const note = document.getElementById(`m-note-${lottoId}`).value.trim() || null;
+  if (!data || n <= 0) { showToast('Inserisci data e numero capi morti', false); return; }
   const lotto = allLotti.find(l => l.id === lottoId);
   const soc = allSoccide.find(s => s.id === lotto.soccida_id);
-
-  try {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/mortalita`, {
-      method: 'POST', headers: SB_H,
-      body: JSON.stringify({
-        lotto_id: lottoId, soccida: soc.nome, data_evento: data,
-        lettera_dop: lotto.lettera_dop || null, capi_morti: capi,
-        trattamento: tratt, note
-      })
+  return invia(btn, async () => {
+    const nuova = await postRiga('mortalita', {
+      lotto_id: lottoId, soccida: soc.nome, data_evento: data,
+      lettera_dop: lotto.lettera_dop || null, capi_morti: n, trattamento: tratt, note,
     });
-    if(!r.ok) throw new Error(await r.text());
-    const nuova = await r.json();
-    allMortalita.push(Array.isArray(nuova) ? nuova[0] : nuova);
-    showToast(`✓ Mortalità registrata — ${capi} capi il ${fmtDate(data)}`, true);
+    allMortalita.push(nuova);
+    allMortalita.sort((a, b) => b.data_evento.localeCompare(a.data_evento) || (b.id || 0) - (a.id || 0));
+    tabAttiva[lottoId] = 'mortalita';
     render();
-  } catch(e) {
-    showToast('Errore: ' + e.message, false);
-  }
+    showToast(`✓ Mortalità registrata — ${n === 1 ? '1 capo' : n + ' capi'} il ${fmtDate(data)}`, true);
+  });
 }
 
-function apriFormNota(lottoId) {
-  const form = document.getElementById(`form-nota-${lottoId}`);
-  form.style.display = form.style.display === 'none' ? 'block' : 'none';
-  document.getElementById(`n-data-${lottoId}`).value = new Date().toISOString().split('T')[0];
-}
-
-async function salvaNota(lottoId) {
+function salvaNota(lottoId, btn) {
   const data = document.getElementById(`n-data-${lottoId}`).value;
   const testo = document.getElementById(`n-testo-${lottoId}`).value.trim();
-  if(!data || !testo) { showToast('Inserisci data e testo della nota', false); return; }
-
+  if (!data || !testo) { showToast('Inserisci data e testo della nota', false); return; }
   const lotto = allLotti.find(l => l.id === lottoId);
   const soc = allSoccide.find(s => s.id === lotto.soccida_id);
-
-  try {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/note_veterinario`, {
-      method: 'POST', headers: SB_H,
-      body: JSON.stringify({
-        lotto_id: lottoId, soccida: soc.nome, data_nota: data, testo
-      })
-    });
-    if(!r.ok) throw new Error(await r.text());
-    const nuova = await r.json();
-    allNoteVet.push(Array.isArray(nuova) ? nuova[0] : nuova);
+  return invia(btn, async () => {
+    const nuova = await postRiga('note_veterinario', { lotto_id: lottoId, soccida: soc.nome, data_nota: data, testo });
+    allNoteVet.push(nuova);
+    tabAttiva[lottoId] = 'note';
+    render();
     showToast(`✓ Nota registrata — ${fmtDate(data)}`, true);
-    render();
-  } catch(e) {
-    showToast('Errore: ' + e.message, false);
-  }
+  });
 }
 
-function apriFormIncremento(lottoId) {
-  const form = document.getElementById(`form-incremento-${lottoId}`);
-  form.style.display = form.style.display === 'none' ? 'block' : 'none';
-}
-
-async function salvaIncremento(lottoId) {
-  const val = parseFloat(document.getElementById(`i-val-${lottoId}`).value);
-  if(isNaN(val) || val <= 0) { showToast('Inserisci un valore valido', false); return; }
-
-  try {
+function salvaIncremento(lottoId, btn) {
+  const val = parseFloat(String(document.getElementById(`i-val-${lottoId}`).value).replace(',', '.'));
+  if (isNaN(val) || val <= 0 || val > 2) { showToast('Inserisci un valore valido (es. 0.750)', false); return; }
+  return invia(btn, async () => {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/lotti?id=eq.${lottoId}`, {
-      method: 'PATCH', headers: SB_H,
-      body: JSON.stringify({ incremento_giornaliero: val })
+      method: 'PATCH', headers: SB_H, body: JSON.stringify({ incremento_giornaliero: val }),
     });
-    if(!r.ok) throw new Error(await r.text());
-    const lotto = allLotti.find(l => l.id === lottoId);
-    lotto.incremento_giornaliero = val;
-    showToast(`✓ Incremento aggiornato — ${fmt(val,3)} kg/gg`, true);
+    if (!r.ok) throw new Error(await r.text());
+    allLotti.find(l => l.id === lottoId).incremento_giornaliero = val;
+    tabAttiva[lottoId] = 'incremento';
     render();
-  } catch(e) {
-    showToast('Errore: ' + e.message, false);
-  }
+    showToast(`✓ Incremento aggiornato — ${fmt(val, 3)} kg/gg`, true);
+  });
 }
 
 loadAll();
