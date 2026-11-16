@@ -564,9 +564,9 @@ function render() {
         <button class="btn-mort" style="margin-bottom:0;background:var(--accent);" onclick="salvaIncremento(${lotto.id}, this)">✓ Salva</button>
       </div>`;
 
-    // USCITE — capi, peso medio, giorni e incremento fatto (niente importi)
-    html += `<div class="section-label">Uscite</div>`;
+    // USCITE — capi, peso medio, giorni e incremento fatto (niente importi); la sezione compare solo se ci sono uscite
     if (uscite.length) {
+      html += `<div class="section-label">Uscite</div>`;
       html += `<div class="uscite-container">` + uscite.map(u => {
         const media = (u.kg_totali && u.capi) ? u.kg_totali / u.capi : null;
         const gg = ggUscita(u, lotto), inc = incrUscita(u, lotto);
@@ -583,8 +583,6 @@ function render() {
           </div>
         </div>`;
       }).join('') + `</div>`;
-    } else {
-      html += `<div class="empty">Nessuna uscita registrata.</div>`;
     }
 
     // TABBAR Mortalità / Incremento / Note
