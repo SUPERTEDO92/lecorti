@@ -244,7 +244,11 @@ function vaiA(n) {
 function renderRubricaMacelli() {
   transizioneMandria(() => {
     soccidaAttiva = null;
-    document.getElementById('content').innerHTML = `<div style="margin-bottom:12px;">
+    document.getElementById('content').innerHTML = `<div class="detail-sticky-wrap">
+      <button class="back-btn" onclick="vaiA('soccide')">← Soccide</button>
+      <div class="soccida-header"><div class="soccida-title">🏭 MACELLI</div></div>
+    </div>
+    <div style="margin-bottom:12px;">
       <input type="text" id="mac-cerca" placeholder="🔍 Cerca per nome, indirizzo, codice..." oninput="macFiltra()" style="width:100%;padding:9px 12px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:16px;font-family:var(--font);background:#FFF;color:var(--text);">
     </div>
     <div class="soccide-list" id="mac-list"></div>`;
