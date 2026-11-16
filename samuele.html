@@ -626,14 +626,14 @@ function render() {
         <button class="btn-mort" style="margin-bottom:0;" onclick="salvaMortalita(${lotto.id}, this)">✓ Salva</button>
       </div>`;
     if (mortLotto.length) {
-      html += `<div class="simple-container lista-scroll">` + mortLotto.map(m => `<div class="simple-row">
+      html += `<div class="simple-container lista-scroll mort">` + mortLotto.map(m => `<div class="simple-row">
           <div>
             <div class="simple-date">${fmtDate(m.data_evento)}</div>
             ${(m.trattamento || m.note) ? `<div class="simple-sub">${m.trattamento ? 'Tratt. ' + esc(m.trattamento) : ''}${m.note ? (m.trattamento ? ' · ' : '') + esc(m.note) : ''}</div>` : ''}
           </div>
           <span class="simple-peso" style="color:var(--red);white-space:nowrap;">${capi(m.capi_morti || 0)}</span>
         </div>`).join('') + `</div>`;
-      if (mortLotto.length > 5) html += `<div class="lista-conta">${mortLotto.length} registrazioni · ${capi(c.morti)} · scorri nel riquadro</div>`;
+      if (mortLotto.length > 4) html += `<div class="lista-conta">${mortLotto.length} registrazioni · ${capi(c.morti)} · scorri nel riquadro</div>`;
     } else {
       html += `<div class="empty">Nessuna mortalità registrata.</div>`;
     }
@@ -677,6 +677,17 @@ function render() {
   });
 
   content.innerHTML = html;
+  limitaMortalita();
+}
+
+// elenco mortalità alto 4 righe (le righe con la nota sono più alte, quindi misuro quelle vere)
+// più un filo della quinta, così si capisce che scorre
+function limitaMortalita() {
+  document.querySelectorAll('.lista-scroll.mort').forEach(el => {
+    const righe = [...el.children];
+    if (righe.length <= 4 || !el.offsetParent) return;
+    el.style.maxHeight = (righe.slice(0, 4).reduce((s, r) => s + r.offsetHeight, 0) + 14) + 'px';
+  });
 }
 
 function switchTab(lottoId, tab) {
@@ -688,6 +699,7 @@ function switchTab(lottoId, tab) {
   document.querySelectorAll(`.ltab[data-lotto="${lottoId}"]`).forEach(b => {
     b.classList.toggle('ltab-active', b.dataset.tab === tab);
   });
+  if (tab === 'mortalita') limitaMortalita();
 }
 
 // apre/chiude un modulo; all'apertura propone la data di oggi e mette il cursore sul primo campo utile
