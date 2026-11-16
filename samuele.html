@@ -72,6 +72,23 @@
   .soccida-card.manuali { background: var(--text); border-color: var(--text); color: #F5F3EE; margin-bottom: 8px; }
   .soccida-card.manuali:hover { background: #2A2A27; border-color: #2A2A27; }
   .soccida-card.manuali .soc-meta, .soccida-card.manuali .soc-arrow { color: #B8B4AB; }
+  /* tabella tatuaggio prosciutto sotto le soccide */
+  .tatuaggio { margin-top: 8px; }
+  .tatuaggio .soccida-card .soc-arrow { transition: transform .25s ease; }
+  .tatuaggio.aperto .soccida-card { border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+  .tatuaggio.aperto .soccida-card .soc-arrow { transform: rotate(90deg); }
+  .tat-corpo { display: none; background: #FFF; border: 0.5px solid var(--border); border-top: none; border-radius: 0 0 var(--radius-lg) var(--radius-lg); padding: 8px 10px 10px; }
+  .tatuaggio.aperto .tat-corpo { display: block; }
+  .tat-griglia { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .tat-col { border: 0.5px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .tat-riga { display: grid; grid-template-columns: 30px 1fr 1fr; align-items: center; border-bottom: 0.5px solid var(--border); font-size: 11px; }
+  .tat-riga:last-child { border-bottom: none; }
+  .tat-riga.testa { background: var(--bg2); font-size: 8.5px; font-family: var(--mono); text-transform: uppercase; color: var(--text2); letter-spacing: .03em; }
+  .tat-riga > span { padding: 5px 4px; text-align: center; }
+  .tat-lettera { background: #8A8A86; color: #FFF; font-weight: 700; font-size: 16px; font-family: var(--font); align-self: stretch; display: flex; align-items: center; justify-content: center; }
+  .tat-riga.testa .tat-lettera { background: var(--bg2); color: var(--text2); font-size: 8.5px; }
+  .tat-carico { font-weight: 600; }
+  @media (max-width: 370px) { .tat-griglia { grid-template-columns: 1fr; } }
 
   /* Header sticky pagina dettaglio */
   .detail-sticky-wrap { position: sticky; top: var(--topbar-h, 0px); z-index: 90; background: var(--bg); padding-bottom: 4px; margin: -14px -14px 10px; padding-left: 14px; padding-right: 14px; padding-top: 14px; }
@@ -328,6 +345,28 @@ async function apriManuali() {
   });
 }
 
+// Tatuaggio per prosciutto: lettera = mese di nascita, il suino si carica dal mese indicato (tabella del documentale, archivio id 36)
+const TATUAGGIO = [
+  ['T', 'Gennaio', 'Ottobre'], ['C', 'Febbraio', 'Novembre'], ['B', 'Marzo', 'Dicembre'],
+  ['A', 'Aprile', 'Gennaio'], ['M', 'Maggio', 'Febbraio'], ['P', 'Giugno', 'Marzo'],
+  ['L', 'Luglio', 'Aprile'], ['E', 'Agosto', 'Maggio'], ['S', 'Settembre', 'Giugno'],
+  ['R', 'Ottobre', 'Luglio'], ['H', 'Novembre', 'Agosto'], ['D', 'Dicembre', 'Settembre'],
+];
+function tatuaggioHtml() {
+  const col = righe => `<div class="tat-col">
+      <div class="tat-riga testa"><span class="tat-lettera">Let.</span><span>Nascita</span><span>Carico</span></div>
+      ${righe.map(([l, n, c]) => `<div class="tat-riga"><span class="tat-lettera">${l}</span><span>${n}</span><span class="tat-carico">${c}</span></div>`).join('')}
+    </div>`;
+  return `<div class="tatuaggio" id="tatuaggio">
+    <div class="soccida-card" onclick="document.getElementById('tatuaggio').classList.toggle('aperto')">
+      <div style="font-size:18px;line-height:1;">🏷️</div>
+      <div class="soc-main"><div class="soc-nome">Tatuaggio prosciutto</div><div class="soc-meta">lettera → mese di nascita e mese di carico</div></div>
+      <span class="soc-arrow">&#8250;</span>
+    </div>
+    <div class="tat-corpo"><div class="tat-griglia">${col(TATUAGGIO.slice(0, 6))}${col(TATUAGGIO.slice(6))}</div></div>
+  </div>`;
+}
+
 function renderMacelliCards(lista) {
   document.getElementById('mac-list').innerHTML = lista.length ? lista.map(m => `
     <div style="background:#FFF;border:0.5px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;">
@@ -419,7 +458,7 @@ function renderLista() {
       <span class="soc-badge ${badge}">${badgeText}</span>
       <span class="soc-arrow">&#8250;</span>
     </div>`;
-  }).join('')}</div>`;
+  }).join('')}</div>` + tatuaggioHtml();
   document.getElementById('content').innerHTML = html;
 }
 
