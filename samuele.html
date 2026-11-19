@@ -433,11 +433,8 @@ async function loadAll() {
       allMangime = await sb('v_consegne_mangime', `?soccida_id=in.(${socIds.join(',')})&in_kg=eq.true&order=data_consegna.desc,numero_documento.desc,riga.asc`);
       if (!Array.isArray(allMangime)) allMangime = [];
     } catch (e) { allMangime = []; }
-    // bolle a 1 kg di TUTTI gli allevamenti: Samuele è spesso in ufficio e a volte trova lui il peso (Ruben 19/11/2026)
-    try {
-      allDaPesare = await sb('v_consegne_mangime', '?quantita_provvisoria=eq.true&in_kg=eq.true&order=data_consegna.desc,numero_documento.asc,riga.asc');
-      if (!Array.isArray(allDaPesare)) allDaPesare = [];
-    } catch (e) { allDaPesare = []; }
+    // bolle a 1 kg delle soccide di Samuele: è spesso in ufficio e a volte trova lui il peso (Ruben 19/11/2026)
+    allDaPesare = allMangime.filter(m => m.quantita_provvisoria);
     await notaMediaPreload(allNoteVet);
   } catch (e) {
     content.innerHTML = `<div class="empty" style="color:var(--red);">Dati non caricati: ${esc(e.message || e)}<br><br>
@@ -455,7 +452,7 @@ function renderLista() {
   const nPesi = allDaPesare.filter(m => m.quantita_provvisoria).length;
   const html = (nPesi ? `<div class="soccida-card" onclick="apriPesi()" style="background:var(--amber-bg);border-color:#E8C88A;margin-bottom:8px;">
       <div style="font-size:18px;line-height:1;">⚖️</div>
-      <div class="soc-main"><div class="soc-nome">Pesi mangime da inserire</div><div class="soc-meta">bolle a 1 kg · tutti gli allevamenti</div></div>
+      <div class="soc-main"><div class="soc-nome">Pesi mangime da inserire</div><div class="soc-meta">bolle a 1 kg delle tue soccide</div></div>
       <span class="soc-badge badge-amber">${nPesi}</span>
       <span class="soc-arrow">&#8250;</span>
     </div>` : '') + `<div class="soccida-card manuali" onclick="apriManuali()">
@@ -620,7 +617,7 @@ function itemMangime(m, righe, conSoccida) {
     </div>`;
 }
 
-// ── PESI MANGIME DA INSERIRE: bolle partite a 1 kg di tutti gli allevamenti (il peso è scritto a penna sul DDT).
+// ── PESI MANGIME DA INSERIRE: bolle partite a 1 kg delle soccide di Samuele (il peso è scritto a penna sul DDT).
 // La mattina dopo l'export Samuele riceve la mail con le bolle nuove; quelle ancora senza peso dopo mezzogiorno vanno a Ilaria.
 function apriPesi() {
   setNav('soccide');
