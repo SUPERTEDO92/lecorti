@@ -581,11 +581,15 @@ function transizioneMandria(azione) {
 
 function apriSoccida(nome) {
   soccidaAttiva = nome;
+  mangimeAperto = false;
   transizioneMandria(() => render());
 }
 
 // ── MANGIME — riga riepilogo consegne della soccida, come renderMangimeRow di index.html.
 // Tocco = elenco delle consegne (data, bolla, kg, articolo). Pesi provvisori (bolle a 1 kg) esclusi dai totali.
+// Sulle bolle a 1 kg Samuele scrive il peso vero (quello a penna sul DDT): aggiorna consegne_mangime come la
+// risposta di Ilaria (quantita, quantita_precedente, quantita_provvisoria=false) e la richiesta pesi si chiude da sola.
+let mangimeAperto = false;
 function renderMangimeRow(socId) {
   const righe = allMangime.filter(m => m.soccida_id === socId);
   if (!righe.length) {
@@ -598,15 +602,20 @@ function renderMangimeRow(socId) {
   const totUltima = righe.filter(m => m.data_consegna === ultimaData).reduce((s, m) => s + kg(m), 0);
   const dd = d => { const p = (d || '').split('-'); return p.length === 3 ? `${p[2]}/${p[1]}` : '—'; };
 
-  const lista = righe.slice(0, 60).map(m => `<div class="mangime-item">
-      <div class="mangime-item-top"><span>${dd(m.data_consegna)} · bolla ${esc(m.numero_documento)}</span><b>${m.quantita_provvisoria ? 'peso da confermare' : fmt(m.quantita) + ' kg'}</b></div>
+  const daPesare = righe.filter(m => m.quantita_provvisoria).length;
+  const lista = righe.slice(0, 60).map(m => `<div class="mangime-item"${m.quantita_provvisoria ? ' style="background:var(--amber-bg, #FFF6E5);"' : ''}>
+      <div class="mangime-item-top"><span>${dd(m.data_consegna)} · bolla ${esc(m.numero_documento)}${m.riga > 1 || righe.some(x => x !== m && x.numero_documento === m.numero_documento) ? ' riga ' + esc(m.riga) : ''}</span><b>${m.quantita_provvisoria ? 'peso da inserire' : fmt(m.quantita) + ' kg'}</b></div>
       <div class="mangime-item-desc">${esc(m.cod_articolo || '')}${m.descrizione ? ' — ' + esc(m.descrizione) : ''}</div>
+      ${m.quantita_provvisoria ? `<div style="display:flex;gap:6px;margin-top:6px;">
+        <input type="number" inputmode="numeric" id="mg-kg-${m.id}" class="field-input" style="margin:0;flex:1;" placeholder="kg scritti sulla bolla">
+        <button class="btn-mort" style="margin:0;width:auto;padding:0 14px;background:var(--accent);" onclick="salvaPesoMangime(${m.id}, this)">✓ Salva</button>
+      </div>` : ''}
     </div>`).join('');
 
-  return `<div class="mangime-wrap">
-    <div class="mangime-row" onclick="this.parentNode.classList.toggle('open')">
+  return `<div class="mangime-wrap${mangimeAperto ? ' open' : ''}">
+    <div class="mangime-row" onclick="mangimeAperto = this.parentNode.classList.toggle('open')">
       <span>🌾 Mangime consegnato</span>
-      <span><b>${fmt(tot30)} kg</b> <span style="color:var(--text2);">30 gg · ultima ${dd(ultimaData)} (${fmt(totUltima)} kg)</span> <span class="mangime-arrow">›</span></span>
+      <span><b>${fmt(tot30)} kg</b> <span style="color:var(--text2);">30 gg · ultima ${dd(ultimaData)}${totUltima ? ` (${fmt(totUltima)} kg)` : ''}</span>${daPesare ? ` <span class="soc-badge badge-amber" style="white-space:nowrap;">${daPesare === 1 ? '1 peso' : daPesare + ' pesi'} da inserire</span>` : ''} <span class="mangime-arrow">›</span></span>
     </div>
     <div class="mangime-list">${lista}</div>
   </div>`;
@@ -882,6 +891,26 @@ function salvaNota(lottoId, btn) {
     tabAttiva[lottoId] = 'note';
     render();
     showToast(`✓ Nota registrata — ${fmtDate(data)}`, true);
+  });
+}
+
+// peso vero di una bolla partita a 1 kg (stessi limiti delle risposte di Ilaria: 200-40.000 kg)
+function salvaPesoMangime(id, btn) {
+  const kg = parseFloat(String(document.getElementById(`mg-kg-${id}`).value).replace(',', '.'));
+  if (isNaN(kg) || kg < 200 || kg > 40000) { showToast('Inserisci i kg della bolla (tra 200 e 40.000)', false); return; }
+  const m = allMangime.find(x => x.id === id);
+  return invia(btn, async () => {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/consegne_mangime?id=eq.${id}&quantita_provvisoria=eq.true`, {
+      method: 'PATCH', headers: SB_H,
+      body: JSON.stringify({ quantita: kg, quantita_precedente: m ? m.quantita : null, quantita_provvisoria: false, aggiornato_at: new Date().toISOString() }),
+    });
+    if (!r.ok) throw new Error(await r.text());
+    const j = await r.json();
+    if (!Array.isArray(j) || !j.length) throw new Error('peso già inserito da qualcun altro, ricarica la pagina');
+    if (m) Object.assign(m, { quantita: kg, quantita_provvisoria: false });
+    mangimeAperto = true;
+    render();
+    showToast(`✓ Peso salvato — bolla ${m ? m.numero_documento : ''}: ${fmt(kg)} kg`, true);
   });
 }
 
