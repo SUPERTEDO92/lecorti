@@ -1227,6 +1227,9 @@
   </div>
   <div class="filter-bar" id="trasf-filters"></div>
   <div class="filter-bar" id="trasf-tipo-filters"></div>
+  <div style="padding:0 14px 10px;display:flex;justify-content:flex-end;">
+    <div class="toggle-fatt" id="trasf-toggle-fatt" onclick="toggleTrasfDaFatturare()"><span class="box"></span> Da fatturare</div>
+  </div>
   <div class="storico-container" id="trasf-list">
     <div class="loading">Caricamento...</div>
   </div>
@@ -3445,6 +3448,18 @@ function buildTrasfTipoFilters() {
   ).join('');
 }
 
+// Da fatturare: stessa regola di liquidazioni.html (trasfDaFatturare) — vendite con prezzo
+// definito ma senza fattura di vendita collegata, dal 01/07/2026
+let trasfDaFatturareFiltro = false;
+function trasfDaFatturare(t) {
+  return t.tipo === 'VENDITA' && t.valore != null && !t.fattura_vendita_documento_id && t.data_trasferimento >= STORICO_DA_FATTURARE_DA;
+}
+function toggleTrasfDaFatturare() {
+  trasfDaFatturareFiltro = !trasfDaFatturareFiltro;
+  document.getElementById('trasf-toggle-fatt').classList.toggle('active', trasfDaFatturareFiltro);
+  renderTrasferimenti();
+}
+
 function setTrasfTipoFilter(val, el) {
   trasfTipoFilter = val;
   document.querySelectorAll('#trasf-tipo-filters .filter-chip').forEach(c => c.classList.remove('active'));
@@ -3495,6 +3510,7 @@ function renderTrasferimenti() {
     .sort((a,b) => b.data_trasferimento.localeCompare(a.data_trasferimento));
   if(trasfFilter !== 'tutti') lista = lista.filter(t => t.data_trasferimento.startsWith(trasfFilter));
   if(trasfTipoFilter !== 'tutti') lista = lista.filter(t => t.tipo === trasfTipoFilter);
+  if(trasfDaFatturareFiltro) lista = lista.filter(trasfDaFatturare);
 
   const byMonth = {};
   lista.forEach(t => {
