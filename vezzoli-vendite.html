@@ -92,6 +92,7 @@ function render() {
   if(!aperte.length) {
     html += '<div class="vd-card"><div class="empty">Nessuna vendita aperta — conto sistemato.</div></div>';
   } else {
+    html += totaliParzialiMese(aperte);
     html += `<div class="vd-card">` + aperte.map(v => renderRiga(v)).join('') + `</div>`;
   }
 
@@ -103,6 +104,27 @@ function render() {
   }
 
   cont.innerHTML = html;
+}
+
+// Riga di totale per ogni mese presente nel conto aperto (tutte le vendite del mese, anche già sistemate)
+function totaliParzialiMese(aperte) {
+  const meseCorr = new Date().toISOString().slice(0,7);
+  const mesi = [...new Set(aperte.map(v => (v.data_vendita||'').slice(0,7)).filter(Boolean))].sort((a,b) => b.localeCompare(a));
+  return mesi.map(k => {
+    const delMese = allVenditeDirette.filter(v => (v.data_vendita||'').startsWith(k));
+    const tot = delMese.reduce((s,v) => s + (parseFloat(v.prezzo)||0), 0);
+    const capi = delMese.reduce((s,v) => s + (parseInt(v.capi)||0), 0);
+    const kg = delMese.reduce((s,v) => s + (parseFloat(v.peso_kg)||0), 0);
+    const [yy, mm] = k.split('-');
+    const nome = new Date(yy, parseInt(mm)-1, 1).toLocaleDateString('it-IT', {month:'long', year:'numeric'});
+    return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 12px;margin-bottom:8px;background:#FFF;border:0.5px solid var(--border);border-radius:var(--radius-lg);">
+      <div style="min-width:0;">
+        <div style="font-size:14px;font-weight:600;text-transform:capitalize;">${nome}${k === meseCorr ? ' <span style="font-weight:400;text-transform:none;color:var(--text2);font-size:11px;">· parziale</span>' : ''}</div>
+        <div class="vd-detail">${fmt(capi)} capi${kg ? ' · ' + fmt(kg,1) + ' kg' : ''} · ${delMese.length} vendit${delMese.length === 1 ? 'a' : 'e'}</div>
+      </div>
+      <div style="font-size:16px;font-weight:700;font-family:var(--mono);color:var(--accent);white-space:nowrap;">€ ${fmt(tot,2)}</div>
+    </div>`;
+  }).join('');
 }
 
 function renderRiga(v) {
