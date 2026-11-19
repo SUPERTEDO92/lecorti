@@ -236,7 +236,8 @@ const etichetta = nome => ETICHETTE[nome] || nome;
 // (bug di rendering su Firefox Android con emoji color-font flippate+animate).
 const PIG_SVG = '<svg viewBox="0 0 100 70" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;"><ellipse cx="52" cy="40" rx="34" ry="24" fill="#F2A6A0"/><ellipse cx="20" cy="24" rx="10" ry="9" fill="#F2A6A0"/><ellipse cx="17" cy="21" rx="4.5" ry="4" fill="#D97D78"/><circle cx="34" cy="30" r="3" fill="#2A2622"/><ellipse cx="14" cy="42" rx="15" ry="13" fill="#EF9791"/><ellipse cx="9" cy="40" rx="3" ry="4" fill="#2A2622"/><ellipse cx="9" cy="46" rx="3" ry="4" fill="#2A2622"/><path d="M84 30 Q94 24 90 34 Q96 38 86 38" fill="none" stroke="#EF9791" stroke-width="4" stroke-linecap="round"/><ellipse cx="46" cy="60" rx="6" ry="4" fill="#D97D78"/><ellipse cx="66" cy="60" rx="6" ry="4" fill="#D97D78"/></svg>';
 
-let allSoccide = [], allLotti = [], allUscite = [], allMortalita = [], allIngressi = [], allNoteVet = [], allTrasferimenti = [], allSanitario = [], allMangime = [];
+let allSoccide = [], allLotti = [], allUscite = [], allMortalita = [], allIngressi = [], allNoteVet = [], allTrasferimenti = [], allSanitario = [], allMangime = [], allDaPesare = [];
+let vistaPesi = false;
 let soccidaAttiva = null;
 const tabAttiva = {};   // lotto_id → 'mortalita' | 'referti' | 'note' (resta aperta dopo un salvataggio)
 
@@ -315,6 +316,7 @@ function setNav(n) {
 // voce del menu: chiude il menu e cambia pagina con la stessa transizione delle schede
 function vaiA(n) {
   setNav(n);
+  vistaPesi = false;
   const nav = document.getElementById('topbar-nav');
   if (!nav.classList.contains('collapsed')) toggleTopbarNav();
   if (n === 'macelli') renderRubricaMacelli();
@@ -431,19 +433,32 @@ async function loadAll() {
       allMangime = await sb('v_consegne_mangime', `?soccida_id=in.(${socIds.join(',')})&in_kg=eq.true&order=data_consegna.desc,numero_documento.desc,riga.asc`);
       if (!Array.isArray(allMangime)) allMangime = [];
     } catch (e) { allMangime = []; }
+    // bolle a 1 kg di TUTTI gli allevamenti: Samuele è spesso in ufficio e a volte trova lui il peso (Ruben 19/11/2026)
+    try {
+      allDaPesare = await sb('v_consegne_mangime', '?quantita_provvisoria=eq.true&in_kg=eq.true&order=data_consegna.desc,numero_documento.asc,riga.asc');
+      if (!Array.isArray(allDaPesare)) allDaPesare = [];
+    } catch (e) { allDaPesare = []; }
     await notaMediaPreload(allNoteVet);
   } catch (e) {
     content.innerHTML = `<div class="empty" style="color:var(--red);">Dati non caricati: ${esc(e.message || e)}<br><br>
       <button class="incr-edit-btn" style="background:var(--text);" onclick="loadAll()">Riprova</button></div>`;
     return;
   }
-  if (soccidaAttiva) render(); else renderLista();
+  if (location.hash === '#pesi') { history.replaceState(null, '', location.pathname); apriPesi(); return; }
+  if (vistaPesi) renderPesi(); else if (soccidaAttiva) render(); else renderLista();
 }
 
 // ── LISTA SOCCIDE (come home di index) ──
 function renderLista() {
   soccidaAttiva = null;
-  const html = `<div class="soccida-card manuali" onclick="apriManuali()">
+  vistaPesi = false;
+  const nPesi = allDaPesare.filter(m => m.quantita_provvisoria).length;
+  const html = (nPesi ? `<div class="soccida-card" onclick="apriPesi()" style="background:var(--amber-bg);border-color:#E8C88A;margin-bottom:8px;">
+      <div style="font-size:18px;line-height:1;">⚖️</div>
+      <div class="soc-main"><div class="soc-nome">Pesi mangime da inserire</div><div class="soc-meta">bolle a 1 kg · tutti gli allevamenti</div></div>
+      <span class="soc-badge badge-amber">${nPesi}</span>
+      <span class="soc-arrow">&#8250;</span>
+    </div>` : '') + `<div class="soccida-card manuali" onclick="apriManuali()">
       <div style="font-size:18px;line-height:1;">📚</div>
       <div class="soc-main"><div class="soc-nome">Manuali Le Corti</div><div class="soc-meta">biosicurezza, schede operative, DOP</div></div>
       <span class="soc-arrow">&#8250;</span>
@@ -581,6 +596,7 @@ function transizioneMandria(azione) {
 
 function apriSoccida(nome) {
   soccidaAttiva = nome;
+  vistaPesi = false;
   mangimeAperto = false;
   transizioneMandria(() => render());
 }
@@ -590,6 +606,39 @@ function apriSoccida(nome) {
 // Sulle bolle a 1 kg Samuele scrive il peso vero (quello a penna sul DDT): aggiorna consegne_mangime come la
 // risposta di Ilaria (quantita, quantita_precedente, quantita_provvisoria=false) e la richiesta pesi si chiude da sola.
 let mangimeAperto = false;
+const ddMangime = d => { const p = (d || '').split('-'); return p.length === 3 ? `${p[2]}/${p[1]}` : '—'; };
+// una consegna: data, bolla (+ riga se la bolla ne ha più di una), kg o campo per il peso; conSoccida = nome allevamento davanti
+function itemMangime(m, righe, conSoccida) {
+  const piuRighe = m.riga > 1 || righe.some(x => x !== m && x.numero_documento === m.numero_documento);
+  return `<div class="mangime-item"${m.quantita_provvisoria ? ' style="background:var(--amber-bg);"' : ''}>
+      <div class="mangime-item-top"><span>${conSoccida ? `<b>${esc(etichetta(m.soccida || m.destinazione || '—'))}</b> · ` : ''}${ddMangime(m.data_consegna)} · bolla ${esc(m.numero_documento)}${piuRighe ? ' riga ' + esc(m.riga) : ''}</span><b>${m.quantita_provvisoria ? (conSoccida ? '' : 'peso da inserire') : fmt(m.quantita) + ' kg'}</b></div>
+      <div class="mangime-item-desc">${esc(m.cod_articolo || '')}${m.descrizione ? ' — ' + esc(m.descrizione) : ''}</div>
+      ${m.quantita_provvisoria ? `<div style="display:flex;gap:6px;margin-top:6px;">
+        <input type="number" inputmode="numeric" id="mg-kg-${m.id}" class="field-input" style="margin:0;flex:1;" placeholder="kg scritti sulla bolla">
+        <button class="btn-mort" style="margin:0;width:auto;padding:0 14px;background:var(--accent);" onclick="salvaPesoMangime(${m.id}, this)">✓ Salva</button>
+      </div>` : ''}
+    </div>`;
+}
+
+// ── PESI MANGIME DA INSERIRE: bolle partite a 1 kg di tutti gli allevamenti (il peso è scritto a penna sul DDT).
+// La mattina dopo l'export Samuele riceve la mail con le bolle nuove; quelle ancora senza peso dopo mezzogiorno vanno a Ilaria.
+function apriPesi() {
+  setNav('soccide');
+  transizioneMandria(() => renderPesi());
+}
+function renderPesi() {
+  vistaPesi = true;
+  soccidaAttiva = null;
+  const righe = allDaPesare.filter(m => m.quantita_provvisoria);
+  document.getElementById('content').innerHTML = `<div class="detail-sticky-wrap">
+      <button class="back-btn" onclick="vistaPesi = false; transizioneMandria(() => renderLista())">← Soccide</button>
+      <div class="soccida-header"><div class="soccida-title">⚖️ PESI MANGIME DA INSERIRE</div></div>
+    </div>
+    <div style="font-size:12px;color:var(--text2);margin:0 2px 10px;">Bolle arrivate dall'export con peso 1 kg: scrivi i kg della bolla (DDT o Impresa).</div>` +
+    (righe.length ? `<div class="mangime-wrap open"><div class="mangime-list" style="max-height:none;border-top:none;">${righe.map(m => itemMangime(m, righe, true)).join('')}</div></div>`
+      : `<div class="empty">Nessuna bolla da pesare. ✓</div>`);
+}
+
 function renderMangimeRow(socId) {
   const righe = allMangime.filter(m => m.soccida_id === socId);
   if (!righe.length) {
@@ -600,17 +649,10 @@ function renderMangimeRow(socId) {
   const tot30 = righe.filter(m => m.data_consegna >= lim30).reduce((s, m) => s + kg(m), 0);
   const ultimaData = righe[0].data_consegna;
   const totUltima = righe.filter(m => m.data_consegna === ultimaData).reduce((s, m) => s + kg(m), 0);
-  const dd = d => { const p = (d || '').split('-'); return p.length === 3 ? `${p[2]}/${p[1]}` : '—'; };
+  const dd = ddMangime;
 
   const daPesare = righe.filter(m => m.quantita_provvisoria).length;
-  const lista = righe.slice(0, 60).map(m => `<div class="mangime-item"${m.quantita_provvisoria ? ' style="background:var(--amber-bg, #FFF6E5);"' : ''}>
-      <div class="mangime-item-top"><span>${dd(m.data_consegna)} · bolla ${esc(m.numero_documento)}${m.riga > 1 || righe.some(x => x !== m && x.numero_documento === m.numero_documento) ? ' riga ' + esc(m.riga) : ''}</span><b>${m.quantita_provvisoria ? 'peso da inserire' : fmt(m.quantita) + ' kg'}</b></div>
-      <div class="mangime-item-desc">${esc(m.cod_articolo || '')}${m.descrizione ? ' — ' + esc(m.descrizione) : ''}</div>
-      ${m.quantita_provvisoria ? `<div style="display:flex;gap:6px;margin-top:6px;">
-        <input type="number" inputmode="numeric" id="mg-kg-${m.id}" class="field-input" style="margin:0;flex:1;" placeholder="kg scritti sulla bolla">
-        <button class="btn-mort" style="margin:0;width:auto;padding:0 14px;background:var(--accent);" onclick="salvaPesoMangime(${m.id}, this)">✓ Salva</button>
-      </div>` : ''}
-    </div>`).join('');
+  const lista = righe.slice(0, 60).map(m => itemMangime(m, righe, false)).join('');
 
   return `<div class="mangime-wrap${mangimeAperto ? ' open' : ''}">
     <div class="mangime-row" onclick="mangimeAperto = this.parentNode.classList.toggle('open')">
@@ -898,7 +940,7 @@ function salvaNota(lottoId, btn) {
 function salvaPesoMangime(id, btn) {
   const kg = parseFloat(String(document.getElementById(`mg-kg-${id}`).value).replace(',', '.'));
   if (isNaN(kg) || kg < 200 || kg > 40000) { showToast('Inserisci i kg della bolla (tra 200 e 40.000)', false); return; }
-  const m = allMangime.find(x => x.id === id);
+  const m = allMangime.find(x => x.id === id) || allDaPesare.find(x => x.id === id);
   return invia(btn, async () => {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/consegne_mangime?id=eq.${id}&quantita_provvisoria=eq.true`, {
       method: 'PATCH', headers: SB_H,
@@ -907,9 +949,8 @@ function salvaPesoMangime(id, btn) {
     if (!r.ok) throw new Error(await r.text());
     const j = await r.json();
     if (!Array.isArray(j) || !j.length) throw new Error('peso già inserito da qualcun altro, ricarica la pagina');
-    if (m) Object.assign(m, { quantita: kg, quantita_provvisoria: false });
-    mangimeAperto = true;
-    render();
+    [allMangime, allDaPesare].forEach(l => l.filter(x => x.id === id).forEach(x => Object.assign(x, { quantita: kg, quantita_provvisoria: false })));
+    if (vistaPesi) renderPesi(); else { mangimeAperto = true; render(); }
     showToast(`✓ Peso salvato — bolla ${m ? m.numero_documento : ''}: ${fmt(kg)} kg`, true);
   });
 }
