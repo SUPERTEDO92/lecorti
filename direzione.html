@@ -151,7 +151,7 @@
   .share { margin-top: 12px; height: 6px; background: #F0ECE3; border-radius: 6px; overflow: hidden; }
   .share > div { height: 100%; background: var(--c); border-radius: 6px; width: 0; }
   .acard-f { font-size: 11.5px; color: var(--ink3); margin-top: 7px; display: flex; justify-content: space-between; }
-  .acard.vuota { cursor: default; opacity: .62; }
+  .acard.vuota, .mcard.vuota { cursor: default; opacity: .62; }
   .acard.vuota:hover { transform: none; box-shadow: var(--sh-sm); border-color: var(--line); }
 
   /* ── Dettaglio allevamento ── */
@@ -282,6 +282,7 @@
     <nav class="nav">
       <button class="nav-btn active" id="nav-home" onclick="vai('home')">🐷 Allevamenti</button>
       <button class="nav-btn" id="nav-macelli" onclick="vai('macelli')">🏭 Macelli</button>
+      <button class="nav-btn" id="nav-svezz" onclick="vai('svezz')">🍼 Svezzamenti</button>
     </nav>
     <div class="anni" id="anni"></div>
     <a class="back-link" href="capo.html">← Direzione</a>
@@ -293,6 +294,7 @@
   <section class="page" id="page-home"></section>
   <section class="page" id="page-alleva"></section>
   <section class="page" id="page-macelli"></section>
+  <section class="page" id="page-svezz"></section>
 </main>
 
 <script src="lecorti-shared.js"></script>
@@ -401,6 +403,7 @@ let ANNO = 'tutti';
 let PAGINA = 'home';
 let ORDINE = 'capi';
 let ALLEVA_APERTO = null;
+let SVEZZ = null;       // dati grezzi per la pagina Svezzamenti
 const COLORI = {};
 
 function colore(nome) {
@@ -409,13 +412,17 @@ function colore(nome) {
 }
 
 async function loadAll() {
-  const [soccide, lotti, uscite, penali, acquisti] = await Promise.all([
+  const [soccide, lotti, uscite, penali, acquisti, ingressi, uscTrasf, mortalita] = await Promise.all([
     sb('soccide', '?select=id,nome,tipo,attiva&order=nome'),
-    sb('lotti', '?select=id,soccida_id,codice'),
+    sb('lotti', '?select=id,soccida_id,codice,data_ingresso,capi_entrati,kg_totali_ingresso,attivo,provenienza'),
     sb('uscite', '?select=id,lotto_id,soccida_nome,data_uscita,numero_ddt,macello,cessionario,capi,kg_totali,prezzo_kg,liquidazione,mancata_resa_kg,ddt_documento_id,liquidazione_documento_id&order=data_uscita'),
     sb('uscite_penali', '?select=uscita_id,causale,numero,valore'),
     sb('trasferimenti', '?select=lotto_id,data_trasferimento,soccida_destinazione,capi,kg,costo_acquisto&tipo=eq.ACQUISTO'),
+    sb('lotti_ingressi', '?select=lotto_id,capi,kg'),
+    sb('trasferimenti', '?select=lotto_id,tipo,data_trasferimento,soccida_destinazione,capi,kg&tipo=in.(TRASFERIMENTO,VENDITA)&lotto_id=not.is.null'),
+    sb('mortalita', '?select=lotto_id,capi_morti'),
   ]);
+  SVEZZ = { lotti, ingressi, uscTrasf, uscite, mortalita };
   // Ingressi nei lotti (acquisti da fornitori + trasferimenti tra soccide, lato ACQUISTO:
   // la riga gemella TRASFERIMENTO non si conta per non raddoppiare)
   ACQUISTI = acquisti.filter(a => a.capi > 0 && !ESCLUSE.includes((a.soccida_destinazione || '').toUpperCase()));
@@ -487,8 +494,9 @@ function vai(p, arg) {
   if (p === 'alleva') ALLEVA_APERTO = arg;
   const da = PAGINA;
   PAGINA = p;
-  document.getElementById('nav-home').classList.toggle('active', p !== 'macelli');
+  document.getElementById('nav-home').classList.toggle('active', p === 'home' || p === 'alleva');
   document.getElementById('nav-macelli').classList.toggle('active', p === 'macelli');
+  document.getElementById('nav-svezz').classList.toggle('active', p === 'svezz');
   transizione(da, p);
 }
 function transizione(da, a) {
@@ -512,6 +520,7 @@ function mostra(p) {
   if (p === 'home') renderHome();
   if (p === 'alleva') renderAlleva(ALLEVA_APERTO);
   if (p === 'macelli') renderMacelli();
+  if (p === 'svezz') renderSvezz();
 }
 function setAnno(a) {
   ANNO = a;
@@ -779,8 +788,9 @@ function dettaglioMacello(x) {
   return h + '</tbody></table></div>';
 }
 
-function apriMacello(i) {
-  const card = document.getElementById('mc-' + i);
+function apriMacello(i) { apriCard('mc-' + i); }
+function apriCard(id) {
+  const card = document.getElementById(id);
   const body = card.querySelector('.mbody');
   const aperta = card.classList.toggle('open');
   if (typeof gsap === 'undefined') { body.style.height = aperta ? 'auto' : '0'; if (aperta) animaNumeri(body); return; }
@@ -791,6 +801,102 @@ function apriMacello(i) {
   } else {
     gsap.to(body, { height: 0, duration: .35, ease: 'power2.inOut' });
   }
+}
+
+// ══════════════ PAGINA 3: SVEZZAMENTI ══════════════
+// Per ogni soccida di tipo svezzamento: capi entrati nei lotti, capi usciti
+// (trasferimenti/vendite dal lotto + uscite), morti e presenti.
+// Filtro anno = lotti entrati in quell'anno. Uscite senza lotto collegato non contate.
+function renderSvezz() {
+  const el = document.getElementById('page-svezz');
+  const { lotti, ingressi, uscTrasf, uscite, mortalita } = SVEZZ;
+  const socSv = SOCCIDE.filter(s => s.tipo === 'svezzamento');
+  const ingPer = {}, uscPer = {}, mortPer = {};
+  ingressi.forEach(i => { const a = ingPer[i.lotto_id] ||= { capi: 0, kg: 0 }; a.capi += i.capi || 0; a.kg += Number(i.kg) || 0; });
+  uscTrasf.forEach(t => (uscPer[t.lotto_id] ||= []).push({ data: t.data_trasferimento, capi: t.capi || 0, kg: Number(t.kg) || 0, dest: t.soccida_destinazione || '—', tipo: t.tipo }));
+  uscite.forEach(u => { if (u.lotto_id && !isUscitaVenditaDiretta(u)) (uscPer[u.lotto_id] ||= []).push({ data: u.data_uscita, capi: u.capi || 0, kg: Number(u.kg_totali) || 0, dest: u.macello || u.cessionario || 'macello', tipo: 'USCITA' }); });
+  mortalita.forEach(m => { mortPer[m.lotto_id] = (mortPer[m.lotto_id] || 0) + (m.capi_morti || 0); });
+
+  const righe = socSv.map(soc => {
+    const ls = lotti.filter(l => l.soccida_id === soc.id && l.data_ingresso && (ANNO === 'tutti' || l.data_ingresso.startsWith(ANNO)))
+      .sort((a, b) => b.data_ingresso.localeCompare(a.data_ingresso))
+      .map(l => {
+        const ing = ingPer[l.id];
+        const entrati = ing ? ing.capi : (l.capi_entrati || 0);
+        const kgIn = ing ? ing.kg : (Number(l.kg_totali_ingresso) || 0);
+        const usc = (uscPer[l.id] || []).sort((a, b) => a.data.localeCompare(b.data));
+        const usciti = usc.reduce((s, u) => s + u.capi, 0);
+        const kgOut = usc.reduce((s, u) => s + u.kg, 0);
+        const morti = mortPer[l.id] || 0;
+        const fine = usc.length ? usc[usc.length - 1].data : null;
+        return { l, entrati, kgIn, usc, usciti, kgOut, morti, presenti: entrati - usciti - morti, fine,
+          dest: [...new Set(usc.map(u => u.dest))] };
+      });
+    const t = ls.reduce((a, x) => ({ entrati: a.entrati + x.entrati, usciti: a.usciti + x.usciti, morti: a.morti + x.morti,
+      presenti: a.presenti + (x.l.attivo ? Math.max(0, x.presenti) : 0), attivi: a.attivi + (x.l.attivo ? 1 : 0) }),
+      { entrati: 0, usciti: 0, morti: 0, presenti: 0, attivi: 0 });
+    return { soc, ls, ...t };
+  }).sort((a, b) => b.entrati - a.entrati);
+
+  const T = righe.reduce((a, r) => ({ entrati: a.entrati + r.entrati, usciti: a.usciti + r.usciti, morti: a.morti + r.morti, presenti: a.presenti + r.presenti, n: a.n + (r.ls.length ? 1 : 0) }),
+    { entrati: 0, usciti: 0, morti: 0, presenti: 0, n: 0 });
+  const pct = (a, b) => b ? fmt(a / b * 100, 1) + ' %' : '—';
+
+  let h = `<div class="hero">
+    <div class="kpi big"><img class="pig" src="img/piglet-running.png" alt="">
+      <div class="kpi-l">Capi entrati in svezzamento</div><div class="kpi-v">${num(T.entrati)}</div>
+      <div class="kpi-s">${T.n} svezzamenti · ${ANNO === 'tutti' ? 'tutti i lotti registrati' : 'lotti entrati nel ' + ANNO}</div></div>
+    <div class="kpi" style="--c:var(--green)"><div class="kpi-l">Capi usciti</div><div class="kpi-v">${num(T.usciti)}</div><div class="kpi-s">trasferiti all'ingrasso o venduti</div></div>
+    <div class="kpi" style="--c:var(--red)"><div class="kpi-l">Morti</div><div class="kpi-v">${num(T.morti)}</div><div class="kpi-s">mortalità ${pct(T.morti, T.entrati)}</div></div>
+    <div class="kpi" style="--c:var(--blue)"><div class="kpi-l">Presenti oggi</div><div class="kpi-v">${num(T.presenti)}</div><div class="kpi-s">nei lotti ancora aperti</div></div>
+    <div class="kpi" style="--c:var(--gold)"><div class="kpi-l">Usciti su entrati</div><div class="kpi-v">${T.entrati ? num(T.usciti / T.entrati * 100, 1, ' %') : '—'}</div><div class="kpi-s">capi usciti ÷ capi entrati</div></div>
+  </div>
+  <div class="sec-h"><div><div class="sec-t">I nostri svezzamenti</div><div class="sec-s">Clicca uno svezzamento per vedere i suoi lotti</div></div></div>
+  <div class="mlist" id="svlist">`;
+
+  righe.forEach((r, i) => {
+    const nome = r.soc.nome.toUpperCase();
+    const [nominativo] = NOMINATIVI[nome] || [''];
+    const c = PALETTE[(i + 2) % PALETTE.length];
+    const ciemme = nome === 'FIORENZUOLA';
+    h += `<div class="mcard ${r.ls.length ? '' : 'vuota'}" id="sv-${i}" style="--c:${c}">
+      <div class="mhead" ${r.ls.length ? `onclick="apriCard('sv-${i}')"` : ''}>
+        <div class="mrank">${escHtml(iniziali(nome))}</div>
+        <div><div class="mname">${escHtml(nome)}${!r.soc.attiva ? ' <span class="pill n">chiuso</span>' : ''}${ciemme ? ' <span class="pill n">suini Gruppo Ciemme</span>' : ''}</div>
+          <div class="msub">${escHtml([nominativo, r.ls.length ? r.ls.length + (r.ls.length === 1 ? ' lotto' : ' lotti') + (r.attivi ? ', ' + r.attivi + ' aperti' : '') : 'nessun lotto' + (ANNO === 'tutti' ? '' : ' nel ' + ANNO)].filter(Boolean).join(' · '))}</div></div>
+        <div><div class="ms-l">Entrati</div><div class="ms-v">${fmt(r.entrati)}</div></div>
+        <div><div class="ms-l">Usciti</div><div class="ms-v eur">${fmt(r.usciti)}</div></div>
+        <div class="hide-s"><div class="ms-l">Morti</div><div class="ms-v" style="color:var(--red)">${fmt(r.morti)} <small style="font-size:11px;color:var(--ink3)">${pct(r.morti, r.entrati)}</small></div></div>
+        <div class="hide-m"><div class="ms-l">Presenti</div><div class="ms-v">${fmt(r.presenti)}</div></div>
+        <div class="hide-m"><div class="ms-l">Usciti / entrati</div><div class="share" style="margin-top:7px"><div data-w="${r.entrati ? Math.min(100, r.usciti / r.entrati * 100).toFixed(1) : 0}"></div></div></div>
+        <div class="mchev">${r.ls.length ? '›' : ''}</div>
+      </div>
+      <div class="mbody"><div style="padding:16px 18px 20px;border-top:1px solid var(--line);overflow-x:auto">${tabellaLottiSvezz(r)}</div></div>
+    </div>`;
+  });
+  h += `</div><div class="note">Entrati = capi arrivati nel lotto (somma degli arrivi). Usciti = trasferimenti e vendite dal lotto più le uscite registrate. Presenti = entrati − usciti − morti, solo per i lotti ancora aperti. Le uscite registrate senza lotto non sono contate.</div>`;
+
+  el.innerHTML = h;
+  animaNumeri(el.querySelector('.hero')); animaNumeri(el.querySelector('#svlist'));
+  if (typeof gsap !== 'undefined') {
+    gsap.from('#page-svezz .hero .kpi', { opacity: 0, y: 14, duration: .5, stagger: .07, ease: 'power3.out' });
+    gsap.from('#svlist .mcard', { opacity: 0, x: -24, duration: .45, stagger: .05, ease: 'power3.out', delay: .2 });
+  }
+}
+
+function tabellaLottiSvezz(r) {
+  let h = `<table class="t"><thead><tr><th class="l">Lotto</th><th class="l">Provenienza</th><th>Ingresso</th><th>Entrati</th><th>Peso ingr.</th><th>Usciti</th><th>Peso uscita</th><th>Morti</th><th>Presenti</th><th>Giorni</th><th class="l">Destinazione</th></tr></thead><tbody>`;
+  r.ls.forEach(x => {
+    const gg = x.fine && !x.l.attivo ? Math.round((new Date(x.fine) - new Date(x.l.data_ingresso)) / 86400000)
+      : Math.round((Date.now() - new Date(x.l.data_ingresso)) / 86400000);
+    h += `<tr><td class="txt l"><b>${escHtml(x.l.codice)}</b> ${x.l.attivo ? '<span class="pill g">aperto</span>' : '<span class="pill n">chiuso</span>'}</td>
+      <td class="txt l" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(x.l.provenienza || '')}">${escHtml(x.l.provenienza || '—')}</td>
+      <td>${fmtDate(x.l.data_ingresso)}</td><td>${fmt(x.entrati)}</td><td>${x.entrati && x.kgIn ? fmt(x.kgIn / x.entrati, 1) + ' kg' : '—'}</td>
+      <td class="eurc">${fmt(x.usciti)}</td><td>${x.usciti && x.kgOut ? fmt(x.kgOut / x.usciti, 1) + ' kg' : '—'}</td>
+      <td class="${x.morti ? 'neg' : ''}">${fmt(x.morti)}</td><td>${x.l.attivo ? fmt(x.presenti) : '—'}</td><td>${gg}</td>
+      <td class="txt l" style="max-width:240px">${escHtml(x.dest.join(', ') || '—')}</td></tr>`;
+  });
+  return h + `</tbody><tfoot><tr><td>Totale</td><td></td><td></td><td>${fmt(r.entrati)}</td><td></td><td class="eurc">${fmt(r.usciti)}</td><td></td><td class="neg">${fmt(r.morti)}</td><td>${fmt(r.presenti)}</td><td></td><td></td></tr></tfoot></table>`;
 }
 
 // ══════════════ Password (stessa della pagina Direzione) ══════════════
