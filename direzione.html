@@ -312,6 +312,8 @@ function fmt(n, dec = 0) {
 }
 
 const ESCLUSE = ['FIORENZUOLA'];
+// Riquadri "Capi venduti per macello" e "Penali per causale" nella pagina Macelli: nascosti per ora (Ruben 24/11/2026)
+const MOSTRA_RIEPILOGHI_MACELLI = false;
 const NOMINATIVI = {
   'SABBIONERA':   ['Soc. Agr. Sabbionera delle Sorelle Vitari s.s.', 'Via Fienile Pozzo 3 — Roccafranca (BS)'],
   'FILIPPINI':    ['Az. Agr. Filippini di Salini Ivonne', "Via Padana Superiore 54 — Urago d'Oglio (BS)"],
@@ -710,7 +712,7 @@ function renderMacelli() {
     <div class="kpi" style="--c:var(--green)"><div class="kpi-l">Pagato medio a capo</div><div class="kpi-v">${num(eurCapo(T), 2, ' €')}</div><div class="kpi-s">IVA inclusa</div></div>
     <div class="kpi" style="--c:var(--blue)"><div class="kpi-l">Mancata resa</div><div class="kpi-v">${num(T.mrKg, 0, ' kg')}</div><div class="kpi-s">kg non pagati dal macello</div></div>
   </div>
-  <div class="mtop">
+  <div class="mtop"${MOSTRA_RIEPILOGHI_MACELLI ? '' : ' style="display:none"'}>
     <div class="panel"><div class="panel-t">Capi venduti per macello</div><div class="panel-s">In ordine di capi caricati</div>
       ${per.slice(0, 12).map(([m, x], i) => `<div class="hbar" style="--c:${PALETTE[i % PALETTE.length]}"><div class="hbar-n" title="${escHtml(m)}">${escHtml(m)}</div>
         <div class="hbar-t"><div data-w="${(x.capi / maxC * 100).toFixed(1)}"></div></div><div class="hbar-v">${fmt(x.capi)}<small>${fmt(x.capi / T.capi * 100, 1)} %</small></div></div>`).join('')}
