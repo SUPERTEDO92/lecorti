@@ -724,6 +724,7 @@ let ORIGINE = 'home';   // da quale pagina si è aperta la scheda (home o svezz)
 function apriAlleva(nome, vista) { ORIGINE = 'home'; VISTA_ALLEVA = vista || 'carichi'; SAN_LOTTO = 'tutti'; vai('alleva', nome); }
 function apriSvezz(nome) { ORIGINE = 'svezz'; VISTA_ALLEVA = 'presenti'; SAN_LOTTO = 'tutti'; vai('alleva', nome); }
 function vai(p, arg) {
+  regAccesso('sezione', p === 'alleva' ? (ORIGINE === 'svezz' ? 'Svezzamento ' : 'Allevamento ') + arg : ({ home: 'Allevamenti', macelli: 'Macelli', svezz: 'Svezzamenti' }[p] || p));
   if (p === 'alleva') ALLEVA_APERTO = arg;
   const da = PAGINA;
   PAGINA = p;
@@ -902,6 +903,7 @@ function posizionaSwitch(anima) {
 window.addEventListener('resize', () => posizionaSwitch(false));
 function setVista(v) {
   if (v === VISTA_ALLEVA) return;
+  regAccesso('vista', ALLEVA_APERTO + ': ' + ({ carichi: isSvezz(ALLEVA_APERTO) ? 'Entrati e usciti' : 'Carichi e liquidazioni', presenti: 'Capi presenti' }[v] || v));
   const ordine = { carichi: 0, presenti: 1, sanitario: 2 };
   const indietro = ordine[v] < ordine[VISTA_ALLEVA];
   VISTA_ALLEVA = v;
@@ -1084,6 +1086,8 @@ async function tabLotto(lottoId, tab) {
   };
   if (giaAperta) { chiudi(); return; }
   btn.classList.add('on');
+  const lt = SVEZZ.lotti.find(l => l.id === lottoId);
+  regAccesso(tab === 'referti' ? 'referti' : 'note', `${ALLEVA_APERTO} lotto ${lt ? lt.codice : lottoId}: ${tab}`);
   const apri = async () => {
     inner.innerHTML = `<div class="san-loading" style="padding:24px 0"><span class="s">${tab === 'referti' ? '🩺' : tab === 'note' ? '📝' : '🚗'}</span></div>`;
     if (typeof gsap !== 'undefined') gsap.to(panel, { height: 'auto', duration: .3 }); else panel.style.height = 'auto';
@@ -1205,7 +1209,11 @@ function dettaglioMacello(x) {
   return h + '</tbody></table></div>';
 }
 
-function apriMacello(i) { apriCard('mc-' + i); }
+function apriMacello(i) {
+  const c = document.getElementById('mc-' + i);
+  if (c && !c.classList.contains('open')) regAccesso('sezione', 'Macello ' + (c.querySelector('.mname')?.textContent || ''));
+  apriCard('mc-' + i);
+}
 function apriCard(id) {
   const card = document.getElementById(id);
   const body = card.querySelector('.mbody');
@@ -1593,6 +1601,7 @@ async function inviaAssistenza() {
     document.getElementById('assist-testo').value = '';
     document.getElementById('assist-form').style.display = 'none';
     document.getElementById('assist-ok').style.display = '';
+    regAccesso('assistenza', 'richiesta n. ' + (d.id || ''));
     if (typeof gsap !== 'undefined') gsap.fromTo('#assist-ok .tick', { scale: 0, rotate: -90 }, { scale: 1, rotate: 0, duration: .6, ease: 'back.out(2)' });
   } catch (e) {
     err.textContent = 'Richiesta non inviata (' + e.message + '). Riprova tra poco.';
@@ -1601,6 +1610,42 @@ async function inviaAssistenza() {
   }
 }
 document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; if (document.getElementById('lightbox').classList.contains('on')) chiudiFoto(); else if (document.getElementById('assist-modal').classList.contains('on')) chiudiAssistenza(); });
+
+// ══════════════ Registro accessi (tabella accessi_direzione, Ruben 25/11/2026) ══════════════
+// La pagina può solo scrivere: il registro si legge da Supabase (vista v_accessi_direzione).
+// Aprendo una volta la pagina con ?io=1 il dispositivo viene segnato come di Ruben.
+const ACC_SESSIONE = (() => {
+  try { let s = sessionStorage.getItem('dir_sessione'); if (!s) { s = Date.now().toString(36) + Math.random().toString(36).slice(2, 8); sessionStorage.setItem('dir_sessione', s); } return s; }
+  catch (e) { return 'x' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+})();
+let ACC_RUBEN = false;
+try {
+  const q = new URLSearchParams(location.search).get('io');
+  if (q === '1') localStorage.setItem('dir_ruben', '1');
+  if (q === '0') localStorage.removeItem('dir_ruben');
+  ACC_RUBEN = localStorage.getItem('dir_ruben') === '1';
+} catch (e) {}
+function nomeDispositivo() {
+  const u = navigator.userAgent;
+  const so = /Android/i.test(u) ? 'Android' : /iPhone/i.test(u) ? 'iPhone' : /iPad/i.test(u) ? 'iPad' : /Windows/i.test(u) ? 'Windows' : /Mac OS X|Macintosh/i.test(u) ? 'Mac' : /Linux/i.test(u) ? 'Linux' : 'altro';
+  const br = /Edg\//.test(u) ? 'Edge' : /OPR\//.test(u) ? 'Opera' : /Firefox\//.test(u) ? 'Firefox' : /SamsungBrowser/.test(u) ? 'Samsung Internet' : /Chrome\//.test(u) ? 'Chrome' : /Safari\//.test(u) ? 'Safari' : 'browser';
+  const tipo = /Mobi|Android|iPhone/i.test(u) ? 'telefono' : /iPad|Tablet/i.test(u) ? 'tablet' : 'PC';
+  return `${tipo} ${so} · ${br}`;
+}
+let ACC_ULTIMO = '';
+function regAccesso(evento, dettaglio) {
+  const chiave = evento + '|' + (dettaglio || '');
+  if (chiave === ACC_ULTIMO) return;   // niente doppioni di fila
+  ACC_ULTIMO = chiave;
+  try {
+    fetch(`${SUPABASE_URL}/rest/v1/accessi_direzione`, {
+      method: 'POST', keepalive: true,
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify({ sessione: ACC_SESSIONE, evento, dettaglio: dettaglio ? String(dettaglio).slice(0, 200) : null,
+        dispositivo: nomeDispositivo(), user_agent: navigator.userAgent.slice(0, 400), schermo: `${screen.width}x${screen.height}`, dispositivo_ruben: ACC_RUBEN }),
+    }).catch(() => {});
+  } catch (e) {}
+}
 
 // ══════════════ Password (stessa della pagina Direzione) ══════════════
 const PW_HASH_TARGET = '0e77daaea7ab6edef5db41e25f91b03b44f82f3a16ad34e80e827fc869eff256';
@@ -1612,14 +1657,18 @@ async function pwCheck() {
   const h = await pwHash(document.getElementById('pw-input').value);
   if (h === PW_HASH_TARGET) {
     try { sessionStorage.setItem('capo_auth', '1'); } catch (e) {}
+    regAccesso('login');
     document.getElementById('pw-gate').classList.add('hidden');
   } else {
     document.getElementById('pw-err').textContent = 'Password errata.';
+    regAccesso('password_errata');
     document.getElementById('pw-input').value = '';
   }
 }
 document.getElementById('pw-input').addEventListener('keydown', e => { if (e.key === 'Enter') pwCheck(); });
-try { if (sessionStorage.getItem('capo_auth') === '1') document.getElementById('pw-gate').classList.add('hidden'); } catch (e) {}
+let ACC_GIA_DENTRO = false;
+try { if (sessionStorage.getItem('capo_auth') === '1') { document.getElementById('pw-gate').classList.add('hidden'); ACC_GIA_DENTRO = true; } } catch (e) {}
+regAccesso('apertura', ACC_GIA_DENTRO ? 'già entrato in questa sessione' : 'pagina della password');
 
 loadAll();
 </script>
