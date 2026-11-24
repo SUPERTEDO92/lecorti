@@ -100,6 +100,7 @@
   }
   @media (min-width: 1101px) { .hero.h4 { grid-template-columns: 1.4fr repeat(3, 1fr); } }
   .hero.h2 { grid-template-columns: 2fr 1fr; }
+  .hero.h1 { grid-template-columns: 1fr; }
   @media (max-width: 640px) { .hero.h2 { grid-template-columns: 1fr; } }
   .kpi {
     background: var(--card); border-radius: var(--r); padding: 18px 20px; box-shadow: var(--sh-sm);
@@ -662,7 +663,7 @@ function renderAlleva(nome) {
     </div></div>`;
 
   h += `<div class="panel"><div class="panel-t">Carichi</div><div class="panel-s">Dal più recente</div><div class="scroll"><table class="t">
-    <thead><tr><th>Data</th><th class="l">DDT</th><th class="l">Lotto</th><th class="l">Macello</th><th>Capi</th><th>Kg</th><th>Peso medio</th><th>€ a capo</th><th>€/kg</th><th>Mancata resa</th><th>Penali</th><th class="l">Doc.</th></tr></thead><tbody>`;
+    <thead><tr><th>Data</th><th class="l">DDT</th><th class="l">Lotto</th><th class="l">Macello</th><th>Capi</th><th>Kg</th><th>Peso medio</th><th>€ a capo</th><th>€/kg</th><th>Penali</th><th class="l">Doc.</th></tr></thead><tbody>`;
   [...lista].reverse().forEach(c => {
     const pc = c.pagato ? c.liquidazione / c.capi : null;
     h += `<tr><td>${fmtDate(c.data_uscita)}</td><td class="txt l">${escHtml(c.numero_ddt || '—')}</td><td class="txt l">${escHtml(c.lotto || '—')}</td>
@@ -670,12 +671,12 @@ function renderAlleva(nome) {
       <td>${fmt(c.capi)}</td><td>${fmt(c.kg_totali)}</td><td>${fmt(c.kg_totali / c.capi, 1)}</td>
       <td class="eurc">${pc != null ? fmt(pc, 2) : '<span class="pill n">da liquidare</span>'}</td>
       <td>${c.pagato && c.kg_totali ? fmt(c.liquidazione / c.kg_totali, 3) : '—'}</td>
-      <td>${c.mancata_resa_kg ? fmt(c.mancata_resa_kg) + ' kg' : '—'}</td>
+
       <td class="${c.penaliEuro ? 'neg' : ''}">${c.penaliEuro ? fmt(c.penaliEuro, 0) + ' €' : '—'}</td>
       <td class="l">${c.ddt_documento_id ? `<button class="doc-btn" onclick="apriDocumento(${c.ddt_documento_id})">DDT</button> ` : ''}${c.liquidazione_documento_id ? `<button class="doc-btn" onclick="apriDocumento(${c.liquidazione_documento_id})">Liq.</button>` : ''}</td></tr>`;
   });
   h += `</tbody><tfoot><tr><td>Totale</td><td></td><td></td><td></td><td>${fmt(a.capi)}</td><td>${fmt(a.kg)}</td><td>${fmt(pesoMedio(a), 1)}</td>
-    <td class="eurc">${fmt(eurCapo(a), 2)}</td><td>${fmt(eurKg(a), 3)}</td><td>${a.mrKg ? fmt(a.mrKg) + ' kg' : '—'}</td><td class="neg">${a.pen ? fmt(a.pen, 0) + ' €' : '—'}</td><td></td></tr></tfoot></table></div></div>`;
+    <td class="eurc">${fmt(eurCapo(a), 2)}</td><td>${fmt(eurKg(a), 3)}</td><td class="neg">${a.pen ? fmt(a.pen, 0) + ' €' : '—'}</td><td></td></tr></tfoot></table></div></div>`;
 
   el.innerHTML = h;
   animaNumeri(el);
@@ -725,10 +726,9 @@ function renderMacelli() {
   const penOrd = Object.entries(penTot).sort((a, b) => b[1].euro - a[1].euro);
   const maxPen = Math.max(1, ...penOrd.map(([, g]) => g.euro));
 
-  let h = `<div class="hero h2">
+  let h = `<div class="hero h1">
     <div class="kpi big"><img class="pig" src="img/truck-transfer.png" alt="">
       <div class="kpi-l">Capi venduti ai macelli</div><div class="kpi-v">${num(T.capi)}</div><div class="kpi-s">${per.length} macelli · ${periodo()}</div></div>
-    <div class="kpi" style="--c:var(--blue)"><div class="kpi-l">Mancata resa</div><div class="kpi-v">${num(T.mrKg, 0, ' kg')}</div><div class="kpi-s">kg non pagati dal macello</div></div>
   </div>
   <div class="mtop"${MOSTRA_RIEPILOGHI_MACELLI ? '' : ' style="display:none"'}>
     <div class="panel"><div class="panel-t">Capi venduti per macello</div><div class="panel-s">In ordine di capi caricati</div>
@@ -776,7 +776,7 @@ function dettaglioMacello(x) {
   const ord = Object.entries(pen).sort((a, b) => b[1].euro - a[1].euro);
   const maxP = Math.max(1, ...ord.map(([, g]) => g.euro));
   const perAll = Object.entries(somma(x.righe, c => c.alleva)).sort((a, b) => b[1].capi - a[1].capi);
-  let h = `<div><div class="panel-t">Penali</div><div class="panel-s">${x.pen ? `${fmt(x.pen, 0)} € in totale · ${fmt(x.pen / x.capi, 2)} € per capo venduto${x.mrKg ? ' · mancata resa ' + fmt(x.mrKg) + ' kg' : ''}` : 'Nessuna penale registrata per questo macello'}</div>`;
+  let h = `<div><div class="panel-t">Penali</div><div class="panel-s">${x.pen ? `${fmt(x.pen, 0)} € in totale · ${fmt(x.pen / x.capi, 2)} € per capo venduto` : 'Nessuna penale registrata per questo macello'}</div>`;
   h += ord.map(([g, p]) => `<div class="pen-row"><div>${escHtml(g)}</div><div class="pen-bar"><div data-w="${(p.euro / maxP * 100).toFixed(1)}"></div></div>
     <div class="pen-n">${p.capi ? fmt(p.capi) + ' c.' : ''}</div><div class="pen-v">${fmt(p.euro, 0)} €</div></div>`).join('');
   h += `</div><div><div class="panel-t">Allevamenti</div><div class="panel-s">Capi venduti a questo macello e pagato a capo</div>
