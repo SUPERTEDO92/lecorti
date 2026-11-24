@@ -61,7 +61,7 @@
     background: linear-gradient(100deg, #1F2A24 0%, #2B3A31 55%, #3A2A20 100%);
     color: #FFF; box-shadow: 0 4px 18px rgba(0,0,0,.18);
   }
-  .header-inner { max-width: 1320px; margin: 0 auto; padding: 14px 28px; display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+  .header-inner { max-width: 1320px; margin: 0 auto; padding: 14px 28px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
   .brand { display: flex; align-items: center; gap: 12px; margin-right: auto; }
   .brand img { width: 46px; height: 46px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.4)); }
   .brand-t { font-size: 18px; font-weight: 700; letter-spacing: .01em; }
@@ -69,7 +69,7 @@
   .nav { display: flex; gap: 6px; background: rgba(255,255,255,.08); padding: 5px; border-radius: 12px; }
   .nav-btn {
     border: none; background: transparent; color: #DCE3DC; font-family: var(--font);
-    font-size: 14px; font-weight: 600; padding: 9px 18px; border-radius: 9px; cursor: pointer;
+    font-size: 14px; font-weight: 600; padding: 9px 15px; border-radius: 9px; cursor: pointer;
     transition: background .2s, color .2s, transform .15s;
   }
   .nav-btn:hover { background: rgba(255,255,255,.1); }
@@ -120,17 +120,14 @@
   .kpi.big .kpi-s { color: #BFD8C8; }
   .kpi.big .pig { position: absolute; right: -10px; bottom: -14px; width: 120px; opacity: .22; transform: rotate(-8deg); }
 
-  .hero.hhome { grid-template-columns: 1.4fr .8fr repeat(4, 1fr); }
-  .kpi.assist {
-    cursor: pointer; font-family: var(--font); text-align: center; border: 1.5px dashed #D9B9A6; background: var(--terra-bg);
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
-    transition: transform .25s cubic-bezier(.34,1.56,.64,1), box-shadow .25s, background .2s;
+  .assist-mini {
+    display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,.25); background: rgba(181,83,42,.85);
+    color: #FFF; font-family: var(--font); font-size: 12.5px; font-weight: 700; padding: 6px 12px; border-radius: 20px; cursor: pointer;
+    transition: background .2s, translate .2s;
   }
-  .kpi.assist::after { display: none; }
-  .kpi.assist:hover { transform: translateY(-3px) scale(1.02); box-shadow: var(--sh-md); background: #F8E2D6; }
+  .assist-mini:hover { background: var(--terra); translate: 0 -1px; }
+  .assist-mini .assist-ico { font-size: 14px; display: inline-block; }
   .assist-ico { font-size: 26px; animation: assistPulse 2.6s ease-in-out infinite; }
-  .assist-t { font-size: 14px; font-weight: 800; color: var(--terra); letter-spacing: .02em; }
-  .assist-s { font-size: 11px; color: var(--ink2); line-height: 1.3; }
   @keyframes assistPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12) rotate(-6deg); } }
   #assist-modal { position: fixed; inset: 0; z-index: 900; display: none; align-items: center; justify-content: center; padding: 16px; }
   #assist-modal.on { display: flex; }
@@ -370,7 +367,7 @@
   @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 
   @media (max-width: 1100px) {
-    .hero, .hero.hhome { grid-template-columns: repeat(2, 1fr); }
+    .hero { grid-template-columns: repeat(2, 1fr); }
     .kpi.big { grid-column: 1 / -1; }
     .dkpi, .dkpi.p4 { grid-template-columns: repeat(3, 1fr); }
     .dkpi.p4 .kpi.big { grid-column: 1 / -1; }
@@ -464,6 +461,7 @@
       <button class="nav-btn" id="nav-svezz" onclick="vai('svezz')">🍼 Svezzamenti</button>
     </nav>
     <div class="anni" id="anni"></div>
+    <button class="assist-mini" onclick="apriAssistenza()" title="Chiedi una modifica al programma"><span class="assist-ico">💬</span> Assistenza</button>
     <a class="back-link" href="capo.html">← Direzione</a>
   </div>
 </header>
@@ -742,12 +740,11 @@ function renderHome() {
   const acqCapo = capiPrezzo ? conPrezzo.reduce((s, a) => s + a.costo_acquisto, 0) / capiPrezzo : null;
   document.getElementById('brand-s').textContent = `Carichi al macello e pagato a capo · ${periodo()}`;
 
-  let h = `<div class="hero hhome">
+  let h = `<div class="hero">
     <div class="kpi big"><img class="pig" src="img/piglet-running.png" alt="">
       <div class="kpi-l">Capi venduti fino ad oggi</div>
       <div class="kpi-v">${num(T.capi)}</div>
       <div class="kpi-s">${fmt(T.n)} carichi al macello · ${periodo()}</div></div>
-    <button class="kpi assist" onclick="apriAssistenza()"><span class="assist-ico">💬</span><span class="assist-t">Assistenza</span><span class="assist-s">Chiedi una modifica al programma</span></button>
     <div class="kpi" style="--c:var(--green)"><div class="kpi-l">Prezzo medio vendita a capo</div><div class="kpi-v">${num(eurCapo(T), 2, ' €')}</div><div class="kpi-s">IVA inclusa, sui carichi liquidati</div></div>
     <div class="kpi" style="--c:var(--terra)"><div class="kpi-l">Prezzo medio acquisto suinetto</div><div class="kpi-v">${num(acqCapo, 2, ' €')}</div><div class="kpi-s">${fmt(capiAcq)} capi acquistati e trasferiti</div></div>
     <div class="kpi" style="--c:var(--blue)"><div class="kpi-l">Euro al kg medio</div><div class="kpi-v">${num(eurKg(T), 3, ' €')}</div><div class="kpi-s">liquidato ÷ kg caricati</div></div>
