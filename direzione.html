@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Le Corti — Allevamenti e macelli</title>
+<meta name="theme-color" content="#1F2A24">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --mono: 'JetBrains Mono', 'SF Mono', monospace;
+    --bg: #F4F1EA;
+    --card: #FFFFFF;
+    --ink: #1F2A24;
+    --ink2: #5E665F;
+    --ink3: #9AA197;
+    --line: #E2DDD2;
+    --green: #2E7D4F;
+    --green-bg: #E6F3EB;
+    --terra: #B5532A;
+    --terra-bg: #FBEDE5;
+    --gold: #B8861B;
+    --gold-bg: #FBF3DF;
+    --blue: #2F5D8A;
+    --blue-bg: #E7EFF8;
+    --red: #B23A3A;
+    --red-bg: #FBEAEA;
+    --r: 14px;
+    --sh-sm: 0 1px 2px rgba(31,42,36,.05), 0 1px 3px rgba(31,42,36,.05);
+    --sh-md: 0 6px 18px rgba(31,42,36,.08), 0 2px 6px rgba(31,42,36,.05);
+    --sh-lg: 0 18px 40px rgba(31,42,36,.16), 0 4px 10px rgba(31,42,36,.08);
+  }
+  html { scrollbar-gutter: stable; }
+  body {
+    font-family: var(--font); color: var(--ink); min-height: 100vh;
+    background:
+      radial-gradient(1100px 500px at 0% -10%, rgba(46,125,79,.10), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(181,83,42,.10), transparent 60%),
+      var(--bg);
+    padding-bottom: 60px;
+  }
+
+  /* ── Password ── */
+  #pw-gate { position: fixed; inset: 0; z-index: 2000; background: var(--ink); display: flex; align-items: center; justify-content: center; padding: 20px; }
+  #pw-gate.hidden { display: none; }
+  .pw-box { width: 100%; max-width: 330px; text-align: center; }
+  .pw-logo { font-family: var(--mono); font-size: 13px; letter-spacing: .16em; color: #9AA197; margin-bottom: 6px; text-transform: uppercase; }
+  .pw-title { font-size: 21px; font-weight: 600; color: #FFF; margin-bottom: 22px; }
+  .pw-input { width: 100%; padding: 13px 16px; border-radius: 10px; border: 1px solid #3A463F; background: #26332C; color: #FFF; font-size: 15px; text-align: center; letter-spacing: .1em; margin-bottom: 12px; font-family: var(--font); }
+  .pw-input:focus { outline: none; border-color: var(--terra); }
+  .pw-btn { width: 100%; padding: 12px; border-radius: 10px; border: none; background: var(--terra); color: #FFF; font-size: 14px; font-weight: 600; cursor: pointer; font-family: var(--font); }
+  .pw-err { color: #E89A9A; font-size: 12px; margin-top: 10px; min-height: 16px; }
+
+  /* ── Header ── */
+  .header {
+    position: sticky; top: 0; z-index: 50;
+    background: linear-gradient(100deg, #1F2A24 0%, #2B3A31 55%, #3A2A20 100%);
+    color: #FFF; box-shadow: 0 4px 18px rgba(0,0,0,.18);
+  }
+  .header-inner { max-width: 1320px; margin: 0 auto; padding: 14px 28px; display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 12px; margin-right: auto; }
+  .brand img { width: 46px; height: 46px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.4)); }
+  .brand-t { font-size: 18px; font-weight: 700; letter-spacing: .01em; }
+  .brand-s { font-size: 12px; color: #B9C2BA; margin-top: 2px; }
+  .nav { display: flex; gap: 6px; background: rgba(255,255,255,.08); padding: 5px; border-radius: 12px; }
+  .nav-btn {
+    border: none; background: transparent; color: #DCE3DC; font-family: var(--font);
+    font-size: 14px; font-weight: 600; padding: 9px 18px; border-radius: 9px; cursor: pointer;
+    transition: background .2s, color .2s, transform .15s;
+  }
+  .nav-btn:hover { background: rgba(255,255,255,.1); }
+  .nav-btn.active { background: #FFF; color: var(--ink); box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+  .anni { display: flex; gap: 6px; }
+  .anno-btn {
+    border: 1px solid rgba(255,255,255,.22); background: transparent; color: #DCE3DC; font-family: var(--mono);
+    font-size: 12px; padding: 6px 11px; border-radius: 20px; cursor: pointer; transition: all .2s;
+  }
+  .anno-btn.active { background: var(--terra); border-color: var(--terra); color: #FFF; }
+  .back-link { color: #B9C2BA; font-size: 12.5px; text-decoration: none; }
+  .back-link:hover { color: #FFF; }
+
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 26px 28px; }
+
+  /* ── Pagine e transizioni ── */
+  .page { display: none; }
+  .page.on { display: block; }
+  #wipe {
+    position: fixed; inset: 0; z-index: 40; pointer-events: none;
+    background: linear-gradient(110deg, var(--green) 0%, #3E8E60 40%, var(--terra) 100%);
+    transform: scaleX(0); transform-origin: left center;
+  }
+
+  /* ── Hero KPI ── */
+  .hero {
+    display: grid; grid-template-columns: 1.4fr repeat(4, 1fr); gap: 14px; margin-bottom: 26px;
+  }
+  .kpi {
+    background: var(--card); border-radius: var(--r); padding: 18px 20px; box-shadow: var(--sh-sm);
+    border: 1px solid var(--line); position: relative; overflow: hidden;
+  }
+  .kpi::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--c, var(--green)); }
+  .kpi-l { font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink2); font-weight: 600; }
+  .kpi-v { font-family: var(--mono); font-size: 26px; font-weight: 700; margin-top: 8px; color: var(--ink); }
+  .kpi-s { font-size: 12px; color: var(--ink3); margin-top: 4px; }
+  .kpi.big {
+    background: linear-gradient(135deg, #1F2A24, #2E4A3A 60%, #2E7D4F);
+    color: #FFF; border: none; box-shadow: var(--sh-md);
+  }
+  .kpi.big::after { display: none; }
+  .kpi.big .kpi-l { color: #BFD8C8; }
+  .kpi.big .kpi-v { color: #FFF; font-size: 44px; }
+  .kpi.big .kpi-s { color: #BFD8C8; }
+  .kpi.big .pig { position: absolute; right: -10px; bottom: -14px; width: 120px; opacity: .22; transform: rotate(-8deg); }
+
+  .sec-h { display: flex; align-items: baseline; justify-content: space-between; margin: 8px 0 14px; gap: 16px; flex-wrap: wrap; }
+  .sec-t { font-size: 20px; font-weight: 700; }
+  .sec-s { font-size: 13px; color: var(--ink2); }
+  .ordina { display: flex; gap: 6px; }
+  .ord-btn { border: 1px solid var(--line); background: var(--card); padding: 6px 12px; border-radius: 20px; font-size: 12.5px; color: var(--ink2); cursor: pointer; font-family: var(--font); }
+  .ord-btn.active { border-color: var(--ink); color: var(--ink); font-weight: 600; }
+
+  /* ── Griglia allevamenti ── */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .acard {
+    background: var(--card); border-radius: var(--r); border: 1px solid var(--line); box-shadow: var(--sh-sm);
+    cursor: pointer; overflow: hidden; position: relative;
+    transition: transform .25s cubic-bezier(.34,1.56,.64,1), box-shadow .25s ease, border-color .2s;
+  }
+  .acard:hover { transform: translateY(-4px); box-shadow: var(--sh-lg); border-color: transparent; }
+  .acard-top { height: 6px; background: var(--c); }
+  .acard-b { padding: 16px 18px 14px; }
+  .acard-h { display: flex; align-items: flex-start; gap: 10px; }
+  .avatar {
+    width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 15px; color: #FFF; background: var(--c); box-shadow: inset 0 -3px 0 rgba(0,0,0,.12);
+  }
+  .acard-n { font-size: 16px; font-weight: 700; line-height: 1.2; }
+  .acard-p { font-size: 11.5px; color: var(--ink2); margin-top: 3px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .tag { display: inline-block; font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 20px; margin-top: 6px; }
+  .tag.ingrasso { background: var(--green-bg); color: var(--green); }
+  .tag.svezzamento { background: var(--blue-bg); color: var(--blue); }
+  .tag.mista { background: var(--gold-bg); color: var(--gold); }
+  .acard-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+  .ms-l { font-size: 10.5px; color: var(--ink3); text-transform: uppercase; letter-spacing: .04em; }
+  .ms-v { font-family: var(--mono); font-size: 15px; font-weight: 700; margin-top: 2px; }
+  .ms-v.eur { color: var(--green); }
+  .share { margin-top: 12px; height: 6px; background: #F0ECE3; border-radius: 6px; overflow: hidden; }
+  .share > div { height: 100%; background: var(--c); border-radius: 6px; width: 0; }
+  .acard-f { font-size: 11.5px; color: var(--ink3); margin-top: 7px; display: flex; justify-content: space-between; }
+  .acard.vuota { cursor: default; opacity: .62; }
+  .acard.vuota:hover { transform: none; box-shadow: var(--sh-sm); border-color: var(--line); }
+
+  /* ── Dettaglio allevamento ── */
+  .back-btn {
+    border: none; background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 8px 16px;
+    font-family: var(--font); font-size: 13.5px; font-weight: 600; color: var(--ink); cursor: pointer; box-shadow: var(--sh-sm);
+    margin-bottom: 18px; transition: transform .15s;
+  }
+  .back-btn:hover { transform: translateX(-3px); }
+  .dhead {
+    border-radius: 18px; padding: 26px 30px; color: #FFF; position: relative; overflow: hidden; box-shadow: var(--sh-md);
+    background: linear-gradient(120deg, #1F2A24 0%, var(--c) 130%);
+  }
+  .dhead::before {
+    content: ''; position: absolute; right: -60px; top: -60px; width: 260px; height: 260px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,.16), transparent 70%);
+  }
+  .dhead-n { font-size: 30px; font-weight: 800; letter-spacing: .01em; }
+  .dhead-p { font-size: 14px; color: rgba(255,255,255,.82); margin-top: 6px; }
+  .dhead-a { font-size: 12.5px; color: rgba(255,255,255,.62); margin-top: 3px; }
+  .dkpi { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin: 18px 0 24px; }
+  .dkpi .kpi-v { font-size: 22px; }
+  .two { display: grid; grid-template-columns: 1.6fr 1fr; gap: 18px; margin-bottom: 20px; }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--sh-sm); padding: 18px 20px; }
+  .panel-t { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .panel-s { font-size: 12px; color: var(--ink2); margin-bottom: 12px; }
+  .chart { width: 100%; height: 230px; }
+  .chart text { font-family: var(--mono); font-size: 10px; fill: var(--ink3); }
+  .hbar { display: grid; grid-template-columns: 140px 1fr 90px; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px dashed var(--line); font-size: 13px; }
+  .hbar:last-child { border-bottom: none; }
+  .hbar-n { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hbar-t { height: 10px; background: #F0ECE3; border-radius: 6px; overflow: hidden; }
+  .hbar-t > div { height: 100%; width: 0; border-radius: 6px; background: var(--c, var(--green)); transition: width 1s cubic-bezier(.2,.8,.2,1); }
+  .hbar-v { text-align: right; font-family: var(--mono); font-size: 12.5px; }
+  .hbar-v small { display: block; color: var(--ink3); font-size: 10.5px; }
+
+  table.t { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+  table.t th { text-align: right; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink2); font-weight: 600; padding: 10px 10px; border-bottom: 2px solid var(--line); background: #FAF8F3; position: sticky; top: 0; }
+  table.t th:first-child, table.t td:first-child { text-align: left; }
+  table.t th.l, table.t td.l { text-align: left; }
+  table.t td { padding: 9px 10px; border-bottom: 1px solid #F0ECE3; text-align: right; font-family: var(--mono); font-size: 12.5px; }
+  table.t td.txt { font-family: var(--font); font-size: 13px; }
+  table.t tbody tr { transition: background .15s; }
+  table.t tbody tr:hover { background: #FAF6EE; }
+  table.t tfoot td { font-weight: 700; background: #F4F1EA; border-top: 2px solid var(--line); }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; font-family: var(--font); }
+  .pill.g { background: var(--green-bg); color: var(--green); }
+  .pill.r { background: var(--red-bg); color: var(--red); }
+  .pill.n { background: #F0ECE3; color: var(--ink2); }
+  .eurc { color: var(--green); font-weight: 700; }
+  .neg { color: var(--red); }
+  .doc-btn { border: 1px solid var(--line); background: #FFF; border-radius: 8px; padding: 2px 7px; font-size: 11px; cursor: pointer; color: var(--ink2); font-family: var(--font); }
+  .doc-btn:hover { border-color: var(--ink2); color: var(--ink); }
+  .scroll { max-height: 520px; overflow: auto; border-radius: 10px; }
+
+  /* ── Macelli ── */
+  .mtop { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 24px; }
+  .mlist { display: flex; flex-direction: column; gap: 12px; }
+  .mcard { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--sh-sm); overflow: hidden; transition: box-shadow .25s, border-color .2s; }
+  .mcard:hover { box-shadow: var(--sh-md); }
+  .mcard.open { box-shadow: var(--sh-lg); border-color: transparent; }
+  .mhead { display: grid; grid-template-columns: 46px 1.6fr repeat(5, 1fr) 26px; align-items: center; gap: 14px; padding: 14px 18px; cursor: pointer; }
+  .mrank { width: 40px; height: 40px; border-radius: 12px; background: var(--c); color: #FFF; display: flex; align-items: center; justify-content: center; font-weight: 800; font-family: var(--mono); }
+  .mname { font-size: 16px; font-weight: 700; }
+  .msub { font-size: 11.5px; color: var(--ink2); margin-top: 2px; }
+  .mchev { font-size: 20px; color: var(--ink3); transition: transform .3s; }
+  .mcard.open .mchev { transform: rotate(90deg); }
+  .mbody { height: 0; overflow: hidden; }
+  .mbody-in { padding: 4px 18px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; border-top: 1px solid var(--line); padding-top: 16px; }
+  .pen-row { display: grid; grid-template-columns: 1fr 120px 54px 80px; gap: 10px; align-items: center; font-size: 13px; padding: 6px 0; border-bottom: 1px dashed var(--line); }
+  .pen-row:last-child { border-bottom: none; }
+  .pen-bar { height: 9px; background: #F4E4DC; border-radius: 6px; overflow: hidden; }
+  .pen-bar > div { height: 100%; background: var(--terra); border-radius: 6px; width: 0; transition: width 1s cubic-bezier(.2,.8,.2,1); }
+  .share > div { transition: width 1s cubic-bezier(.2,.8,.2,1); }
+  .pen-n { text-align: right; font-family: var(--mono); font-size: 12px; color: var(--ink2); }
+  .pen-v { text-align: right; font-family: var(--mono); font-size: 12.5px; font-weight: 700; color: var(--terra); }
+  .empty { padding: 26px; text-align: center; color: var(--ink3); font-size: 13.5px; }
+  .note { font-size: 11.5px; color: var(--ink3); margin-top: 18px; line-height: 1.5; }
+  .loading { padding: 80px 0; text-align: center; color: var(--ink2); }
+  .loading .dot { display: inline-block; width: 10px; height: 10px; margin: 0 3px; border-radius: 50%; background: var(--terra); animation: bounce 1s infinite; }
+  .loading .dot:nth-child(2) { animation-delay: .15s; background: var(--gold); }
+  .loading .dot:nth-child(3) { animation-delay: .3s; background: var(--green); }
+  @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+  @media (max-width: 1100px) {
+    .hero { grid-template-columns: repeat(2, 1fr); }
+    .kpi.big { grid-column: 1 / -1; }
+    .dkpi { grid-template-columns: repeat(3, 1fr); }
+    .two, .mtop, .mbody-in { grid-template-columns: minmax(0, 1fr); }
+    .mhead { grid-template-columns: 40px 1.4fr repeat(3, 1fr) 22px; }
+    .mhead .hide-m { display: none; }
+  }
+  @media (max-width: 640px) {
+    .wrap, .header-inner { padding-left: 16px; padding-right: 16px; }
+    .dkpi { grid-template-columns: repeat(2, 1fr); }
+    .kpi.big .kpi-v { font-size: 34px; }
+    .mhead { grid-template-columns: 36px 1fr 1fr 22px; }
+    .mhead .hide-s { display: none; }
+    .scroll, .mbody-in > div { overflow-x: auto; }
+    .hbar { grid-template-columns: 100px minmax(0, 1fr) 80px; }
+    .pen-row { grid-template-columns: 1fr 70px 44px 70px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="pw-gate">
+  <div class="pw-box">
+    <div class="pw-logo">Le Corti</div>
+    <div class="pw-title">Allevamenti e macelli</div>
+    <input type="password" id="pw-input" class="pw-input" placeholder="Password" autocomplete="off">
+    <button class="pw-btn" onclick="pwCheck()">Entra</button>
+    <div class="pw-err" id="pw-err"></div>
+  </div>
+</div>
+
+<div id="wipe"></div>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="brand">
+      <img src="img/piglet-tycoon.svg" alt="">
+      <div>
+        <div class="brand-t">Le Corti · Allevamenti e macelli</div>
+        <div class="brand-s" id="brand-s">Carichi al macello e pagato a capo</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <button class="nav-btn active" id="nav-home" onclick="vai('home')">🐷 Allevamenti</button>
+      <button class="nav-btn" id="nav-macelli" onclick="vai('macelli')">🏭 Macelli</button>
+    </nav>
+    <div class="anni" id="anni"></div>
+    <a class="back-link" href="capo.html">← Direzione</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="loading" class="loading"><span class="dot"></span><span class="dot"></span><span class="dot"></span><div style="margin-top:14px">Carico i dati…</div></div>
+  <section class="page" id="page-home"></section>
+  <section class="page" id="page-alleva"></section>
+  <section class="page" id="page-macelli"></section>
+</main>
+
+<script src="lecorti-shared.js"></script>
+<script>
+// ══════════════════════════════════════════════════════════════
+// Dati: uscite (carichi al macello) + uscite_penali + lotti/soccide.
+// €/capo = liquidazione (totale pagato, IVA inclusa) / capi del carico,
+// solo sui carichi con la liquidazione registrata.
+// Esclusi: FIORENZUOLA (suini di Gruppo Ciemme, non di Le Corti) e le
+// uscite "VENDITA DIRETTA" (capi venduti un po' alla volta da Vezzoli).
+// ══════════════════════════════════════════════════════════════
+
+// fmt con il punto delle migliaia anche a 4 cifre (4.007, non 4007)
+function fmt(n, dec = 0) {
+  if (n == null || isNaN(n)) return '—';
+  return Number(n).toLocaleString('it-IT', { minimumFractionDigits: dec, maximumFractionDigits: dec, useGrouping: 'always' });
+}
+
+const ESCLUSE = ['FIORENZUOLA'];
+const NOMINATIVI = {
+  'SABBIONERA':   ['Soc. Agr. Sabbionera delle Sorelle Vitari s.s.', 'Via Fienile Pozzo 3 — Roccafranca (BS)'],
+  'FILIPPINI':    ['Az. Agr. Filippini di Salini Ivonne', "Via Padana Superiore 54 — Urago d'Oglio (BS)"],
+  'FEROLDA':      ['Soc. Agricola Le Corti — Allevamento La Ferolda', 'Via Orzinuovi — Barbariga (BS)'],
+  'MINERBIO':     ['Soc. Agricola Le Corti — Allevamento Minerbio', 'Via Nuova Inferiore 2b — Minerbio (BO)'],
+  'BATTAGLIOLA':  ['Soc. Agricola Le Corti — Allevamento Battagliola', 'Loc. Feroldina — Barbariga (BS)'],
+  'GALUPPINI':    ['Az. Agr. Galuppini Giuseppe', 'Via Cucca 13 — Calvisano (BS)'],
+  'GALUPPINI 2':  ['Aziende Agricole Galuppini Giuseppe (2)', 'Via Cucca — Calvisano (BS)'],
+  'SCARATTI':     ['Az. Agricola Scaratti Giacomo Luigi', 'Cascina Ugona — Verolavecchia (BS)'],
+  'CATERINA':     ['Mostarda Bruno — Cascina Santa Caterina', 'Via Campagna 16 — Calcinato (BS)'],
+  'FESTA CHIARI': ['Az. Agricola Festa Gianfranco', 'Via Lunghe 11 — Chiari (BS)'],
+  'CADEVILLA':    ['Festa Gianfranco — Cascina Cadevilla snc', 'Calcio (BG)'],
+  'CAMPOBELLO':   ['Allevamenti F.lli Morini s.r.l.s. — Campobello', "Torre de' Negri (PV)"],
+  'PIOPPETTE':    ['Soc. Agricola Pioppette di Ferronato Maurizio e Lucy s.s.', "Via Ca' Morino 2 — Solferino (MN)"],
+  'BARONCHELLI':  ['Soc. Agricola Baronchelli Pietro e Figli', 'C.na Marcellino — Corte Palasio (LO)'],
+  'MIGLIORATI':   ['Migliorati Alessandro', 'Via Colombo, Fr. Corticelle — Dello (BS)'],
+  'PRADA':        ['Allevamento La Prada di Tomasoni Alfredo', 'Coniolo di Orzinuovi (BS)'],
+  'BORDOALA':     ['Soc. Agricola Le Corti — Allevamento Bordoala', 'Loc. Molino Ala — Bordolano (CR)'],
+  'PODESTA':      ['Soc. Agricola Le Corti — Cascina Fiorita', 'Verolavecchia (BS)'],
+  'CASTELDAIANO': ['Az. Agr. Pelizzola Amedeo', "Fr. Villa — Castel d'Aiano (BO)"],
+  'BERTESAGO':    ['Bertesago Pietro', 'Via Roma 34 — Moscazzano (CR)'],
+  'SEMENZA':      ['Semenza Davide Desiderio (suini Luxporc)', 'C.na Pollarana — Castiraga Vidardo (LO)'],
+  'VEZZOLI':      ['Soc. Agr. Vezzoli Roberto e Vincenzo', ''],
+  'ACQUANEGRA':   ['c/o S.S. Soc. Agr. Vittorio di Marco Salandini', 'Acquanegra Cremonese (CR)'],
+  'PEDRONI':      ['Az. Agricola Pedroni', ''],
+  'LUCREZIA INGRASSO': ['Soc. Agricola Le Corti — Lucrezia ingrasso', ''],
+};
+const PALETTE = ['#2E7D4F','#B5532A','#2F5D8A','#B8861B','#7A4E9C','#1F8A8A','#C0436B','#5B7A1E','#8A5A2B','#3D6FB6','#A23E2E','#4F7F6A','#9C6B12','#5C5AA8'];
+
+// Nomi macello uniformati (stessa entità scritta in modi diversi)
+const ALIAS_MACELLO = [
+  [/^ANNONI/i, 'ANNONI'],
+  [/CAPPOLA/i, 'FRATELLI CAPPOLA'],
+  [/^OPAS ALIMENTARE/i, 'OPAS ALIMENTARE'],
+  [/^O\.?P\.?A\.?S\.?( ORGANIZZAZIONE.*)?$/i, 'OPAS (macello non indicato)'],
+  [/^FM FONTANELLE/i, 'FM FONTANELLE (macello non indicato)'],
+  [/^PINI/i, 'PINI ITALIA'],
+  [/RIZIERI/i, 'LA RIZIERI'],
+  [/CABRINI/i, 'CABRINI'],
+  [/MARZOCCHI/i, 'MARZOCCHI'],
+  [/BERTESAGO/i, 'BERTESAGO'],
+  [/^SANTI/i, 'SANTI F.LLI'],
+  [/^SOLAR/i, 'SOLAR'],
+  [/VEZZOLI/i, 'VEZZOLI (soc. agr.)'],
+];
+function nomeMacello(u) {
+  const raw = (u.macello || u.cessionario || 'NON INDICATO').trim();
+  for (const [re, n] of ALIAS_MACELLO) if (re.test(raw)) return n;
+  return raw.toUpperCase();
+}
+function nomeIntermediario(u) {
+  if (!u.macello || !u.cessionario) return null;
+  const c = u.cessionario;
+  if (/OPAS/i.test(c)) return 'OPAS';
+  if (/FONTANELLE/i.test(c)) return 'FM FONTANELLE';
+  if (/^ANNONI/i.test(c)) return null;
+  return c;
+}
+
+// Causali delle penali raggruppate (sui documenti dei macelli sono scritte in mille modi)
+const GRUPPI_PENALI = [
+  [/commission/i, null],
+  [/non accessibile|OCR|dettaglio non|^Trattenute/i, 'Non dettagliate'],
+  [/tatuagg/i, 'Tatuaggi non conformi'],
+  [/^L\b|^L2|^LE\b|leggeri|circuito L|giudizio L/i, 'Leggeri (L)'],
+  [/sotto ?peso|<\s?100|inferiore 100/i, 'Sottopeso'],
+  [/disosso|spolpo/i, 'Disosso'],
+  [/distrutt|smaltiment|morto|sparato|VAM|allegati sanitari/i, 'Distrutti, morti, smaltimento'],
+  [/fuori pes|intermedi|>\s?180|EUROP|NON DOP/i, 'Fuori peso / intermedi'],
+  [/prosciutt|cosce|merce non conforme|ascesso|cisti|emato|DET2/i, 'Cosce / merce non conforme'],
+  [/toelett/i, 'Toelettatura'],
+  [/scart/i, 'Scarti'],
+  [/detrazioni fisse/i, 'Detrazioni fisse'],
+  [/mancata resa/i, 'Non dettagliate'],
+];
+function gruppoPenale(c) {
+  for (const [re, g] of GRUPPI_PENALI) if (re.test(c || '')) return g;
+  return 'Altre (HE, affannati, zoppie…)';
+}
+
+let CARICHI = [];      // uscite arricchite
+let SOCCIDE = [];
+let ANNO = 'tutti';
+let PAGINA = 'home';
+let ORDINE = 'capi';
+let ALLEVA_APERTO = null;
+const COLORI = {};
+
+function colore(nome) {
+  if (!COLORI[nome]) COLORI[nome] = PALETTE[Object.keys(COLORI).length % PALETTE.length];
+  return COLORI[nome];
+}
+
+async function loadAll() {
+  const [soccide, lotti, uscite, penali] = await Promise.all([
+    sb('soccide', '?select=id,nome,tipo,attiva&order=nome'),
+    sb('lotti', '?select=id,soccida_id,codice'),
+    sb('uscite', '?select=id,lotto_id,soccida_nome,data_uscita,numero_ddt,macello,cessionario,capi,kg_totali,prezzo_kg,liquidazione,mancata_resa_kg,ddt_documento_id,liquidazione_documento_id&order=data_uscita'),
+    sb('uscite_penali', '?select=uscita_id,causale,numero,valore'),
+  ]);
+  SOCCIDE = soccide;
+  const socById = Object.fromEntries(soccide.map(s => [s.id, s]));
+  const lottoById = Object.fromEntries(lotti.map(l => [l.id, l]));
+  const penPerUscita = {};
+  penali.forEach(p => {
+    const g = gruppoPenale(p.causale);
+    if (!g) return;
+    const v = Math.abs(Number(p.valore) || 0);
+    if (!v && !p.numero) return;
+    (penPerUscita[p.uscita_id] ||= []).push({ gruppo: g, capi: p.numero || 0, euro: v });
+  });
+
+  CARICHI = uscite
+    .filter(u => !isUscitaVenditaDiretta(u))
+    .map(u => {
+      const lotto = lottoById[u.lotto_id];
+      const soc = lotto ? socById[lotto.soccida_id] : null;
+      const alleva = (soc?.nome || u.soccida_nome || 'NON INDICATO').toUpperCase();
+      const pen = penPerUscita[u.id] || [];
+      return {
+        ...u, alleva, lotto: lotto?.codice || null,
+        macelloN: nomeMacello(u), interm: nomeIntermediario(u),
+        anno: u.data_uscita.slice(0, 4),
+        pagato: u.liquidazione > 0 && u.capi > 0,
+        penali: pen, penaliEuro: pen.reduce((s, p) => s + p.euro, 0),
+      };
+    })
+    .filter(u => !ESCLUSE.includes(u.alleva) && u.capi > 0);
+
+  const anni = [...new Set(CARICHI.map(c => c.anno))].sort();
+  document.getElementById('anni').innerHTML =
+    ['tutti', ...anni].map(a => `<button class="anno-btn ${a === ANNO ? 'active' : ''}" onclick="setAnno('${a}')">${a === 'tutti' ? 'Tutto' : a}</button>`).join('');
+
+  // colori stabili per allevamento (in ordine di capi venduti)
+  Object.entries(somma(CARICHI, c => c.alleva)).sort((a, b) => b[1].capi - a[1].capi).forEach(([n]) => colore(n));
+
+  document.getElementById('loading').style.display = 'none';
+  render(true);
+}
+
+function carichi() { return ANNO === 'tutti' ? CARICHI : CARICHI.filter(c => c.anno === ANNO); }
+
+// Somme per chiave: capi, kg, carichi, capi/kg/€ dei soli carichi pagati, penali
+function somma(lista, chiave) {
+  const g = {};
+  lista.forEach(c => {
+    const k = chiave(c);
+    const a = g[k] ||= { capi: 0, kg: 0, n: 0, capiP: 0, kgP: 0, liq: 0, pen: 0, capiPen: 0, mrKg: 0, dal: c.data_uscita, al: c.data_uscita, righe: [] };
+    a.capi += c.capi; a.kg += c.kg_totali || 0; a.n++;
+    if (c.pagato) { a.capiP += c.capi; a.kgP += c.kg_totali || 0; a.liq += c.liquidazione; }
+    a.pen += c.penaliEuro; a.capiPen += c.penali.reduce((s, p) => s + p.capi, 0);
+    a.mrKg += c.mancata_resa_kg || 0;
+    if (c.data_uscita < a.dal) a.dal = c.data_uscita;
+    if (c.data_uscita > a.al) a.al = c.data_uscita;
+    a.righe.push(c);
+  });
+  return g;
+}
+const eurCapo = a => a.capiP ? a.liq / a.capiP : null;
+const eurKg = a => a.kgP ? a.liq / a.kgP : null;
+const pesoMedio = a => a.capi ? a.kg / a.capi : null;
+const iniziali = n => n.split(/\s+/).map(w => w[0]).join('').slice(0, 2);
+
+// ── Navigazione con transizione ──
+function vai(p, arg) {
+  if (p === 'alleva') ALLEVA_APERTO = arg;
+  const da = PAGINA;
+  PAGINA = p;
+  document.getElementById('nav-home').classList.toggle('active', p !== 'macelli');
+  document.getElementById('nav-macelli').classList.toggle('active', p === 'macelli');
+  transizione(da, p);
+}
+function transizione(da, a) {
+  const wipe = document.getElementById('wipe');
+  const vecchia = document.getElementById('page-' + (da || 'home'));
+  const avanti = !(a === 'home' && da === 'alleva');
+  if (typeof gsap === 'undefined') { mostra(a); return; }
+  const tl = gsap.timeline();
+  tl.to(vecchia, { opacity: 0, x: avanti ? -40 : 40, duration: .25, ease: 'power2.in' })
+    .set(wipe, { transformOrigin: avanti ? 'left center' : 'right center' })
+    .to(wipe, { scaleX: 1, duration: .32, ease: 'power3.inOut' }, '-=.12')
+    .add(() => { mostra(a); window.scrollTo({ top: 0 }); })
+    .set(wipe, { transformOrigin: avanti ? 'right center' : 'left center' })
+    .to(wipe, { scaleX: 0, duration: .38, ease: 'power3.inOut' })
+    .fromTo('#page-' + a, { opacity: 0, x: avanti ? 40 : -40 }, { opacity: 1, x: 0, duration: .45, ease: 'power3.out' }, '-=.28');
+}
+function mostra(p) {
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('on'));
+  const el = document.getElementById('page-' + p);
+  el.classList.add('on');
+  if (p === 'home') renderHome();
+  if (p === 'alleva') renderAlleva(ALLEVA_APERTO);
+  if (p === 'macelli') renderMacelli();
+}
+function setAnno(a) {
+  ANNO = a;
+  document.querySelectorAll('.anno-btn').forEach(b => b.classList.toggle('active', b.textContent === (a === 'tutti' ? 'Tutto' : a)));
+  render(false);
+}
+function setOrdine(o) { ORDINE = o; renderHome(); }
+function render(prima) {
+  const el = document.getElementById('page-' + PAGINA);
+  mostra(PAGINA);
+  if (prima && typeof gsap !== 'undefined') gsap.fromTo(el, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: .6, ease: 'power3.out' });
+}
+
+// Numeri che "contano" fino al valore
+function animaNumeri(root) {
+  root.querySelectorAll('[data-n]').forEach(el => {
+    const fine = Number(el.dataset.n), dec = Number(el.dataset.d || 0), suf = el.dataset.s || '';
+    if (typeof gsap === 'undefined' || isNaN(fine)) { el.textContent = fmt(fine, dec) + suf; return; }
+    const o = { v: 0 };
+    gsap.to(o, { v: fine, duration: 1.2, ease: 'power2.out', onUpdate: () => { el.textContent = fmt(o.v, dec) + suf; } });
+  });
+  const barre = root.querySelectorAll('[data-w]');
+  barre.forEach(el => { el.style.width = '0'; });
+  requestAnimationFrame(() => requestAnimationFrame(() => barre.forEach(el => { el.style.width = el.dataset.w + '%'; })));
+}
+const num = (v, dec = 0, suf = '') => v == null ? '—' : `<span data-n="${v}" data-d="${dec}" data-s="${suf}">0</span>`;
+const periodo = () => ANNO === 'tutti' ? 'da dicembre 2025 a oggi' : `anno ${ANNO}`;
+
+// ══════════════ PAGINA 1: ALLEVAMENTI ══════════════
+function renderHome() {
+  const lista = carichi();
+  const T = somma(lista, () => 'tot').tot || { capi: 0, kg: 0, n: 0, capiP: 0, kgP: 0, liq: 0 };
+  const perAll = somma(lista, c => c.alleva);
+  const nMacelli = new Set(lista.map(c => c.macelloN)).size;
+  document.getElementById('brand-s').textContent = `Carichi al macello e pagato a capo · ${periodo()}`;
+
+  let h = `<div class="hero">
+    <div class="kpi big"><img class="pig" src="img/piglet-running.png" alt="">
+      <div class="kpi-l">Capi venduti fino ad oggi</div>
+      <div class="kpi-v">${num(T.capi)}</div>
+      <div class="kpi-s">${fmt(T.n)} carichi al macello · ${periodo()}</div></div>
+    <div class="kpi" style="--c:var(--terra)"><div class="kpi-l">Pagato medio a capo</div><div class="kpi-v">${num(eurCapo(T), 2, ' €')}</div><div class="kpi-s">IVA inclusa, sui carichi liquidati</div></div>
+    <div class="kpi" style="--c:var(--gold)"><div class="kpi-l">Peso medio</div><div class="kpi-v">${num(pesoMedio(T), 1, ' kg')}</div><div class="kpi-s">${fmt(T.kg)} kg caricati</div></div>
+    <div class="kpi" style="--c:var(--blue)"><div class="kpi-l">Pagato al kg</div><div class="kpi-v">${num(eurKg(T), 3, ' €')}</div><div class="kpi-s">liquidato ÷ kg caricati</div></div>
+    <div class="kpi" style="--c:var(--green)"><div class="kpi-l">Allevamenti · Macelli</div><div class="kpi-v">${num(Object.keys(perAll).length)} · ${num(nMacelli)}</div><div class="kpi-s">con almeno un carico</div></div>
+  </div>`;
+
+  const ordinati = Object.entries(perAll).sort((a, b) =>
+    ORDINE === 'nome' ? a[0].localeCompare(b[0]) :
+    ORDINE === 'eur' ? (eurCapo(b[1]) || 0) - (eurCapo(a[1]) || 0) : b[1].capi - a[1].capi);
+  const maxCapi = Math.max(1, ...ordinati.map(([, a]) => a.capi));
+
+  h += `<div class="sec-h"><div><div class="sec-t">I nostri allevamenti</div><div class="sec-s">Clicca su un allevamento per vedere carichi, pesi e pagato a capo</div></div>
+    <div class="ordina">
+      <button class="ord-btn ${ORDINE === 'capi' ? 'active' : ''}" onclick="setOrdine('capi')">Più capi</button>
+      <button class="ord-btn ${ORDINE === 'eur' ? 'active' : ''}" onclick="setOrdine('eur')">€ a capo</button>
+      <button class="ord-btn ${ORDINE === 'nome' ? 'active' : ''}" onclick="setOrdine('nome')">A-Z</button>
+    </div></div><div class="grid" id="grid">`;
+
+  ordinati.forEach(([nome, a]) => {
+    const [nominativo, indirizzo] = NOMINATIVI[nome] || ['', ''];
+    const tipo = SOCCIDE.find(s => s.nome.toUpperCase() === nome)?.tipo;
+    h += `<div class="acard" style="--c:${colore(nome)}" onclick="vai('alleva','${escHtml(nome)}')">
+      <div class="acard-top"></div><div class="acard-b">
+        <div class="acard-h"><div class="avatar">${escHtml(iniziali(nome))}</div>
+          <div><div class="acard-n">${escHtml(nome)}</div>
+          <div class="acard-p">${escHtml(nominativo || indirizzo || '')}</div>
+          ${tipo ? `<span class="tag ${tipo}">${tipo}</span>` : ''}</div></div>
+        <div class="acard-stats">
+          <div><div class="ms-l">Capi</div><div class="ms-v">${num(a.capi)}</div></div>
+          <div><div class="ms-l">Peso medio</div><div class="ms-v">${num(pesoMedio(a), 1)}</div></div>
+          <div><div class="ms-l">€ a capo</div><div class="ms-v eur">${eurCapo(a) != null ? num(eurCapo(a), 0) : '—'}</div></div>
+        </div>
+        <div class="share"><div data-w="${(a.capi / maxCapi * 100).toFixed(1)}"></div></div>
+        <div class="acard-f"><span>${a.n} carichi</span><span>${fmtDate(a.dal)} → ${fmtDate(a.al)}</span></div>
+      </div></div>`;
+  });
+
+  // allevamenti attivi senza carichi nel periodo
+  const senza = SOCCIDE.filter(s => s.attiva && !perAll[s.nome.toUpperCase()] && !ESCLUSE.includes(s.nome.toUpperCase()));
+  senza.forEach(s => {
+    const [nominativo] = NOMINATIVI[s.nome.toUpperCase()] || [''];
+    h += `<div class="acard vuota" style="--c:#C9C3B6"><div class="acard-top"></div><div class="acard-b">
+      <div class="acard-h"><div class="avatar">${escHtml(iniziali(s.nome))}</div>
+      <div><div class="acard-n">${escHtml(s.nome)}</div><div class="acard-p">${escHtml(nominativo)}</div>
+      ${s.tipo ? `<span class="tag ${s.tipo}">${s.tipo}</span>` : ''}</div></div>
+      <div class="acard-f" style="margin-top:14px"><span>Nessun carico al macello ${ANNO === 'tutti' ? 'registrato' : 'nel ' + ANNO}</span></div></div></div>`;
+  });
+  h += `</div><div class="note">€ a capo = liquidazione pagata (IVA inclusa) ÷ capi del carico, solo sui carichi con la liquidazione registrata. Fiorenzuola esclusa (suini di Gruppo Ciemme).</div>`;
+
+  const el = document.getElementById('page-home');
+  el.innerHTML = h;
+  animaNumeri(el);
+  if (typeof gsap !== 'undefined') {
+    gsap.from('#grid .acard', { opacity: 0, y: 24, scale: .97, duration: .5, stagger: .035, ease: 'power3.out', delay: .1 });
+    gsap.from('.hero .kpi', { opacity: 0, y: 14, duration: .5, stagger: .07, ease: 'power3.out' });
+  }
+}
+
+// ══════════════ DETTAGLIO ALLEVAMENTO ══════════════
+function renderAlleva(nome) {
+  const el = document.getElementById('page-alleva');
+  const lista = carichi().filter(c => c.alleva === nome);
+  const c0 = colore(nome);
+  const [nominativo, indirizzo] = NOMINATIVI[nome] || ['', ''];
+  let h = `<button class="back-btn" onclick="vai('home')">← Tutti gli allevamenti</button>
+    <div class="dhead" style="--c:${c0}"><div class="dhead-n">${escHtml(nome)}</div>
+    ${nominativo ? `<div class="dhead-p">${escHtml(nominativo)}</div>` : ''}${indirizzo ? `<div class="dhead-a">${escHtml(indirizzo)}</div>` : ''}</div>`;
+  if (!lista.length) { el.innerHTML = h + `<div class="empty">Nessun carico ${ANNO === 'tutti' ? '' : 'nel ' + ANNO}.</div>`; return; }
+
+  const a = somma(lista, () => 't').t;
+  const pagati = lista.filter(c => c.pagato).map(c => c.liquidazione / c.capi);
+  const minC = pagati.length ? Math.min(...pagati) : null, maxC = pagati.length ? Math.max(...pagati) : null;
+  h += `<div class="dkpi">
+    <div class="kpi" style="--c:${c0}"><div class="kpi-l">Capi caricati</div><div class="kpi-v">${num(a.capi)}</div><div class="kpi-s">${a.n} carichi</div></div>
+    <div class="kpi" style="--c:var(--gold)"><div class="kpi-l">Peso medio</div><div class="kpi-v">${num(pesoMedio(a), 1, ' kg')}</div><div class="kpi-s">${fmt(a.kg)} kg totali</div></div>
+    <div class="kpi" style="--c:var(--green)"><div class="kpi-l">Pagato a capo</div><div class="kpi-v" style="color:var(--green)">${num(eurCapo(a), 2, ' €')}</div><div class="kpi-s">media, IVA inclusa</div></div>
+    <div class="kpi" style="--c:var(--blue)"><div class="kpi-l">Pagato al kg</div><div class="kpi-v">${num(eurKg(a), 3, ' €')}</div><div class="kpi-s">liquidato ÷ kg</div></div>
+    <div class="kpi" style="--c:var(--terra)"><div class="kpi-l">Min · max a capo</div><div class="kpi-v" style="font-size:17px">${minC != null ? fmt(minC, 0) + ' · ' + fmt(maxC, 0) + ' €' : '—'}</div><div class="kpi-s">carico peggiore · migliore</div></div>
+    <div class="kpi" style="--c:var(--red)"><div class="kpi-l">Penali macello</div><div class="kpi-v" style="color:var(--terra)">${num(a.pen, 0, ' €')}</div><div class="kpi-s">${a.capiPen ? fmt(a.capiPen) + ' capi penalizzati' : 'registrate'}${a.capi ? ' · ' + fmt(a.pen / a.capi, 2) + ' €/capo' : ''}</div></div>
+  </div>`;
+
+  // grafico € a capo per carico + macelli usati
+  const perMac = Object.entries(somma(lista, c => c.macelloN)).sort((x, y) => y[1].capi - x[1].capi);
+  const maxM = Math.max(...perMac.map(([, m]) => m.capi));
+  h += `<div class="two"><div class="panel"><div class="panel-t">Pagato a capo, carico per carico</div>
+      <div class="panel-s">Ogni barra è un carico (€ a capo IVA inclusa) · la linea è il peso medio</div>${graficoCarichi(lista, c0)}</div>
+    <div class="panel"><div class="panel-t">Macelli serviti</div><div class="panel-s">Capi caricati e pagato medio a capo</div>
+    ${perMac.map(([m, x]) => `<div class="hbar" style="--c:${c0}"><div class="hbar-n" title="${escHtml(m)}">${escHtml(m)}</div>
+      <div class="hbar-t"><div data-w="${(x.capi / maxM * 100).toFixed(1)}"></div></div>
+      <div class="hbar-v">${fmt(x.capi)} capi<small>${eurCapo(x) != null ? fmt(eurCapo(x), 2) + ' €/capo' : 'non liquidato'}</small></div></div>`).join('')}
+    </div></div>`;
+
+  h += `<div class="panel"><div class="panel-t">Carichi</div><div class="panel-s">Dal più recente</div><div class="scroll"><table class="t">
+    <thead><tr><th>Data</th><th class="l">DDT</th><th class="l">Lotto</th><th class="l">Macello</th><th>Capi</th><th>Kg</th><th>Peso medio</th><th>€ a capo</th><th>€/kg</th><th>Mancata resa</th><th>Penali</th><th class="l">Doc.</th></tr></thead><tbody>`;
+  [...lista].reverse().forEach(c => {
+    const pc = c.pagato ? c.liquidazione / c.capi : null;
+    h += `<tr><td>${fmtDate(c.data_uscita)}</td><td class="txt l">${escHtml(c.numero_ddt || '—')}</td><td class="txt l">${escHtml(c.lotto || '—')}</td>
+      <td class="txt l">${escHtml(c.macelloN)}${c.interm ? ` <span class="pill n">${escHtml(c.interm)}</span>` : ''}</td>
+      <td>${fmt(c.capi)}</td><td>${fmt(c.kg_totali)}</td><td>${fmt(c.kg_totali / c.capi, 1)}</td>
+      <td class="eurc">${pc != null ? fmt(pc, 2) : '<span class="pill n">da liquidare</span>'}</td>
+      <td>${c.pagato && c.kg_totali ? fmt(c.liquidazione / c.kg_totali, 3) : '—'}</td>
+      <td>${c.mancata_resa_kg ? fmt(c.mancata_resa_kg) + ' kg' : '—'}</td>
+      <td class="${c.penaliEuro ? 'neg' : ''}">${c.penaliEuro ? fmt(c.penaliEuro, 0) + ' €' : '—'}</td>
+      <td class="l">${c.ddt_documento_id ? `<button class="doc-btn" onclick="apriDocumento(${c.ddt_documento_id})">DDT</button> ` : ''}${c.liquidazione_documento_id ? `<button class="doc-btn" onclick="apriDocumento(${c.liquidazione_documento_id})">Liq.</button>` : ''}</td></tr>`;
+  });
+  h += `</tbody><tfoot><tr><td>Totale</td><td></td><td></td><td></td><td>${fmt(a.capi)}</td><td>${fmt(a.kg)}</td><td>${fmt(pesoMedio(a), 1)}</td>
+    <td class="eurc">${fmt(eurCapo(a), 2)}</td><td>${fmt(eurKg(a), 3)}</td><td>${a.mrKg ? fmt(a.mrKg) + ' kg' : '—'}</td><td class="neg">${a.pen ? fmt(a.pen, 0) + ' €' : '—'}</td><td></td></tr></tfoot></table></div></div>`;
+
+  el.innerHTML = h;
+  animaNumeri(el);
+  if (typeof gsap !== 'undefined') {
+    gsap.from('#page-alleva .dkpi .kpi', { opacity: 0, y: 16, duration: .45, stagger: .06, ease: 'power3.out', delay: .15 });
+    gsap.from('#page-alleva .bar', { scaleY: 0, transformOrigin: 'bottom', duration: .6, stagger: .02, ease: 'power3.out', delay: .3 });
+    gsap.from('#page-alleva tbody tr', { opacity: 0, x: -10, duration: .3, stagger: .015, delay: .4 });
+  }
+}
+
+function graficoCarichi(lista, col) {
+  const W = 760, H = 230, pl = 46, pr = 40, pt = 14, pb = 26;
+  const pagati = lista.filter(c => c.pagato);
+  if (!pagati.length) return '<div class="empty">Nessun carico ancora liquidato.</div>';
+  const v = pagati.map(c => c.liquidazione / c.capi);
+  const pesi = pagati.map(c => c.kg_totali / c.capi);
+  const top = Math.ceil(Math.max(...v) / 50) * 50;
+  const pmin = Math.floor(Math.min(...pesi) / 10) * 10, pmax = Math.ceil(Math.max(...pesi) / 10) * 10 || 1;
+  const bw = (W - pl - pr) / pagati.length;
+  const y = x => pt + (H - pt - pb) * (1 - x / top);
+  const yp = p => pt + (H - pt - pb) * (1 - (p - pmin) / Math.max(1, pmax - pmin));
+  let s = `<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">`;
+  for (let i = 0; i <= 4; i++) {
+    const val = top / 4 * i;
+    s += `<line x1="${pl}" x2="${W - pr}" y1="${y(val)}" y2="${y(val)}" stroke="#EDE8DD"/><text x="${pl - 6}" y="${y(val) + 3}" text-anchor="end">${fmt(val)}€</text>`;
+  }
+  s += `<text x="${W - pr + 6}" y="${yp(pmax) + 3}">${pmax}kg</text><text x="${W - pr + 6}" y="${yp(pmin) + 3}">${pmin}kg</text>`;
+  pagati.forEach((c, i) => {
+    const x = pl + i * bw + bw * .15, w = Math.max(2, bw * .7);
+    s += `<rect class="bar" x="${x}" y="${y(v[i])}" width="${w}" height="${H - pb - y(v[i])}" rx="3" fill="${col}" opacity=".85"><title>${fmtDate(c.data_uscita)} · ${c.macelloN} · ${fmt(v[i], 2)} €/capo · ${fmt(pesi[i], 1)} kg</title></rect>`;
+  });
+  const pts = pagati.map((c, i) => `${pl + i * bw + bw / 2},${yp(pesi[i])}`).join(' ');
+  s += `<polyline points="${pts}" fill="none" stroke="#1F2A24" stroke-width="2" stroke-dasharray="4 3" opacity=".55"/>`;
+  const step = Math.ceil(pagati.length / 8);
+  pagati.forEach((c, i) => { if (i % step === 0) s += `<text x="${pl + i * bw + bw / 2}" y="${H - 8}" text-anchor="middle">${c.data_uscita.slice(8)}/${c.data_uscita.slice(5, 7)}</text>`; });
+  return s + '</svg>';
+}
+
+// ══════════════ PAGINA 2: MACELLI ══════════════
+function renderMacelli() {
+  const lista = carichi();
+  const per = Object.entries(somma(lista, c => c.macelloN)).sort((a, b) => b[1].capi - a[1].capi);
+  const T = somma(lista, () => 't').t || { capi: 0, pen: 0 };
+  const maxC = Math.max(1, ...per.map(([, m]) => m.capi));
+  const penTot = {};
+  lista.forEach(c => c.penali.forEach(p => { const g = penTot[p.gruppo] ||= { capi: 0, euro: 0 }; g.capi += p.capi; g.euro += p.euro; }));
+  const penOrd = Object.entries(penTot).sort((a, b) => b[1].euro - a[1].euro);
+  const maxPen = Math.max(1, ...penOrd.map(([, g]) => g.euro));
+
+  let h = `<div class="hero">
+    <div class="kpi big"><img class="pig" src="img/truck-transfer.png" alt="">
+      <div class="kpi-l">Capi venduti ai macelli</div><div class="kpi-v">${num(T.capi)}</div><div class="kpi-s">${per.length} macelli · ${periodo()}</div></div>
+    <div class="kpi" style="--c:var(--terra)"><div class="kpi-l">Penali registrate</div><div class="kpi-v">${num(T.pen, 0, ' €')}</div><div class="kpi-s">${T.capi ? fmt(T.pen / T.capi, 2) + ' € per capo venduto' : ''}</div></div>
+    <div class="kpi" style="--c:var(--gold)"><div class="kpi-l">Capi penalizzati</div><div class="kpi-v">${num(T.capiPen)}</div><div class="kpi-s">${T.capi ? fmt(T.capiPen / T.capi * 100, 1) + ' % dei capi' : ''}</div></div>
+    <div class="kpi" style="--c:var(--green)"><div class="kpi-l">Pagato medio a capo</div><div class="kpi-v">${num(eurCapo(T), 2, ' €')}</div><div class="kpi-s">IVA inclusa</div></div>
+    <div class="kpi" style="--c:var(--blue)"><div class="kpi-l">Mancata resa</div><div class="kpi-v">${num(T.mrKg, 0, ' kg')}</div><div class="kpi-s">kg non pagati dal macello</div></div>
+  </div>
+  <div class="mtop">
+    <div class="panel"><div class="panel-t">Capi venduti per macello</div><div class="panel-s">In ordine di capi caricati</div>
+      ${per.slice(0, 12).map(([m, x], i) => `<div class="hbar" style="--c:${PALETTE[i % PALETTE.length]}"><div class="hbar-n" title="${escHtml(m)}">${escHtml(m)}</div>
+        <div class="hbar-t"><div data-w="${(x.capi / maxC * 100).toFixed(1)}"></div></div><div class="hbar-v">${fmt(x.capi)}<small>${fmt(x.capi / T.capi * 100, 1)} %</small></div></div>`).join('')}
+    </div>
+    <div class="panel"><div class="panel-t">Penali per causale — tutti i macelli</div><div class="panel-s">Euro trattenuti e capi coinvolti</div>
+      ${penOrd.length ? penOrd.map(([g, x]) => `<div class="pen-row"><div>${escHtml(g)}</div><div class="pen-bar"><div data-w="${(x.euro / maxPen * 100).toFixed(1)}"></div></div>
+        <div class="pen-n">${x.capi ? fmt(x.capi) + ' c.' : ''}</div><div class="pen-v">${fmt(x.euro, 0)} €</div></div>`).join('') : '<div class="empty">Nessuna penale registrata.</div>'}
+    </div>
+  </div>
+  <div class="sec-h"><div><div class="sec-t">Tutti i macelli</div><div class="sec-s">Clicca un macello per le penali e gli allevamenti che l'hanno servito</div></div></div>
+  <div class="mlist" id="mlist">`;
+
+  per.forEach(([m, x], i) => {
+    const interm = [...new Set(x.righe.map(c => c.interm).filter(Boolean))];
+    h += `<div class="mcard" id="mc-${i}" style="--c:${PALETTE[i % PALETTE.length]}">
+      <div class="mhead" onclick="apriMacello(${i})">
+        <div class="mrank">${i + 1}</div>
+        <div><div class="mname">${escHtml(m)}</div><div class="msub">${interm.length ? 'tramite ' + escHtml(interm.join(', ')) + ' · ' : ''}${fmtDate(x.dal)} → ${fmtDate(x.al)}</div></div>
+        <div><div class="ms-l">Capi</div><div class="ms-v">${fmt(x.capi)}</div></div>
+        <div class="hide-s"><div class="ms-l">Carichi</div><div class="ms-v">${x.n}</div></div>
+        <div class="hide-m"><div class="ms-l">Peso medio</div><div class="ms-v">${fmt(pesoMedio(x), 1)}</div></div>
+        <div class="hide-s"><div class="ms-l">€ a capo</div><div class="ms-v eur">${eurCapo(x) != null ? fmt(eurCapo(x), 2) : '—'}</div></div>
+        <div class="hide-m"><div class="ms-l">Penali</div><div class="ms-v" style="color:var(--terra)">${x.pen ? fmt(x.pen, 0) + ' €' : '—'}</div></div>
+        <div class="mchev">›</div>
+      </div>
+      <div class="mbody"><div class="mbody-in">${dettaglioMacello(x)}</div></div>
+    </div>`;
+  });
+  h += `</div><div class="note">Penali: le trattenute dei macelli (leggeri, sottopeso, disosso, tatuaggi…) come sono registrate nel gestionale, causali raggruppate. Le commissioni e il capitale sociale OPAS non sono penali e non sono contati. Per alcuni carichi (soprattutto fino a giugno 2026) il dettaglio delle penali non è registrato.</div>`;
+
+  const el = document.getElementById('page-macelli');
+  el.innerHTML = h;
+  animaNumeri(el.querySelector('.hero')); animaNumeri(el.querySelector('.mtop'));
+  if (typeof gsap !== 'undefined') {
+    gsap.from('#page-macelli .hero .kpi', { opacity: 0, y: 14, duration: .5, stagger: .07, ease: 'power3.out' });
+    gsap.from('#mlist .mcard', { opacity: 0, x: -24, duration: .45, stagger: .04, ease: 'power3.out', delay: .2 });
+  }
+}
+
+function dettaglioMacello(x) {
+  const pen = {};
+  x.righe.forEach(c => c.penali.forEach(p => { const g = pen[p.gruppo] ||= { capi: 0, euro: 0 }; g.capi += p.capi; g.euro += p.euro; }));
+  const ord = Object.entries(pen).sort((a, b) => b[1].euro - a[1].euro);
+  const maxP = Math.max(1, ...ord.map(([, g]) => g.euro));
+  const perAll = Object.entries(somma(x.righe, c => c.alleva)).sort((a, b) => b[1].capi - a[1].capi);
+  let h = `<div><div class="panel-t">Penali</div><div class="panel-s">${x.pen ? `${fmt(x.pen, 0)} € in totale · ${fmt(x.pen / x.capi, 2)} € per capo venduto${x.mrKg ? ' · mancata resa ' + fmt(x.mrKg) + ' kg' : ''}` : 'Nessuna penale registrata per questo macello'}</div>`;
+  h += ord.map(([g, p]) => `<div class="pen-row"><div>${escHtml(g)}</div><div class="pen-bar"><div data-w="${(p.euro / maxP * 100).toFixed(1)}"></div></div>
+    <div class="pen-n">${p.capi ? fmt(p.capi) + ' c.' : ''}</div><div class="pen-v">${fmt(p.euro, 0)} €</div></div>`).join('');
+  h += `</div><div><div class="panel-t">Allevamenti</div><div class="panel-s">Capi venduti a questo macello e pagato a capo</div>
+    <table class="t"><thead><tr><th class="l">Allevamento</th><th>Carichi</th><th>Capi</th><th>Peso medio</th><th>€ a capo</th><th>Penali</th></tr></thead><tbody>`;
+  perAll.forEach(([n, a]) => {
+    h += `<tr style="cursor:pointer" onclick="vai('alleva','${escHtml(n)}')"><td class="txt l"><span style="display:inline-block;width:9px;height:9px;border-radius:3px;background:${colore(n)};margin-right:7px"></span>${escHtml(n)}</td>
+      <td>${a.n}</td><td>${fmt(a.capi)}</td><td>${fmt(pesoMedio(a), 1)}</td><td class="eurc">${eurCapo(a) != null ? fmt(eurCapo(a), 2) : '—'}</td><td class="${a.pen ? 'neg' : ''}">${a.pen ? fmt(a.pen, 0) + ' €' : '—'}</td></tr>`;
+  });
+  return h + '</tbody></table></div>';
+}
+
+function apriMacello(i) {
+  const card = document.getElementById('mc-' + i);
+  const body = card.querySelector('.mbody');
+  const aperta = card.classList.toggle('open');
+  if (typeof gsap === 'undefined') { body.style.height = aperta ? 'auto' : '0'; if (aperta) animaNumeri(body); return; }
+  if (aperta) {
+    gsap.fromTo(body, { height: 0 }, { height: 'auto', duration: .5, ease: 'power3.out' });
+    animaNumeri(body);
+    gsap.from(body.querySelectorAll('.pen-row, tbody tr'), { opacity: 0, y: 8, duration: .3, stagger: .03, delay: .15 });
+  } else {
+    gsap.to(body, { height: 0, duration: .35, ease: 'power2.inOut' });
+  }
+}
+
+// ══════════════ Password (stessa della pagina Direzione) ══════════════
+const PW_HASH_TARGET = '54363d1e1514f3d07555f682436d041260f01ecf5955eb689df60f1ac306c0b3';
+async function pwHash(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+async function pwCheck() {
+  const h = await pwHash(document.getElementById('pw-input').value);
+  if (h === PW_HASH_TARGET) {
+    try { sessionStorage.setItem('capo_auth', '1'); } catch (e) {}
+    document.getElementById('pw-gate').classList.add('hidden');
+  } else {
+    document.getElementById('pw-err').textContent = 'Password errata.';
+    document.getElementById('pw-input').value = '';
+  }
+}
+document.getElementById('pw-input').addEventListener('keydown', e => { if (e.key === 'Enter') pwCheck(); });
+try { if (sessionStorage.getItem('capo_auth') === '1') document.getElementById('pw-gate').classList.add('hidden'); } catch (e) {}
+
+loadAll();
+</script>
+</body>
+</html>
