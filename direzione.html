@@ -120,6 +120,39 @@
   .kpi.big .kpi-s { color: #BFD8C8; }
   .kpi.big .pig { position: absolute; right: -10px; bottom: -14px; width: 120px; opacity: .22; transform: rotate(-8deg); }
 
+  .hero.hhome { grid-template-columns: 1.4fr .8fr repeat(4, 1fr); }
+  .kpi.assist {
+    cursor: pointer; font-family: var(--font); text-align: center; border: 1.5px dashed #D9B9A6; background: var(--terra-bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    transition: transform .25s cubic-bezier(.34,1.56,.64,1), box-shadow .25s, background .2s;
+  }
+  .kpi.assist::after { display: none; }
+  .kpi.assist:hover { transform: translateY(-3px) scale(1.02); box-shadow: var(--sh-md); background: #F8E2D6; }
+  .assist-ico { font-size: 26px; animation: assistPulse 2.6s ease-in-out infinite; }
+  .assist-t { font-size: 14px; font-weight: 800; color: var(--terra); letter-spacing: .02em; }
+  .assist-s { font-size: 11px; color: var(--ink2); line-height: 1.3; }
+  @keyframes assistPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12) rotate(-6deg); } }
+  #assist-modal { position: fixed; inset: 0; z-index: 900; display: none; align-items: center; justify-content: center; padding: 16px; }
+  #assist-modal.on { display: flex; }
+  .assist-bg { position: absolute; inset: 0; background: rgba(20,28,24,.55); backdrop-filter: blur(3px); }
+  .assist-box { position: relative; width: 100%; max-width: 520px; background: #FFF; border-radius: 18px; box-shadow: var(--sh-lg); overflow: hidden; }
+  .assist-head { padding: 20px 24px 16px; color: #FFF; background: linear-gradient(120deg, #1F2A24, var(--terra)); }
+  .assist-head h3 { font-size: 19px; font-weight: 800; }
+  .assist-head p { font-size: 13px; color: rgba(255,255,255,.8); margin-top: 4px; padding-right: 30px; }
+  .assist-x { position: absolute; top: 12px; right: 14px; border: none; background: rgba(255,255,255,.15); color: #FFF; width: 32px; height: 32px; border-radius: 50%; font-size: 18px; cursor: pointer; }
+  .assist-body { padding: 18px 24px 22px; }
+  .assist-body label { display: block; font-size: 11.5px; font-weight: 700; color: var(--ink2); text-transform: uppercase; letter-spacing: .05em; margin: 10px 0 6px; }
+  .assist-body input, .assist-body textarea { width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px; font-family: var(--font); font-size: 14.5px; color: var(--ink); background: #FCFBF8; }
+  .assist-body textarea { min-height: 140px; resize: vertical; }
+  .assist-body input:focus, .assist-body textarea:focus { outline: none; border-color: var(--terra); box-shadow: 0 0 0 4px rgba(181,83,42,.12); }
+  .assist-send { width: 100%; margin-top: 16px; border: none; border-radius: 12px; padding: 13px; font-family: var(--font); font-size: 15px; font-weight: 700; color: #FFF; background: var(--terra); cursor: pointer; transition: transform .15s, opacity .2s; }
+  .assist-send:hover { transform: translateY(-1px); }
+  .assist-send:disabled { opacity: .6; cursor: wait; }
+  .assist-err { color: var(--red); font-size: 12.5px; margin-top: 8px; min-height: 16px; }
+  .assist-ok { padding: 34px 24px 30px; text-align: center; }
+  .assist-ok .tick { width: 64px; height: 64px; border-radius: 50%; background: var(--green); color: #FFF; font-size: 34px; display: inline-flex; align-items: center; justify-content: center; }
+  .assist-ok h4 { font-size: 18px; margin-top: 14px; }
+  .assist-ok p { font-size: 13.5px; color: var(--ink2); margin-top: 6px; }
   .sec-h { display: flex; align-items: baseline; justify-content: space-between; margin: 8px 0 14px; gap: 16px; flex-wrap: wrap; }
   .sec-t { font-size: 20px; font-weight: 700; }
   .sec-s { font-size: 13px; color: var(--ink2); }
@@ -278,7 +311,7 @@
   @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 
   @media (max-width: 1100px) {
-    .hero { grid-template-columns: repeat(2, 1fr); }
+    .hero, .hero.hhome { grid-template-columns: repeat(2, 1fr); }
     .kpi.big { grid-column: 1 / -1; }
     .dkpi, .dkpi.p4 { grid-template-columns: repeat(3, 1fr); }
     .dkpi.p4 .kpi.big { grid-column: 1 / -1; }
@@ -314,6 +347,26 @@
 </div>
 
 <div id="wipe"></div>
+
+<div id="assist-modal">
+  <div class="assist-bg" onclick="chiudiAssistenza()"></div>
+  <div class="assist-box" id="assist-box">
+    <button class="assist-x" onclick="chiudiAssistenza()" aria-label="Chiudi">×</button>
+    <div class="assist-head"><h3>💬 Assistenza</h3><p>Scrivi cosa vorresti cambiare o aggiungere: la richiesta arriva via mail e ci lavoriamo.</p></div>
+    <div id="assist-form" class="assist-body">
+      <label for="assist-nome">Il tuo nome</label>
+      <input id="assist-nome" maxlength="80" placeholder="Nome">
+      <label for="assist-testo">Richiesta</label>
+      <textarea id="assist-testo" maxlength="4000" placeholder="Es. nella scheda dell'allevamento vorrei vedere anche…"></textarea>
+      <button class="assist-send" id="assist-send" onclick="inviaAssistenza()">Invia richiesta</button>
+      <div class="assist-err" id="assist-err"></div>
+    </div>
+    <div id="assist-ok" class="assist-ok" style="display:none">
+      <div class="tick">✓</div><h4>Richiesta inviata</h4><p>Grazie! La richiesta è arrivata, ti faremo sapere.</p>
+      <button class="assist-send" style="max-width:200px" onclick="chiudiAssistenza()">Chiudi</button>
+    </div>
+  </div>
+</div>
 
 <header class="header">
   <div class="header-inner">
@@ -608,11 +661,12 @@ function renderHome() {
   const acqCapo = capiPrezzo ? conPrezzo.reduce((s, a) => s + a.costo_acquisto, 0) / capiPrezzo : null;
   document.getElementById('brand-s').textContent = `Carichi al macello e pagato a capo · ${periodo()}`;
 
-  let h = `<div class="hero">
+  let h = `<div class="hero hhome">
     <div class="kpi big"><img class="pig" src="img/piglet-running.png" alt="">
       <div class="kpi-l">Capi venduti fino ad oggi</div>
       <div class="kpi-v">${num(T.capi)}</div>
       <div class="kpi-s">${fmt(T.n)} carichi al macello · ${periodo()}</div></div>
+    <button class="kpi assist" onclick="apriAssistenza()"><span class="assist-ico">💬</span><span class="assist-t">Assistenza</span><span class="assist-s">Chiedi una modifica al programma</span></button>
     <div class="kpi" style="--c:var(--green)"><div class="kpi-l">Prezzo medio vendita a capo</div><div class="kpi-v">${num(eurCapo(T), 2, ' €')}</div><div class="kpi-s">IVA inclusa, sui carichi liquidati</div></div>
     <div class="kpi" style="--c:var(--terra)"><div class="kpi-l">Prezzo medio acquisto suinetto</div><div class="kpi-v">${num(acqCapo, 2, ' €')}</div><div class="kpi-s">${fmt(capiAcq)} capi acquistati e trasferiti</div></div>
     <div class="kpi" style="--c:var(--blue)"><div class="kpi-l">Euro al kg medio</div><div class="kpi-v">${num(eurKg(T), 3, ' €')}</div><div class="kpi-s">liquidato ÷ kg caricati</div></div>
@@ -1056,6 +1110,58 @@ function tabellaLottiSvezz(r) {
   });
   return h + `</tbody><tfoot><tr><td>Totale</td><td></td><td></td><td>${fmt(r.entrati)}</td><td></td><td class="eurc">${fmt(r.usciti)}</td><td></td><td class="neg">${fmt(r.morti)}</td><td>${fmt(r.presenti)}</td><td></td><td></td></tr></tfoot></table>`;
 }
+
+// ══════════════ Assistenza: richieste di modifica → edge function "assistenza" → mail a Ruben ══════════════
+function sezioneCorrente() {
+  if (PAGINA === 'alleva') return 'Allevamento ' + ALLEVA_APERTO + (VISTA_ALLEVA === 'presenti' ? ' (capi presenti)' : ' (carichi)');
+  return { home: 'Allevamenti', macelli: 'Macelli', svezz: 'Svezzamenti' }[PAGINA] || PAGINA;
+}
+function apriAssistenza() {
+  const m = document.getElementById('assist-modal');
+  document.getElementById('assist-form').style.display = '';
+  document.getElementById('assist-ok').style.display = 'none';
+  document.getElementById('assist-err').textContent = '';
+  document.getElementById('assist-send').disabled = false;
+  try { document.getElementById('assist-nome').value = localStorage.getItem('assist_nome') || ''; } catch (e) {}
+  m.classList.add('on');
+  if (typeof gsap !== 'undefined') {
+    gsap.fromTo('.assist-bg', { opacity: 0 }, { opacity: 1, duration: .25 });
+    gsap.fromTo('#assist-box', { opacity: 0, y: 40, scale: .94 }, { opacity: 1, y: 0, scale: 1, duration: .45, ease: 'back.out(1.6)' });
+  }
+  setTimeout(() => document.getElementById(document.getElementById('assist-nome').value ? 'assist-testo' : 'assist-nome').focus(), 200);
+}
+function chiudiAssistenza() {
+  const m = document.getElementById('assist-modal');
+  if (typeof gsap === 'undefined') { m.classList.remove('on'); return; }
+  gsap.to('#assist-box', { opacity: 0, y: 30, scale: .96, duration: .25, ease: 'power2.in' });
+  gsap.to('.assist-bg', { opacity: 0, duration: .25, onComplete: () => m.classList.remove('on') });
+}
+async function inviaAssistenza() {
+  const nome = document.getElementById('assist-nome').value.trim();
+  const testo = document.getElementById('assist-testo').value.trim();
+  const err = document.getElementById('assist-err');
+  if (testo.length < 3) { err.textContent = 'Scrivi la richiesta prima di inviarla.'; return; }
+  const btn = document.getElementById('assist-send');
+  btn.disabled = true; btn.textContent = 'Invio in corso…'; err.textContent = '';
+  try {
+    const r = await fetch(`${SUPABASE_URL}/functions/v1/assistenza`, {
+      method: 'POST', headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome, testo, pagina: sezioneCorrente() }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || !d.ok) throw new Error(d.error || 'errore ' + r.status);
+    try { localStorage.setItem('assist_nome', nome); } catch (e) {}
+    document.getElementById('assist-testo').value = '';
+    document.getElementById('assist-form').style.display = 'none';
+    document.getElementById('assist-ok').style.display = '';
+    if (typeof gsap !== 'undefined') gsap.fromTo('#assist-ok .tick', { scale: 0, rotate: -90 }, { scale: 1, rotate: 0, duration: .6, ease: 'back.out(2)' });
+  } catch (e) {
+    err.textContent = 'Richiesta non inviata (' + e.message + '). Riprova tra poco.';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Invia richiesta';
+  }
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.getElementById('assist-modal').classList.contains('on')) chiudiAssistenza(); });
 
 // ══════════════ Password (stessa della pagina Direzione) ══════════════
 const PW_HASH_TARGET = '0e77daaea7ab6edef5db41e25f91b03b44f82f3a16ad34e80e827fc869eff256';
