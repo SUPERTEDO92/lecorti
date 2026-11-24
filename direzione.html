@@ -98,6 +98,7 @@
   .hero {
     display: grid; grid-template-columns: 1.4fr repeat(4, 1fr); gap: 14px; margin-bottom: 26px;
   }
+  @media (min-width: 1101px) { .hero.h4 { grid-template-columns: 1.4fr repeat(3, 1fr); } }
   .kpi {
     background: var(--card); border-radius: var(--r); padding: 18px 20px; box-shadow: var(--sh-sm);
     border: 1px solid var(--line); position: relative; overflow: hidden;
@@ -844,14 +845,13 @@ function renderSvezz() {
     { entrati: 0, usciti: 0, morti: 0, presenti: 0, n: 0 });
   const pct = (a, b) => b ? fmt(a / b * 100, 1) + ' %' : '—';
 
-  let h = `<div class="hero">
+  let h = `<div class="hero h4">
     <div class="kpi big"><img class="pig" src="img/piglet-running.png" alt="">
       <div class="kpi-l">Capi entrati in svezzamento</div><div class="kpi-v">${num(T.entrati)}</div>
       <div class="kpi-s">${T.n} svezzamenti · lotti aperti e chiusi entrati dal 1° gennaio 2026</div></div>
     <div class="kpi" style="--c:var(--green)"><div class="kpi-l">Capi usciti</div><div class="kpi-v">${num(T.usciti)}</div><div class="kpi-s">trasferiti all'ingrasso o venduti</div></div>
     <div class="kpi" style="--c:var(--red)"><div class="kpi-l">Morti</div><div class="kpi-v">${num(T.morti)}</div><div class="kpi-s">mortalità ${pct(T.morti, T.entrati)}</div></div>
     <div class="kpi" style="--c:var(--blue)"><div class="kpi-l">Presenti oggi</div><div class="kpi-v">${num(T.presenti)}</div><div class="kpi-s">nei lotti ancora aperti</div></div>
-    <div class="kpi" style="--c:var(--gold)"><div class="kpi-l">Usciti su entrati</div><div class="kpi-v">${T.entrati ? num(T.usciti / T.entrati * 100, 1, ' %') : '—'}</div><div class="kpi-s">capi usciti ÷ capi entrati</div></div>
   </div>
   <div class="sec-h"><div><div class="sec-t">I nostri svezzamenti</div><div class="sec-s">Clicca uno svezzamento per vedere i suoi lotti</div></div></div>
   <div class="mlist" id="svlist">`;
@@ -870,7 +870,7 @@ function renderSvezz() {
         <div><div class="ms-l">Usciti</div><div class="ms-v eur">${fmt(r.usciti)}</div></div>
         <div class="hide-s"><div class="ms-l">Morti</div><div class="ms-v" style="color:var(--red)">${fmt(r.morti)} <small style="font-size:11px;color:var(--ink3)">${pct(r.morti, r.entrati)}</small></div></div>
         <div class="hide-m"><div class="ms-l">Presenti</div><div class="ms-v">${fmt(r.presenti)}</div></div>
-        <div class="hide-m"><div class="ms-l">Usciti / entrati</div><div class="share" style="margin-top:7px"><div data-w="${r.entrati ? Math.min(100, r.usciti / r.entrati * 100).toFixed(1) : 0}"></div></div></div>
+        <div class="hide-m"></div>
         <div class="mchev">${r.ls.length ? '›' : ''}</div>
       </div>
       <div class="mbody"><div style="padding:16px 18px 20px;border-top:1px solid var(--line);overflow-x:auto">${tabellaLottiSvezz(r)}</div></div>
