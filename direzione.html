@@ -150,6 +150,32 @@
   .assist-ok .tick { width: 64px; height: 64px; border-radius: 50%; background: var(--green); color: #FFF; font-size: 34px; display: inline-flex; align-items: center; justify-content: center; }
   .assist-ok h4 { font-size: 18px; margin-top: 14px; }
   .assist-ok p { font-size: 13.5px; color: var(--ink2); margin-top: 6px; }
+  /* ── Linguette Referti / Note / Visite sotto ogni lotto ── */
+  .lotti-grid { align-items: start; }
+  .ltabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 0 12px 12px; }
+  .ltab {
+    border: 1px solid var(--line); background: #FAF8F3; border-radius: 10px; padding: 8px 6px; cursor: pointer;
+    font-family: var(--font); font-size: 12.5px; font-weight: 700; color: var(--ink2);
+    display: inline-flex; align-items: center; justify-content: center; gap: 5px; transition: background .2s, color .2s, border-color .2s, translate .2s;
+  }
+  .ltab:hover { translate: 0 -1px; border-color: var(--ink3); }
+  .ltab.on { background: #1F2A24; color: #FFF; border-color: #1F2A24; }
+  .ltab.san { color: var(--red); background: var(--red-bg); border-color: #EFC9C9; }
+  .ltab.san.on { background: linear-gradient(120deg, #4A1414, #B23A3A 70%, #E0543C); color: #FFF; border-color: #8E2A2A; box-shadow: 0 4px 14px rgba(178,58,58,.35); }
+  .lt-ico { display: inline-block; }
+  .ltab.san:hover .lt-ico { animation: skullWiggle .5s ease-in-out; }
+  .lt-n { font-family: var(--mono); font-size: 11px; padding: 1px 7px; border-radius: 20px; background: rgba(31,42,36,.08); }
+  .ltab.on .lt-n { background: rgba(255,255,255,.2); }
+  .lt-n.zero { opacity: .5; }
+  .lt-n.pos { background: var(--red); color: #FFF; }
+  .lpanel { height: 0; overflow: hidden; }
+  .lpanel-in { padding: 4px 12px 14px; border-top: 1px dashed var(--line); }
+  .lpanel .tl { padding-left: 30px; margin-top: 8px; }
+  .lpanel .tl-mese { margin-top: 10px; }
+  .lpanel .tl-item { padding: 11px 13px; }
+  .lpanel .tl-dot { left: -30px; width: 24px; height: 24px; font-size: 12px; }
+  .lpanel .tl::before { left: 11px; }
+  .lpanel .foto-grid img { width: 72px; height: 72px; }
   /* ── Vista Sanitario ── */
   .switch-btn.san { color: var(--red); }
   .switch-btn.san:not(.on) { background: var(--red-bg); }
@@ -818,7 +844,6 @@ function renderAlleva(nome) {
       <div class="switch-pill"></div>
       <button class="switch-btn" data-v="carichi" onclick="setVista('carichi')">🚚 Carichi e liquidazioni <span class="switch-n">${fmt(lista.reduce((s, c) => s + c.capi, 0))}</span></button>
       <button class="switch-btn" data-v="presenti" onclick="setVista('presenti')">🐷 Capi presenti <span class="switch-n">${fmt(pres.presenti)}</span></button>
-      <button class="switch-btn san" data-v="sanitario" onclick="setVista('sanitario')"><span class="san-skull-mini">☠️</span> Sanitario</button>
     </div>
     <div id="alleva-view"></div>`;
   posizionaSwitch(false);
@@ -971,6 +996,12 @@ function vistaPresenti(nome, el) {
       </div>
       <div class="lbar"><div class="lbar-l"><span>Peso stimato verso il carico</span><span>${r.oggi != null ? fmt(r.oggi, 0) + ' / ' + max + ' kg' : ''}</span></div>
         <div class="share"><div data-w="${perc.toFixed(1)}"></div></div></div>
+      <div class="ltabs">
+        <button class="ltab san" data-t="referti" onclick="tabLotto(${r.l.id},'referti')"><span class="lt-ico">☠️</span> Referti <b class="lt-n" id="ltn-r-${r.l.id}">…</b></button>
+        <button class="ltab" data-t="note" onclick="tabLotto(${r.l.id},'note')"><span class="lt-ico">📝</span> Note <b class="lt-n" id="ltn-n-${r.l.id}">…</b></button>
+        <button class="ltab" data-t="visite" onclick="tabLotto(${r.l.id},'visite')"><span class="lt-ico">🚗</span> Visite <b class="lt-n" id="ltn-v-${r.l.id}">…</b></button>
+      </div>
+      <div class="lpanel" id="lp-${r.l.id}"><div class="lpanel-in"></div></div>
     </div>`;
   });
   h += `</div><div class="note">Presenti = entrati − morti − uscite − trasferimenti. Peso stimato come nel gestionale (peso d\'arrivo + incremento del lotto × giorni). La barra arriva al peso di carico di riferimento (180 kg).</div>`;
@@ -978,8 +1009,64 @@ function vistaPresenti(nome, el) {
   animaNumeri(el);
   if (typeof gsap !== 'undefined') {
     gsap.from('#alleva-view .dkpi .kpi', { opacity: 0, y: 16, duration: .45, stagger: .06, ease: 'power3.out', delay: .1 });
-    gsap.from('#alleva-view .lcard', { opacity: 0, y: 24, scale: .97, duration: .5, stagger: .08, ease: 'power3.out', delay: .2 });
+    gsap.from('#alleva-view .lcard', { opacity: 0, y: 24, scale: .97, duration: .5, stagger: .08, ease: 'power3.out', delay: .2, clearProps: 'transform,opacity' });
   }
+  // conteggi di referti, note e visite per lotto (dati caricati alla prima apertura)
+  caricaSanitario().then(() => {
+    if (ALLEVA_APERTO !== nome || VISTA_ALLEVA !== 'presenti') return;
+    P.righe.forEach(r => {
+      const c = contiLottoSan(nome, r.l.id);
+      const put = (id, n, pos) => { const b = document.getElementById(id); if (b) { b.textContent = n; b.classList.toggle('zero', !n); if (pos) b.classList.add('pos'); } };
+      put('ltn-r-' + r.l.id, c.referti.length, c.referti.some(e => e.esito === 'pos'));
+      put('ltn-n-' + r.l.id, c.note.length);
+      put('ltn-v-' + r.l.id, c.visite.length);
+    });
+  }).catch(() => {});
+}
+
+// Referti / note / visite di un lotto (per le linguette sotto la scheda)
+function contiLottoSan(nome, lottoId) {
+  const { ev, lot } = eventiSanitari(nome);
+  const l = lot[lottoId];
+  return {
+    lot,
+    referti: ev.filter(e => e.tipo === 'referto' && e.lotto === lottoId),
+    note: ev.filter(e => e.tipo === 'nota' && e.lotto === lottoId),
+    visite: ev.filter(e => e.tipo === 'visita' && l && e.data >= l.data_ingresso),
+  };
+}
+let TESCHIO_VISTO = false;
+async function tabLotto(lottoId, tab) {
+  const card = document.getElementById('lp-' + lottoId).closest('.lcard');
+  const panel = document.getElementById('lp-' + lottoId);
+  const inner = panel.querySelector('.lpanel-in');
+  const btn = card.querySelector(`.ltab[data-t="${tab}"]`);
+  const giaAperta = btn.classList.contains('on');
+  card.querySelectorAll('.ltab').forEach(b => b.classList.remove('on'));
+  const chiudi = () => {
+    if (typeof gsap === 'undefined') { panel.style.height = '0'; return; }
+    gsap.to(panel, { height: 0, duration: .3, ease: 'power2.inOut' });
+  };
+  if (giaAperta) { chiudi(); return; }
+  btn.classList.add('on');
+  const apri = async () => {
+    inner.innerHTML = `<div class="san-loading" style="padding:24px 0"><span class="s">${tab === 'referti' ? '☠️' : tab === 'note' ? '📝' : '🚗'}</span></div>`;
+    if (typeof gsap !== 'undefined') gsap.to(panel, { height: 'auto', duration: .3 }); else panel.style.height = 'auto';
+    try { await caricaSanitario(); } catch (e) { inner.innerHTML = '<div class="empty">Dati non disponibili.</div>'; return; }
+    const c = contiLottoSan(ALLEVA_APERTO, lottoId);
+    const lista = c[tab];
+    const vuoto = { referti: 'Nessun referto per questo lotto.', note: 'Nessuna nota per questo lotto.', visite: "Nessuna visita registrata dall'ingresso del lotto." }[tab];
+    inner.innerHTML = itemsSan(lista, {}, vuoto);
+    if (typeof gsap === 'undefined') { panel.style.height = 'auto'; return; }
+    gsap.fromTo(panel, { height: panel.offsetHeight }, { height: 'auto', duration: .5, ease: 'power3.out' });
+    gsap.from(inner.querySelectorAll('.tl-item'), { opacity: 0, x: -14, duration: .35, stagger: { each: .05, amount: .6 }, ease: 'power3.out', delay: .1 });
+    gsap.from(inner.querySelectorAll('.tl-dot'), { scale: 0, duration: .4, stagger: { each: .05, amount: .6 }, ease: 'back.out(2.5)', delay: .2 });
+  };
+  if (tab === 'referti') {
+    if (!TESCHIO_VISTO) { TESCHIO_VISTO = true; caricaSanitario().catch(() => {}); teschio(apri); return; }
+    if (typeof gsap !== 'undefined') gsap.fromTo(btn.querySelector('.lt-ico'), { rotate: -25, scale: 1.5 }, { rotate: 0, scale: 1, duration: .6, ease: 'elastic.out(1, .4)' });
+  }
+  apri();
 }
 
 function graficoCarichi(lista, col) {
@@ -1309,6 +1396,9 @@ function timelineSan(ev, lot) {
     const l = lot[SAN_LOTTO];
     lista = ev.filter(e => e.lotto === SAN_LOTTO || (e.tipo === 'visita' && l && e.data >= l.data_ingresso));
   }
+  return itemsSan(lista, lot);
+}
+function itemsSan(lista, lot, vuoto) {
   const MESI = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
   let h = '<div class="tl">', mese = '';
   lista.slice(0, 250).forEach((e, i) => {
@@ -1335,7 +1425,7 @@ function timelineSan(ev, lot) {
         <div class="tl-txt" style="color:var(--ink2)">${oraVisita(e.v) || 'visita registrata'}</div></div>`;
     }
   });
-  if (!lista.length) h += '<div class="empty">Niente da mostrare per questo lotto.</div>';
+  if (!lista.length) h += `<div class="empty">${vuoto || 'Niente da mostrare per questo lotto.'}</div>`;
   return h + '</div>';
 }
 function apriFoto(src) {
