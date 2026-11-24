@@ -99,6 +99,8 @@
     display: grid; grid-template-columns: 1.4fr repeat(4, 1fr); gap: 14px; margin-bottom: 26px;
   }
   @media (min-width: 1101px) { .hero.h4 { grid-template-columns: 1.4fr repeat(3, 1fr); } }
+  .hero.h2 { grid-template-columns: 2fr 1fr; }
+  @media (max-width: 640px) { .hero.h2 { grid-template-columns: 1fr; } }
   .kpi {
     background: var(--card); border-radius: var(--r); padding: 18px 20px; box-shadow: var(--sh-sm);
     border: 1px solid var(--line); position: relative; overflow: hidden;
@@ -723,12 +725,9 @@ function renderMacelli() {
   const penOrd = Object.entries(penTot).sort((a, b) => b[1].euro - a[1].euro);
   const maxPen = Math.max(1, ...penOrd.map(([, g]) => g.euro));
 
-  let h = `<div class="hero">
+  let h = `<div class="hero h2">
     <div class="kpi big"><img class="pig" src="img/truck-transfer.png" alt="">
       <div class="kpi-l">Capi venduti ai macelli</div><div class="kpi-v">${num(T.capi)}</div><div class="kpi-s">${per.length} macelli · ${periodo()}</div></div>
-    <div class="kpi" style="--c:var(--terra)"><div class="kpi-l">Penali registrate</div><div class="kpi-v">${num(T.pen, 0, ' €')}</div><div class="kpi-s">${T.capi ? fmt(T.pen / T.capi, 2) + ' € per capo venduto' : ''}</div></div>
-    <div class="kpi" style="--c:var(--gold)"><div class="kpi-l">Capi penalizzati</div><div class="kpi-v">${num(T.capiPen)}</div><div class="kpi-s">${T.capi ? fmt(T.capiPen / T.capi * 100, 1) + ' % dei capi' : ''}</div></div>
-    <div class="kpi" style="--c:var(--green)"><div class="kpi-l">Pagato medio a capo</div><div class="kpi-v">${num(eurCapo(T), 2, ' €')}</div><div class="kpi-s">IVA inclusa</div></div>
     <div class="kpi" style="--c:var(--blue)"><div class="kpi-l">Mancata resa</div><div class="kpi-v">${num(T.mrKg, 0, ' kg')}</div><div class="kpi-s">kg non pagati dal macello</div></div>
   </div>
   <div class="mtop"${MOSTRA_RIEPILOGHI_MACELLI ? '' : ' style="display:none"'}>
