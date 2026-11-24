@@ -100,6 +100,12 @@
   }
   .soccida-header { background: var(--text); color: #F5F3EE; border-radius: var(--radius-lg); padding: 10px 16px; }
   .soccida-title { font-size: 17px; font-weight: 500; font-family: var(--mono); }
+  .soccida-header-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .btn-mappa { background: transparent; color: #F5F3EE; border: 1px solid rgba(245,243,238,.45); border-radius: 999px; padding: 4px 12px; font-size: 12px; font-family: var(--font); font-weight: 500; cursor: pointer; white-space: nowrap; }
+  .btn-mappa:active, .btn-mappa:hover { background: rgba(245,243,238,.12); }
+  .mappa-list { margin-top: 8px; display: none; }
+  .mappa-list.open { display: block; }
+  .mappa-item { display: block; width: 100%; text-align: left; background: rgba(245,243,238,.08); color: #F5F3EE; border: none; border-radius: 8px; padding: 7px 10px; margin-top: 4px; font-size: 12px; font-family: var(--font); cursor: pointer; }
 
   .lotto-header {
     background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius-lg);
@@ -236,7 +242,7 @@ const etichetta = nome => ETICHETTE[nome] || nome;
 // (bug di rendering su Firefox Android con emoji color-font flippate+animate).
 const PIG_SVG = '<svg viewBox="0 0 100 70" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;"><ellipse cx="52" cy="40" rx="34" ry="24" fill="#F2A6A0"/><ellipse cx="20" cy="24" rx="10" ry="9" fill="#F2A6A0"/><ellipse cx="17" cy="21" rx="4.5" ry="4" fill="#D97D78"/><circle cx="34" cy="30" r="3" fill="#2A2622"/><ellipse cx="14" cy="42" rx="15" ry="13" fill="#EF9791"/><ellipse cx="9" cy="40" rx="3" ry="4" fill="#2A2622"/><ellipse cx="9" cy="46" rx="3" ry="4" fill="#2A2622"/><path d="M84 30 Q94 24 90 34 Q96 38 86 38" fill="none" stroke="#EF9791" stroke-width="4" stroke-linecap="round"/><ellipse cx="46" cy="60" rx="6" ry="4" fill="#D97D78"/><ellipse cx="66" cy="60" rx="6" ry="4" fill="#D97D78"/></svg>';
 
-let allSoccide = [], allLotti = [], allUscite = [], allMortalita = [], allIngressi = [], allNoteVet = [], allTrasferimenti = [], allSanitario = [], allMangime = [], allDaPesare = [];
+let allSoccide = [], allLotti = [], allUscite = [], allMortalita = [], allIngressi = [], allNoteVet = [], allTrasferimenti = [], allSanitario = [], allMangime = [], allDaPesare = [], allMappe = [];
 let vistaPesi = false;
 let soccidaAttiva = null;
 const tabAttiva = {};   // lotto_id → 'mortalita' | 'referti' | 'note' (resta aperta dopo un salvataggio)
@@ -435,6 +441,11 @@ async function loadAll() {
     } catch (e) { allMangime = []; }
     // bolle a 1 kg delle soccide di Samuele: è spesso in ufficio e a volte trova lui il peso (Ruben 19/11/2026)
     allDaPesare = allMangime.filter(m => m.quantita_provvisoria);
+    // planimetrie delle soccide (documentale, categoria soccide): stesso bottone "Mappa" di index.html
+    try {
+      allMappe = await sb('archivio_documenti', `?categoria=eq.soccide&soccida_id=in.(${socIds.join(',')})&documento_id=not.is.null&select=id,soccida_id,sottocategoria,titolo,documento_id&order=titolo.asc`);
+      if (!Array.isArray(allMappe)) allMappe = [];
+    } catch (e) { allMappe = []; }
     await notaMediaPreload(allNoteVet);
   } catch (e) {
     content.innerHTML = `<div class="empty" style="color:var(--red);">Dati non caricati: ${esc(e.message || e)}<br><br>
@@ -661,14 +672,31 @@ function renderMangimeRow(socId) {
 }
 
 // ── DETTAGLIO SOCCIDA ──
+function mappeSoccida(socId) {
+  return allMappe.filter(d => d.soccida_id === socId && /planimetria|mappa/i.test((d.sottocategoria || '') + ' ' + (d.titolo || '')));
+}
+function apriMappaSoccida(socId) {
+  const mappe = mappeSoccida(socId);
+  if (mappe.length === 1) { apriDocumento(mappe[0].documento_id); return; }
+  const el = document.getElementById('mappa-list-' + socId);
+  if (el) el.classList.toggle('open');
+}
+
 function render() {
   const soc = allSoccide.find(s => s.nome === soccidaAttiva);
   const content = document.getElementById('content');
   if (!soc) { renderLista(); return; }
+  const mappe = mappeSoccida(soc.id);
 
   let html = `<div class="detail-sticky-wrap">
     <button class="back-btn" onclick="transizioneMandria(() => renderLista())">← Soccide</button>
-    <div class="soccida-header"><div class="soccida-title">${esc(etichetta(soc.nome))}</div></div>
+    <div class="soccida-header">
+      <div class="soccida-header-row">
+        <div class="soccida-title">${esc(etichetta(soc.nome))}</div>
+        ${mappe.length ? `<button type="button" class="btn-mappa" onclick="apriMappaSoccida(${soc.id})">🗺️ Mappa</button>` : ''}
+      </div>
+      ${mappe.length > 1 ? `<div class="mappa-list" id="mappa-list-${soc.id}">${mappe.map(d => `<button type="button" class="mappa-item" onclick="apriDocumento(${d.documento_id})">${esc(d.titolo || 'Planimetria')}</button>`).join('')}</div>` : ''}
+    </div>
   </div>`;
 
   html += renderMangimeRow(soc.id);
