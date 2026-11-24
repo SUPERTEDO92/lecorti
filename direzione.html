@@ -153,6 +153,65 @@
   .assist-ok .tick { width: 64px; height: 64px; border-radius: 50%; background: var(--green); color: #FFF; font-size: 34px; display: inline-flex; align-items: center; justify-content: center; }
   .assist-ok h4 { font-size: 18px; margin-top: 14px; }
   .assist-ok p { font-size: 13.5px; color: var(--ink2); margin-top: 6px; }
+  /* ── Vista Sanitario ── */
+  .switch-btn.san { color: var(--red); }
+  .switch-btn.san:not(.on) { background: var(--red-bg); }
+  .switch-btn.san:not(.on):hover { background: #F6D7D7; }
+  .switch.san-on .switch-pill { background: linear-gradient(120deg, #4A1414, #B23A3A 70%, #E0543C); box-shadow: 0 4px 18px rgba(178,58,58,.45); }
+  .san-skull-mini { display: inline-block; transition: transform .3s; }
+  .switch-btn.san:hover .san-skull-mini { animation: skullWiggle .5s ease-in-out; }
+  @keyframes skullWiggle { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-14deg) scale(1.15); } 75% { transform: rotate(14deg) scale(1.15); } }
+
+  #skull-fx { position: fixed; inset: 0; z-index: 950; pointer-events: none; display: none; align-items: center; justify-content: center; overflow: hidden; }
+  #skull-fx.on { display: flex; }
+  .sfx-bg { position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, rgba(178,58,58,.92) 0%, rgba(74,20,20,.96) 55%, rgba(20,6,6,.98) 100%); }
+  .sfx-tape { position: absolute; left: -10%; width: 120%; height: 46px; background: repeating-linear-gradient(-45deg, #F2C200 0 26px, #141414 26px 52px); box-shadow: 0 6px 20px rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; }
+  .sfx-tape span { background: #141414; color: #F2C200; font-family: var(--mono); font-weight: 700; letter-spacing: .3em; font-size: 15px; padding: 4px 16px; }
+  .sfx-tape.t1 { top: 14%; transform: rotate(-4deg); }
+  .sfx-tape.t2 { bottom: 14%; transform: rotate(3deg); }
+  .sfx-ring { position: absolute; width: 260px; height: 260px; border-radius: 50%; border: 3px solid rgba(255,120,100,.6); }
+  .sfx-skull { position: relative; width: 210px; filter: drop-shadow(0 0 30px rgba(255,60,40,.7)); }
+  .sfx-skull .eye { fill: #FF2D1A; }
+  .sfx-title { position: absolute; top: calc(50% + 150px); color: #FFF; font-weight: 800; font-size: 22px; letter-spacing: .25em; text-transform: uppercase; text-shadow: 0 0 18px rgba(255,60,40,.9); }
+
+  .san-loading { padding: 60px 0; text-align: center; color: var(--red); font-weight: 600; }
+  .san-loading .s { display: inline-block; font-size: 34px; animation: skullWiggle 1s infinite; }
+  .dkpi.san5 { grid-template-columns: repeat(5, 1fr); }
+  .kpi.san-big { background: linear-gradient(135deg, #2A0E0E, #8E2A2A 60%, #C2463A); color: #FFF; border: none; }
+  .kpi.san-big::after { display: none; }
+  .kpi.san-big .kpi-l { color: #F3C7C0; } .kpi.san-big .kpi-v { color: #FFF; } .kpi.san-big .kpi-s { color: #F3C7C0; }
+  .san-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 18px; }
+  .san-chip { border: 1px solid var(--line); background: var(--card); border-radius: 12px; padding: 8px 12px; cursor: pointer; font-family: var(--font); text-align: left; transition: translate .2s, box-shadow .2s, background .2s, border-color .2s; box-shadow: var(--sh-sm); }
+  .san-chip:hover { translate: 0 -2px; box-shadow: var(--sh-md); }
+  .san-chip.on { border-color: var(--red); background: var(--red-bg); }
+  .san-chip b { display: block; font-size: 13.5px; }
+  .san-chip small { font-size: 11.5px; color: var(--ink2); }
+  .tl { position: relative; padding-left: 34px; }
+  .tl::before { content: ''; position: absolute; left: 13px; top: 6px; bottom: 6px; width: 2px; background: linear-gradient(var(--red), #E8C9C0 40%, var(--line)); }
+  .tl-mese { position: relative; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--ink2); margin: 18px 0 10px -34px; padding-left: 34px; }
+  .tl-item { position: relative; background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--sh-sm); padding: 13px 16px; margin-bottom: 12px; border-left: 4px solid var(--k, var(--line)); }
+  .tl-dot { position: absolute; left: -33px; top: 12px; width: 28px; height: 28px; border-radius: 50%; background: #FFF; border: 2px solid var(--k, var(--line)); display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: var(--sh-sm); }
+  .tl-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .tl-tit { font-weight: 800; font-size: 14px; }
+  .tl-data { font-family: var(--mono); font-size: 12px; color: var(--ink2); margin-left: auto; }
+  .tl-txt { font-size: 13.5px; line-height: 1.5; margin-top: 7px; white-space: pre-wrap; word-break: break-word; }
+  .tl-det { font-size: 12px; color: var(--ink2); line-height: 1.5; margin-top: 8px; display: none; background: #FAF8F3; border-radius: 8px; padding: 9px 11px; }
+  .tl-det.on { display: block; }
+  .tl-act { display: flex; gap: 8px; margin-top: 9px; flex-wrap: wrap; }
+  .tl-btn { border: 1px solid var(--line); background: #FFF; border-radius: 8px; padding: 4px 10px; font-size: 12px; cursor: pointer; font-family: var(--font); color: var(--ink); }
+  .tl-btn:hover { border-color: var(--ink2); }
+  .op { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--ink2); background: #F0ECE3; border-radius: 20px; padding: 2px 9px 2px 3px; }
+  .op i { font-style: normal; width: 20px; height: 20px; border-radius: 50%; background: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
+  .lot-tag { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: #1F2A24; color: #FFF; }
+  .foto-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .foto-grid img { width: 96px; height: 96px; object-fit: cover; border-radius: 10px; cursor: zoom-in; box-shadow: var(--sh-sm); transition: transform .2s; background: #F0ECE3; }
+  .foto-grid img:hover { transform: scale(1.06); }
+  .tl audio { margin-top: 10px; width: 100%; max-width: 360px; height: 36px; }
+  #lightbox { position: fixed; inset: 0; z-index: 960; background: rgba(10,12,11,.88); display: none; align-items: center; justify-content: center; padding: 20px; cursor: zoom-out; }
+  #lightbox.on { display: flex; }
+  #lightbox img { max-width: 100%; max-height: 100%; border-radius: 10px; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+  @media (max-width: 1100px) { .dkpi.san5 { grid-template-columns: repeat(3, 1fr); } .dkpi.san5 .san-big { grid-column: 1 / -1; } }
+  @media (max-width: 640px) { .dkpi.san5 { grid-template-columns: repeat(2, 1fr); } .foto-grid img { width: 78px; height: 78px; } .tl { padding-left: 28px; } .tl-dot { left: -29px; width: 24px; height: 24px; font-size: 12px; } .tl::before { left: 10px; } }
   .sec-h { display: flex; align-items: baseline; justify-content: space-between; margin: 8px 0 14px; gap: 16px; flex-wrap: wrap; }
   .sec-t { font-size: 20px; font-weight: 700; }
   .sec-s { font-size: 13px; color: var(--ink2); }
@@ -347,6 +406,28 @@
 </div>
 
 <div id="wipe"></div>
+
+<div id="skull-fx" aria-hidden="true">
+  <div class="sfx-bg"></div>
+  <div class="sfx-tape t1"><span>⚠ AREA SANITARIA ⚠</span></div>
+  <div class="sfx-tape t2"><span>⚠ ATTENZIONE ⚠</span></div>
+  <div class="sfx-ring"></div><div class="sfx-ring"></div>
+  <svg class="sfx-skull" viewBox="0 0 200 220">
+    <g id="sk-head">
+      <path d="M100 8C52 8 18 42 18 88c0 26 11 46 27 59v22c0 7 6 12 13 12h84c7 0 13-5 13-12v-22c16-13 27-33 27-59C182 42 148 8 100 8z" fill="#F4EEE2" stroke="#2A0E0E" stroke-width="5"/>
+      <path d="M58 56c-7 6-10 15-10 22" stroke="#D9CFBE" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <ellipse cx="68" cy="98" rx="23" ry="25" fill="#2A0E0E"/><ellipse cx="132" cy="98" rx="23" ry="25" fill="#2A0E0E"/>
+      <circle class="eye" cx="68" cy="100" r="9"/><circle class="eye" cx="132" cy="100" r="9"/>
+      <path d="M100 120l-12 22h24z" fill="#2A0E0E"/>
+    </g>
+    <g id="sk-jaw">
+      <path d="M50 166h100v26c0 10-8 18-18 18H68c-10 0-18-8-18-18z" fill="#F4EEE2" stroke="#2A0E0E" stroke-width="5"/>
+      <path d="M70 166v30M85 166v34M100 166v34M115 166v34M130 166v30" stroke="#2A0E0E" stroke-width="4"/>
+    </g>
+  </svg>
+  <div class="sfx-title">Sanitario</div>
+</div>
+<div id="lightbox" onclick="chiudiFoto()"><img id="lightbox-img" alt=""></div>
 
 <div id="assist-modal">
   <div class="assist-bg" onclick="chiudiAssistenza()"></div>
@@ -589,7 +670,7 @@ const pesoMedio = a => a.capi ? a.kg / a.capi : null;
 const iniziali = n => n.split(/\s+/).map(w => w[0]).join('').slice(0, 2);
 
 // ── Navigazione con transizione ──
-function apriAlleva(nome, vista) { VISTA_ALLEVA = vista || 'carichi'; vai('alleva', nome); }
+function apriAlleva(nome, vista) { VISTA_ALLEVA = vista || 'carichi'; SAN_LOTTO = 'tutti'; vai('alleva', nome); }
 function vai(p, arg) {
   if (p === 'alleva') ALLEVA_APERTO = arg;
   const da = PAGINA;
@@ -740,6 +821,7 @@ function renderAlleva(nome) {
       <div class="switch-pill"></div>
       <button class="switch-btn" data-v="carichi" onclick="setVista('carichi')">🚚 Carichi e liquidazioni <span class="switch-n">${fmt(lista.reduce((s, c) => s + c.capi, 0))}</span></button>
       <button class="switch-btn" data-v="presenti" onclick="setVista('presenti')">🐷 Capi presenti <span class="switch-n">${fmt(pres.presenti)}</span></button>
+      <button class="switch-btn san" data-v="sanitario" onclick="setVista('sanitario')"><span class="san-skull-mini">☠️</span> Sanitario</button>
     </div>
     <div id="alleva-view"></div>`;
   posizionaSwitch(false);
@@ -753,6 +835,7 @@ function posizionaSwitch(anima) {
   const btn = sw.querySelector(`.switch-btn[data-v="${VISTA_ALLEVA}"]`);
   const pill = sw.querySelector('.switch-pill');
   sw.querySelectorAll('.switch-btn').forEach(b => b.classList.toggle('on', b === btn));
+  sw.classList.toggle('san-on', VISTA_ALLEVA === 'sanitario');
   pill.style.transition = anima ? '' : 'none';
   pill.style.width = btn.offsetWidth + 'px';
   pill.style.transform = `translateX(${btn.offsetLeft - 5}px)`;
@@ -761,10 +844,12 @@ function posizionaSwitch(anima) {
 window.addEventListener('resize', () => posizionaSwitch(false));
 function setVista(v) {
   if (v === VISTA_ALLEVA) return;
-  const indietro = v === 'carichi';
+  const ordine = { carichi: 0, presenti: 1, sanitario: 2 };
+  const indietro = ordine[v] < ordine[VISTA_ALLEVA];
   VISTA_ALLEVA = v;
   posizionaSwitch(true);
   const box = document.getElementById('alleva-view');
+  if (v === 'sanitario') { caricaSanitario().catch(() => {}); teschio(() => disegnaVista(true)); if (typeof gsap !== 'undefined') gsap.set(box, { opacity: 1, x: 0 }); return; }
   if (typeof gsap === 'undefined') { disegnaVista(false); return; }
   gsap.to(box, { opacity: 0, x: indietro ? 40 : -40, duration: .22, ease: 'power2.in', onComplete: () => {
     disegnaVista(true);
@@ -773,7 +858,9 @@ function setVista(v) {
 }
 function disegnaVista(cambio) {
   const box = document.getElementById('alleva-view');
-  if (VISTA_ALLEVA === 'presenti') vistaPresenti(ALLEVA_APERTO, box); else vistaCarichi(ALLEVA_APERTO, box);
+  if (VISTA_ALLEVA === 'presenti') vistaPresenti(ALLEVA_APERTO, box);
+  else if (VISTA_ALLEVA === 'sanitario') vistaSanitario(ALLEVA_APERTO, box);
+  else vistaCarichi(ALLEVA_APERTO, box);
 }
 
 function vistaCarichi(nome, el) {
@@ -1111,6 +1198,187 @@ function tabellaLottiSvezz(r) {
   return h + `</tbody><tfoot><tr><td>Totale</td><td></td><td></td><td>${fmt(r.entrati)}</td><td></td><td class="eurc">${fmt(r.usciti)}</td><td></td><td class="neg">${fmt(r.morti)}</td><td>${fmt(r.presenti)}</td><td></td><td></td></tr></tfoot></table>`;
 }
 
+
+// ══════════════ Vista SANITARIO: referti, note dal campo con foto/vocali, visite in allevamento ══════════════
+let SAN = null;          // dati caricati alla prima apertura
+let SAN_LOTTO = 'tutti';
+async function caricaSanitario() {
+  if (SAN) return SAN;
+  const [referti, note, visite] = await Promise.all([
+    sb('sanitario', '?select=id,lotto_id,soccida,data_referto,patologia,note_trattamento,referto_documento_id&order=data_referto.desc'),
+    sb('note_veterinario', '?select=id,lotto_id,soccida,data_nota,testo,created_at,foto_documento_id,foto_documento_ids,audio_documento_id&order=data_nota.desc,id.desc'),
+    sb('spostamenti', '?select=id,data_spostamento,ora,ora_fine,soccida_id&soccida_id=not.is.null&order=data_spostamento.desc,ora.desc'),
+  ]);
+  const ids = new Set();
+  note.forEach(n => { (n.foto_documento_ids || []).forEach(i => ids.add(i)); if (n.foto_documento_id) ids.add(n.foto_documento_id); if (n.audio_documento_id) ids.add(n.audio_documento_id); });
+  const docs = {}, arr = [...ids];
+  for (let i = 0; i < arr.length; i += 150) {
+    (await sb('documenti', `?select=id,storage_path,content_type&id=in.(${arr.slice(i, i + 150).join(',')})`)).forEach(d => { docs[d.id] = d; });
+  }
+  SAN = { referti, note, visite, docs };
+  return SAN;
+}
+const urlDoc = d => d && d.storage_path ? `${SUPABASE_URL}/storage/v1/object/public/documenti/${encodeURI(d.storage_path)}` : null;
+
+// Esito del referto letto dal riassunto scritto da import-referto ("…: positivi — negativi: … — in corso: …")
+function esitoReferto(r) {
+  const t = r.patologia || '';
+  const resto = t.replace(/negativi:[^—]*/gi, '').replace(/(—\s*)?in corso:?[^—]*/gi, '');
+  const NEG = /non\s+(dimostrat|rilevat|isolat|evidenziat)|negativ|assent/i;
+  const POS = /positiv|rilevat|dimostrata presenza|isolat|splenomeg|peritonit|polmonit|pleurit|pericardit|lesion|enterit|torsione|artrit|cachessia|prrs|circovirus|pcv2|streptococc|salmonell|brachyspira|lawsonia|actinobac|pasteurell|haemophil|glaesserella|coli|mycoplasma|clostrid|trueperella|proteus|influenza|sequestr/i;
+  if (resto.split(/—|[.;]|,(?![^(]*\))/).some(seg => POS.test(seg) && !NEG.test(seg))) return 'pos';
+  if (/in corso/i.test(t)) return 'corso';
+  return 'neg';
+}
+const ESITO = { pos: ['Positivo', 'r', 'var(--red)'], neg: ['Negativo', 'g', 'var(--green)'], corso: ['In corso', 'n', 'var(--gold)'] };
+
+function eventiSanitari(nome) {
+  const soc = SOCCIDE.find(s => s.nome.toUpperCase() === nome);
+  const lotti = soc ? SVEZZ.lotti.filter(l => l.soccida_id === soc.id) : [];
+  const ids = new Set(lotti.map(l => l.id));
+  const lot = Object.fromEntries(lotti.map(l => [l.id, l]));
+  const mio = r => (r.lotto_id && ids.has(r.lotto_id)) || (!r.lotto_id && (r.soccida || '').toUpperCase() === nome);
+  const ev = [];
+  SAN.referti.filter(mio).forEach(r => ev.push({ tipo: 'referto', data: r.data_referto, lotto: r.lotto_id, r, esito: esitoReferto(r) }));
+  SAN.note.filter(mio).forEach(n => {
+    const foto = [...new Set([...(n.foto_documento_ids || []), ...(n.foto_documento_id ? [n.foto_documento_id] : [])])].map(i => SAN.docs[i]).filter(d => d && urlDoc(d));
+    ev.push({ tipo: 'nota', data: n.data_nota || (n.created_at || '').slice(0, 10), lotto: n.lotto_id, n, foto, audio: n.audio_documento_id ? SAN.docs[n.audio_documento_id] : null });
+  });
+  if (soc) SAN.visite.filter(v => v.soccida_id === soc.id).forEach(v => ev.push({ tipo: 'visita', data: v.data_spostamento, lotto: null, v }));
+  ev.sort((a, b) => (b.data || '').localeCompare(a.data || '') || ({ referto: 0, nota: 1, visita: 2 }[a.tipo] - { referto: 0, nota: 1, visita: 2 }[b.tipo]));
+  return { ev, lotti, lot };
+}
+
+async function vistaSanitario(nome, el) {
+  el.innerHTML = `<div class="san-loading"><span class="s">☠️</span><div style="margin-top:10px">Carico referti, note e visite…</div></div>`;
+  try { await caricaSanitario(); } catch (e) { el.innerHTML = `<div class="empty">Dati sanitari non disponibili.</div>`; return; }
+  if (VISTA_ALLEVA !== 'sanitario' || ALLEVA_APERTO !== nome) return;
+  const { ev, lotti, lot } = eventiSanitari(nome);
+  const ref = ev.filter(e => e.tipo === 'referto'), note = ev.filter(e => e.tipo === 'nota'), vis = ev.filter(e => e.tipo === 'visita');
+  const nFoto = note.reduce((s, e) => s + e.foto.length, 0);
+  const pos = ref.filter(e => e.esito === 'pos').length;
+  const ultimaVisita = vis[0]?.data;
+
+  let h = `<div class="dkpi san5">
+    <div class="kpi san-big"><div class="kpi-l">☠️ Referti di laboratorio</div><div class="kpi-v">${num(ref.length)}</div><div class="kpi-s">${pos ? fmt(pos) + ' con positività' : 'nessuna positività'}</div></div>
+    <div class="kpi" style="--c:var(--terra)"><div class="kpi-l">📝 Note dal campo</div><div class="kpi-v">${num(note.length)}</div><div class="kpi-s">osservazioni degli operatori</div></div>
+    <div class="kpi" style="--c:var(--blue)"><div class="kpi-l">📷 Foto allegate</div><div class="kpi-v">${num(nFoto)}</div><div class="kpi-s">dai sopralluoghi</div></div>
+    <div class="kpi" style="--c:var(--green)"><div class="kpi-l">🚗 Visite in allevamento</div><div class="kpi-v">${num(vis.length)}</div><div class="kpi-s">registrate dal GPS</div></div>
+    <div class="kpi" style="--c:var(--gold)"><div class="kpi-l">Ultima visita</div><div class="kpi-v" style="font-size:19px">${ultimaVisita ? fmtDate(ultimaVisita) : '—'}</div><div class="kpi-s">${vis[0] ? oraVisita(vis[0].v) : ''}</div></div>
+  </div>`;
+
+  // un riquadro per lotto (filtro)
+  const perLotto = {};
+  ev.forEach(e => { if (!e.lotto) return; const a = perLotto[e.lotto] ||= { ref: 0, pos: 0, note: 0, foto: 0 }; if (e.tipo === 'referto') { a.ref++; if (e.esito === 'pos') a.pos++; } if (e.tipo === 'nota') { a.note++; a.foto += e.foto.length; } });
+  const lottiEv = lotti.filter(l => perLotto[l.id]).sort((a, b) => (b.data_ingresso || '').localeCompare(a.data_ingresso || ''));
+  if (SAN_LOTTO !== 'tutti' && !perLotto[SAN_LOTTO]) SAN_LOTTO = 'tutti';
+  h += `<div class="san-chips"><button class="san-chip ${SAN_LOTTO === 'tutti' ? 'on' : ''}" onclick="filtraSan('tutti')"><b>Tutto l'allevamento</b><small>${ref.length} referti · ${note.length} note · ${vis.length} visite</small></button>`;
+  lottiEv.forEach(l => { const a = perLotto[l.id];
+    h += `<button class="san-chip ${SAN_LOTTO === l.id ? 'on' : ''}" onclick="filtraSan(${l.id})"><b>Lotto ${escHtml(l.codice)} ${l.attivo ? '' : '<span class="pill n">chiuso</span>'}</b><small>🧪 ${a.ref}${a.pos ? ` <span style="color:var(--red);font-weight:700">(${a.pos} ☠)</span>` : ''} · 📝 ${a.note} · 📷 ${a.foto}</small></button>`; });
+  h += `</div><div id="san-tl">${timelineSan(ev, lot)}</div>`;
+  if (!ev.length) h = h.replace('<div id="san-tl"></div>', '') + '<div class="empty">Nessun referto, nota o visita registrati per questo allevamento.</div>';
+  el.innerHTML = h;
+  animaNumeri(el);
+  if (typeof gsap !== 'undefined') {
+    gsap.from('#alleva-view .dkpi .kpi', { opacity: 0, y: 16, duration: .45, stagger: .06, ease: 'power3.out', delay: .05 });
+    gsap.from('#alleva-view .san-chip', { opacity: 0, scale: .9, duration: .35, stagger: .04, ease: 'back.out(1.6)', delay: .2, clearProps: 'all' });
+    animaTimeline();
+  }
+}
+function animaTimeline() {
+  if (typeof gsap === 'undefined') return;
+  gsap.from('#san-tl .tl-item', { opacity: 0, x: -18, duration: .4, stagger: { each: .04, amount: .8 }, ease: 'power3.out', delay: .15 });
+  gsap.from('#san-tl .tl-dot', { scale: 0, duration: .4, stagger: { each: .04, amount: .8 }, ease: 'back.out(2.5)', delay: .25 });
+}
+function oraVisita(v) {
+  const a = (v.ora || '').slice(0, 5), b = (v.ora_fine || '').slice(0, 5);
+  if (!a) return '';
+  if (!b || b === a) return 'alle ' + a;
+  const [h1, m1] = a.split(':').map(Number), [h2, m2] = b.split(':').map(Number);
+  const min = (h2 * 60 + m2) - (h1 * 60 + m1);
+  return `${a} – ${b}${min > 0 ? ' · ' + (min >= 60 ? Math.floor(min / 60) + ' h ' + (min % 60 ? min % 60 + ' min' : '') : min + ' min') : ''}`;
+}
+function filtraSan(l) {
+  SAN_LOTTO = l;
+  document.querySelectorAll('.san-chip').forEach(c => c.classList.toggle('on', c.getAttribute('onclick') === `filtraSan(${l === 'tutti' ? "'tutti'" : l})`));
+  const { ev, lot } = eventiSanitari(ALLEVA_APERTO);
+  const box = document.getElementById('san-tl');
+  if (typeof gsap === 'undefined') { box.innerHTML = timelineSan(ev, lot); return; }
+  gsap.to(box, { opacity: 0, y: 10, duration: .18, onComplete: () => { box.innerHTML = timelineSan(ev, lot); gsap.set(box, { opacity: 1, y: 0 }); animaTimeline(); } });
+}
+function timelineSan(ev, lot) {
+  let lista = ev;
+  if (SAN_LOTTO !== 'tutti') {
+    const l = lot[SAN_LOTTO];
+    lista = ev.filter(e => e.lotto === SAN_LOTTO || (e.tipo === 'visita' && l && e.data >= l.data_ingresso));
+  }
+  const MESI = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+  let h = '<div class="tl">', mese = '';
+  lista.slice(0, 250).forEach((e, i) => {
+    const m = (e.data || '').slice(0, 7);
+    if (m !== mese) { mese = m; h += `<div class="tl-mese">${MESI[+m.slice(5) - 1] || ''} ${m.slice(0, 4)}</div>`; }
+    const lt = e.lotto && lot[e.lotto] ? `<span class="lot-tag">Lotto ${escHtml(lot[e.lotto].codice)}</span>` : '';
+    if (e.tipo === 'referto') {
+      const [lab, cls, col] = ESITO[e.esito];
+      h += `<div class="tl-item" style="--k:${col}"><div class="tl-dot">${e.esito === 'pos' ? '☠️' : '🧪'}</div>
+        <div class="tl-top"><span class="tl-tit">Referto di laboratorio</span><span class="pill ${cls}">${lab}</span>${lt}<span class="tl-data">${fmtDate(e.data)}</span></div>
+        <div class="tl-txt">${escHtml(e.r.patologia || '—')}</div>
+        <div class="tl-act">${e.r.referto_documento_id ? `<button class="tl-btn" onclick="apriDocumento(${e.r.referto_documento_id})">📄 Referto PDF</button>` : ''}
+          ${e.r.note_trattamento ? `<button class="tl-btn" onclick="this.parentNode.nextElementSibling.classList.toggle('on')">🔎 Dettagli</button>` : ''}</div>
+        ${e.r.note_trattamento ? `<div class="tl-det">${escHtml(e.r.note_trattamento)}</div>` : ''}</div>`;
+    } else if (e.tipo === 'nota') {
+      h += `<div class="tl-item" style="--k:var(--terra)"><div class="tl-dot">📝</div>
+        <div class="tl-top"><span class="op"><i>🧑‍🌾</i>Operatore</span><span class="tl-tit">Nota dal campo</span>${lt}<span class="tl-data">${fmtDate(e.data)}</span></div>
+        ${e.n.testo ? `<div class="tl-txt">${escHtml(e.n.testo)}</div>` : ''}
+        ${e.foto.length ? `<div class="foto-grid">${e.foto.map(d => `<img loading="lazy" src="${urlDoc(d)}" alt="Foto" onclick="apriFoto(this.src)">`).join('')}</div>` : ''}
+        ${e.audio && urlDoc(e.audio) ? `<audio controls preload="none" src="${urlDoc(e.audio)}"></audio>` : ''}</div>`;
+    } else {
+      h += `<div class="tl-item" style="--k:var(--green)"><div class="tl-dot">🚗</div>
+        <div class="tl-top"><span class="tl-tit">Visita in allevamento</span><span class="tl-data">${fmtDate(e.data)}</span></div>
+        <div class="tl-txt" style="color:var(--ink2)">${oraVisita(e.v) || 'visita registrata'}</div></div>`;
+    }
+  });
+  if (!lista.length) h += '<div class="empty">Niente da mostrare per questo lotto.</div>';
+  return h + '</div>';
+}
+function apriFoto(src) {
+  const lb = document.getElementById('lightbox');
+  document.getElementById('lightbox-img').src = src;
+  lb.classList.add('on');
+  if (typeof gsap !== 'undefined') gsap.fromTo('#lightbox-img', { scale: .7, opacity: 0 }, { scale: 1, opacity: 1, duration: .4, ease: 'back.out(1.5)' });
+}
+function chiudiFoto() { document.getElementById('lightbox').classList.remove('on'); }
+
+// Animazione del teschio quando si apre la vista Sanitario
+function teschio(fatto) {
+  const fx = document.getElementById('skull-fx');
+  const ridotto = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (typeof gsap === 'undefined' || ridotto) { fatto(); return; }
+  fx.classList.add('on');
+  const tl = gsap.timeline({ onComplete: () => { fx.classList.remove('on'); } });
+  tl.set('#skull-fx .sfx-bg', { opacity: 0 })
+    .set('#skull-fx .sfx-tape.t1', { xPercent: -110 }).set('#skull-fx .sfx-tape.t2', { xPercent: 110 })
+    .set('#skull-fx .sfx-skull', { scale: 0, rotate: -35, y: 0, opacity: 1 })
+    .set('#skull-fx .sfx-title', { opacity: 0, y: 20, letterSpacing: '.6em' })
+    .set('#skull-fx .sfx-ring', { scale: .4, opacity: 0 })
+    .set('#sk-jaw', { y: 0 })
+    .to('#skull-fx .sfx-bg', { opacity: 1, duration: .25 })
+    .to('#skull-fx .sfx-tape.t1', { xPercent: 0, duration: .4, ease: 'power3.out' }, '<')
+    .to('#skull-fx .sfx-tape.t2', { xPercent: 0, duration: .4, ease: 'power3.out' }, '<.05')
+    .to('#skull-fx .sfx-skull', { scale: 1, rotate: 0, duration: .55, ease: 'back.out(2.2)' }, '-=.2')
+    .to('#skull-fx .sfx-ring', { scale: 2.6, opacity: 1, duration: .1, stagger: .18 }, '<.25')
+    .to('#skull-fx .sfx-ring', { opacity: 0, duration: .6, stagger: .18 }, '<.1')
+    .to('#sk-jaw', { y: 14, duration: .09, yoyo: true, repeat: 5, ease: 'power1.inOut' }, '<')
+    .to('#skull-fx .eye', { attr: { r: 12 }, duration: .12, yoyo: true, repeat: 3 }, '<')
+    .to('#skull-fx .sfx-title', { opacity: 1, y: 0, letterSpacing: '.25em', duration: .35, ease: 'power2.out' }, '<.1')
+    .add(() => fatto(), '+=.15')
+    .to('#skull-fx .sfx-skull', { scale: .2, y: -260, rotate: 25, opacity: 0, duration: .45, ease: 'power3.in' })
+    .to('#skull-fx .sfx-tape.t1', { xPercent: 110, duration: .35, ease: 'power3.in' }, '<')
+    .to('#skull-fx .sfx-tape.t2', { xPercent: -110, duration: .35, ease: 'power3.in' }, '<')
+    .to('#skull-fx .sfx-title', { opacity: 0, duration: .2 }, '<')
+    .to('#skull-fx .sfx-bg', { opacity: 0, duration: .35 }, '-=.1');
+}
+
 // ══════════════ Assistenza: richieste di modifica → edge function "assistenza" → mail a Ruben ══════════════
 function sezioneCorrente() {
   if (PAGINA === 'alleva') return 'Allevamento ' + ALLEVA_APERTO + (VISTA_ALLEVA === 'presenti' ? ' (capi presenti)' : ' (carichi)');
@@ -1161,7 +1429,7 @@ async function inviaAssistenza() {
     btn.disabled = false; btn.textContent = 'Invia richiesta';
   }
 }
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.getElementById('assist-modal').classList.contains('on')) chiudiAssistenza(); });
+document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; if (document.getElementById('lightbox').classList.contains('on')) chiudiFoto(); else if (document.getElementById('assist-modal').classList.contains('on')) chiudiAssistenza(); });
 
 // ══════════════ Password (stessa della pagina Direzione) ══════════════
 const PW_HASH_TARGET = '0e77daaea7ab6edef5db41e25f91b03b44f82f3a16ad34e80e827fc869eff256';
