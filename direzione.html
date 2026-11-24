@@ -156,9 +156,42 @@
   .share > div { height: 100%; background: var(--c); border-radius: 6px; width: 0; }
   .acard-f { font-size: 11.5px; color: var(--ink3); margin-top: 7px; display: flex; justify-content: space-between; }
   .acard.vuota, .mcard.vuota { cursor: default; opacity: .62; }
+  .acard.senza-carichi { opacity: .9; }
   .acard.vuota:hover { transform: none; box-shadow: var(--sh-sm); border-color: var(--line); }
 
   /* ── Dettaglio allevamento ── */
+  .switch {
+    position: relative; display: inline-flex; gap: 0; padding: 5px; margin: 18px 0 4px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--sh-sm);
+  }
+  .switch-pill {
+    position: absolute; top: 5px; bottom: 5px; left: 5px; border-radius: 12px;
+    background: linear-gradient(120deg, #1F2A24, var(--c)); box-shadow: 0 4px 14px rgba(31,42,36,.25);
+    transition: transform .45s cubic-bezier(.34,1.3,.64,1), width .45s cubic-bezier(.34,1.3,.64,1);
+  }
+  .switch-btn {
+    position: relative; z-index: 1; border: none; background: transparent; cursor: pointer; font-family: var(--font);
+    font-size: 14.5px; font-weight: 700; color: var(--ink2); padding: 11px 20px; border-radius: 12px; transition: color .3s;
+    display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+  }
+  .switch-btn.on { color: #FFF; }
+  .switch-n { font-family: var(--mono); font-size: 12px; padding: 2px 8px; border-radius: 20px; background: rgba(31,42,36,.07); }
+  .switch-btn.on .switch-n { background: rgba(255,255,255,.18); }
+  .dkpi.p4 { grid-template-columns: 1.4fr repeat(3, 1fr); }
+  .lotti-grid { margin-bottom: 8px; display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; }
+  .lcard { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--sh-sm); overflow: hidden; transition: transform .25s, box-shadow .25s; }
+  .lcard:hover { transform: translateY(-3px); box-shadow: var(--sh-md); }
+  .lcard-h { display: flex; justify-content: space-between; align-items: flex-start; padding: 14px 18px; color: #FFF; background: linear-gradient(120deg, #1F2A24 0%, #1F2A24 45%, var(--c) 160%); }
+  .lcard-c { font-size: 17px; font-weight: 800; }
+  .lcard-p { font-size: 11.5px; color: rgba(255,255,255,.7); margin-top: 3px; }
+  .lcard-d { font-family: var(--mono); font-size: 14px; font-weight: 700; }
+  .lstat { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); }
+  .lstat > div { background: #FFF; padding: 11px 16px; }
+  .lstat > div.hl { background: var(--green-bg); }
+  .lbar { padding: 12px 16px 14px; }
+  .lbar-l { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--ink2); font-weight: 600; }
+  .lbar .share { margin-top: 8px; height: 8px; }
+  .lbar .share > div { background: linear-gradient(90deg, var(--gold), var(--green)); }
   .back-btn {
     border: none; background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 8px 16px;
     font-family: var(--font); font-size: 13.5px; font-weight: 600; color: var(--ink); cursor: pointer; box-shadow: var(--sh-sm);
@@ -243,14 +276,18 @@
   @media (max-width: 1100px) {
     .hero { grid-template-columns: repeat(2, 1fr); }
     .kpi.big { grid-column: 1 / -1; }
-    .dkpi { grid-template-columns: repeat(3, 1fr); }
+    .dkpi, .dkpi.p4 { grid-template-columns: repeat(3, 1fr); }
+    .dkpi.p4 .kpi.big { grid-column: 1 / -1; }
     .two, .mtop, .mbody-in { grid-template-columns: minmax(0, 1fr); }
     .mhead { grid-template-columns: 40px 1.4fr repeat(3, 1fr) 22px; }
     .mhead .hide-m { display: none; }
   }
   @media (max-width: 640px) {
     .wrap, .header-inner { padding-left: 16px; padding-right: 16px; }
-    .dkpi { grid-template-columns: repeat(2, 1fr); }
+    .dkpi, .dkpi.p4 { grid-template-columns: repeat(2, 1fr); }
+    .switch { display: flex; }
+    .switch-btn { flex: 1; justify-content: center; padding: 10px 8px; font-size: 13px; white-space: normal; text-align: center; }
+    .lotti-grid { grid-template-columns: 1fr; }
     .kpi.big .kpi-v { font-size: 34px; }
     .mhead { grid-template-columns: 36px 1fr 1fr 22px; }
     .mhead .hide-s { display: none; }
@@ -407,7 +444,8 @@ let ANNO = 'tutti';
 let PAGINA = 'home';
 let ORDINE = 'capi';
 let ALLEVA_APERTO = null;
-let SVEZZ = null;       // dati grezzi per la pagina Svezzamenti
+let SVEZZ = null;       // dati grezzi per la pagina Svezzamenti e i capi presenti
+let VISTA_ALLEVA = 'carichi';
 const COLORI = {};
 
 function colore(nome) {
@@ -418,15 +456,15 @@ function colore(nome) {
 async function loadAll() {
   const [soccide, lotti, uscite, penali, acquisti, ingressi, uscTrasf, mortalita] = await Promise.all([
     sb('soccide', '?select=id,nome,tipo,attiva&order=nome'),
-    sb('lotti', '?select=id,soccida_id,codice,data_ingresso,capi_entrati,kg_totali_ingresso,attivo,provenienza'),
+    sb('lotti', '?select=id,soccida_id,codice,data_ingresso,capi_entrati,kg_totali_ingresso,media_ingresso,incremento_giornaliero,lettera_dop,attivo,provenienza'),
     sb('uscite', '?select=id,lotto_id,soccida_nome,data_uscita,numero_ddt,macello,cessionario,capi,kg_totali,prezzo_kg,liquidazione,mancata_resa_kg,ddt_documento_id,liquidazione_documento_id&order=data_uscita'),
     sb('uscite_penali', '?select=uscita_id,causale,numero,valore'),
     sb('trasferimenti', '?select=lotto_id,data_trasferimento,soccida_destinazione,capi,kg,costo_acquisto&tipo=eq.ACQUISTO'),
-    sb('lotti_ingressi', '?select=lotto_id,capi,kg'),
+    sb('lotti_ingressi', '?select=lotto_id,data_ingresso,capi,kg'),
     sb('trasferimenti', '?select=lotto_id,tipo,data_trasferimento,soccida_destinazione,capi,kg&tipo=in.(TRASFERIMENTO,VENDITA)&lotto_id=not.is.null'),
     sb('mortalita', '?select=lotto_id,capi_morti'),
   ]);
-  SVEZZ = { lotti, ingressi, uscTrasf, uscite, mortalita };
+  SVEZZ = { lotti, ingressi, ingressiAll: ingressi, uscTrasf, uscite, mortalita };
   // Ingressi nei lotti (acquisti da fornitori + trasferimenti tra soccide, lato ACQUISTO:
   // la riga gemella TRASFERIMENTO non si conta per non raddoppiare)
   ACQUISTI = acquisti.filter(a => a.capi > 0 && !ESCLUSE.includes((a.soccida_destinazione || '').toUpperCase()));
@@ -494,6 +532,7 @@ const pesoMedio = a => a.capi ? a.kg / a.capi : null;
 const iniziali = n => n.split(/\s+/).map(w => w[0]).join('').slice(0, 2);
 
 // ── Navigazione con transizione ──
+function apriAlleva(nome, vista) { VISTA_ALLEVA = vista || 'carichi'; vai('alleva', nome); }
 function vai(p, arg) {
   if (p === 'alleva') ALLEVA_APERTO = arg;
   const da = PAGINA;
@@ -591,7 +630,7 @@ function renderHome() {
   ordinati.forEach(([nome, a]) => {
     const [nominativo, indirizzo] = NOMINATIVI[nome] || ['', ''];
     const tipo = SOCCIDE.find(s => s.nome.toUpperCase() === nome)?.tipo;
-    h += `<div class="acard" style="--c:${colore(nome)}" onclick="vai('alleva','${escHtml(nome)}')">
+    h += `<div class="acard" style="--c:${colore(nome)}" onclick="apriAlleva('${escHtml(nome)}')">
       <div class="acard-top"></div><div class="acard-b">
         <div class="acard-h"><div class="avatar">${escHtml(iniziali(nome))}</div>
           <div><div class="acard-n">${escHtml(nome)}</div>
@@ -611,11 +650,12 @@ function renderHome() {
   const senza = SOCCIDE.filter(s => s.attiva && !perAll[s.nome.toUpperCase()] && !ESCLUSE.includes(s.nome.toUpperCase()));
   senza.forEach(s => {
     const [nominativo] = NOMINATIVI[s.nome.toUpperCase()] || [''];
-    h += `<div class="acard vuota" style="--c:#C9C3B6"><div class="acard-top"></div><div class="acard-b">
+    const pres = presentiSoccida(s.nome.toUpperCase()).presenti;
+    h += `<div class="acard ${pres ? 'senza-carichi' : 'vuota'}" style="--c:${pres ? colore(s.nome.toUpperCase()) : '#C9C3B6'}" ${pres ? `onclick="apriAlleva('${escHtml(s.nome.toUpperCase())}','presenti')"` : ''}><div class="acard-top"></div><div class="acard-b">
       <div class="acard-h"><div class="avatar">${escHtml(iniziali(s.nome))}</div>
       <div><div class="acard-n">${escHtml(s.nome)}</div><div class="acard-p">${escHtml(nominativo)}</div>
       ${s.tipo ? `<span class="tag ${s.tipo}">${s.tipo}</span>` : ''}</div></div>
-      <div class="acard-f" style="margin-top:14px"><span>Nessun carico al macello ${ANNO === 'tutti' ? 'registrato' : 'nel ' + ANNO}</span></div></div></div>`;
+      <div class="acard-f" style="margin-top:14px"><span>${pres ? `🐷 ${fmt(pres)} capi presenti` : ''}</span><span>Nessun carico al macello ${ANNO === 'tutti' ? '' : 'nel ' + ANNO}</span></div></div></div>`;
   });
   h += `</div><div class="note">€ a capo = liquidazione pagata (IVA inclusa) ÷ capi del carico, solo sui carichi con la liquidazione registrata. Prezzo medio acquisto = costo d'acquisto ÷ capi, media su tutti gli ingressi nei lotti (acquisti da fornitori e trasferimenti tra soccide) con il prezzo registrato${capiPrezzo < capiAcq ? ` (${fmt(capiPrezzo)} capi su ${fmt(capiAcq)})` : ''}. Fiorenzuola esclusa (suini di Gruppo Ciemme).</div>`;
 
@@ -634,11 +674,55 @@ function renderAlleva(nome) {
   const lista = carichi().filter(c => c.alleva === nome);
   const c0 = colore(nome);
   const [nominativo, indirizzo] = NOMINATIVI[nome] || ['', ''];
-  let h = `<button class="back-btn" onclick="vai('home')">← Tutti gli allevamenti</button>
+  const pres = presentiSoccida(nome);
+  el.innerHTML = `<button class="back-btn" onclick="vai('home')">← Tutti gli allevamenti</button>
     <div class="dhead" style="--c:${c0}"><div class="dhead-n">${escHtml(nome)}</div>
-    ${nominativo ? `<div class="dhead-p">${escHtml(nominativo)}</div>` : ''}${indirizzo ? `<div class="dhead-a">${escHtml(indirizzo)}</div>` : ''}</div>`;
-  if (!lista.length) { el.innerHTML = h + `<div class="empty">Nessun carico ${ANNO === 'tutti' ? '' : 'nel ' + ANNO}.</div>`; return; }
+    ${nominativo ? `<div class="dhead-p">${escHtml(nominativo)}</div>` : ''}${indirizzo ? `<div class="dhead-a">${escHtml(indirizzo)}</div>` : ''}</div>
+    <div class="switch" id="alleva-switch" style="--c:${c0}">
+      <div class="switch-pill"></div>
+      <button class="switch-btn" data-v="carichi" onclick="setVista('carichi')">🚚 Carichi e liquidazioni <span class="switch-n">${fmt(lista.reduce((s, c) => s + c.capi, 0))}</span></button>
+      <button class="switch-btn" data-v="presenti" onclick="setVista('presenti')">🐷 Capi presenti <span class="switch-n">${fmt(pres.presenti)}</span></button>
+    </div>
+    <div id="alleva-view"></div>`;
+  posizionaSwitch(false);
+  disegnaVista(false);
+}
 
+// Selettore "Carichi e liquidazioni" / "Capi presenti" nella scheda dell'allevamento
+function posizionaSwitch(anima) {
+  const sw = document.getElementById('alleva-switch');
+  if (!sw) return;
+  const btn = sw.querySelector(`.switch-btn[data-v="${VISTA_ALLEVA}"]`);
+  const pill = sw.querySelector('.switch-pill');
+  sw.querySelectorAll('.switch-btn').forEach(b => b.classList.toggle('on', b === btn));
+  pill.style.transition = anima ? '' : 'none';
+  pill.style.width = btn.offsetWidth + 'px';
+  pill.style.transform = `translateX(${btn.offsetLeft - 5}px)`;
+  if (!anima) requestAnimationFrame(() => { pill.style.transition = ''; });
+}
+window.addEventListener('resize', () => posizionaSwitch(false));
+function setVista(v) {
+  if (v === VISTA_ALLEVA) return;
+  const indietro = v === 'carichi';
+  VISTA_ALLEVA = v;
+  posizionaSwitch(true);
+  const box = document.getElementById('alleva-view');
+  if (typeof gsap === 'undefined') { disegnaVista(false); return; }
+  gsap.to(box, { opacity: 0, x: indietro ? 40 : -40, duration: .22, ease: 'power2.in', onComplete: () => {
+    disegnaVista(true);
+    gsap.fromTo(box, { opacity: 0, x: indietro ? -40 : 40 }, { opacity: 1, x: 0, duration: .45, ease: 'power3.out' });
+  } });
+}
+function disegnaVista(cambio) {
+  const box = document.getElementById('alleva-view');
+  if (VISTA_ALLEVA === 'presenti') vistaPresenti(ALLEVA_APERTO, box); else vistaCarichi(ALLEVA_APERTO, box);
+}
+
+function vistaCarichi(nome, el) {
+  const lista = carichi().filter(c => c.alleva === nome);
+  const c0 = colore(nome);
+  if (!lista.length) { el.innerHTML = `<div class="empty">Nessun carico al macello ${ANNO === 'tutti' ? 'registrato' : 'nel ' + ANNO}.</div>`; return; }
+  let h = '';
   const a = somma(lista, () => 't').t;
   const pagati = lista.filter(c => c.pagato).map(c => c.liquidazione / c.capi);
   const minC = pagati.length ? Math.min(...pagati) : null, maxC = pagati.length ? Math.max(...pagati) : null;
@@ -681,9 +765,85 @@ function renderAlleva(nome) {
   el.innerHTML = h;
   animaNumeri(el);
   if (typeof gsap !== 'undefined') {
-    gsap.from('#page-alleva .dkpi .kpi', { opacity: 0, y: 16, duration: .45, stagger: .06, ease: 'power3.out', delay: .15 });
-    gsap.from('#page-alleva .bar', { scaleY: 0, transformOrigin: 'bottom', duration: .6, stagger: .02, ease: 'power3.out', delay: .3 });
-    gsap.from('#page-alleva tbody tr', { opacity: 0, x: -10, duration: .3, stagger: .015, delay: .4 });
+    gsap.from('#alleva-view .dkpi .kpi', { opacity: 0, y: 16, duration: .45, stagger: .06, ease: 'power3.out', delay: .15 });
+    gsap.from('#alleva-view .bar', { scaleY: 0, transformOrigin: 'bottom', duration: .6, stagger: .02, ease: 'power3.out', delay: .3 });
+    gsap.from('#alleva-view tbody tr', { opacity: 0, x: -10, duration: .3, stagger: .015, delay: .4 });
+  }
+}
+
+// ── Capi presenti: lotti attivi della soccida ──
+// presenti = entrati − morti − uscite − trasferimenti (stessa formula del gestionale);
+// peso stimato = per ogni arrivo peso medio + incremento ponderato del lotto × giorni, media pesata sui capi
+// (come samuele.html / index.html); peso medio della soccida = media dei lotti pesata sui presenti.
+function giorniDa(iso) {
+  if (!iso) return 0;
+  const [a, m, g] = iso.split('-').map(Number);
+  const o = new Date();
+  return Math.round((new Date(o.getFullYear(), o.getMonth(), o.getDate()) - new Date(a, m - 1, g)) / 86400000);
+}
+function presentiSoccida(nome) {
+  const { lotti, ingressiAll, uscTrasf, uscite, mortalita } = SVEZZ;
+  const soc = SOCCIDE.find(s => s.nome.toUpperCase() === nome);
+  const ls = soc ? lotti.filter(l => l.soccida_id === soc.id && l.attivo).sort((a, b) => (a.data_ingresso || '').localeCompare(b.data_ingresso || '')) : [];
+  const righe = ls.map(l => {
+    const ing = ingressiAll.filter(i => i.lotto_id === l.id);
+    const entrati = ing.length ? ing.reduce((s, i) => s + (i.capi || 0), 0) : (l.capi_entrati || 0);
+    const morti = mortalita.filter(m => m.lotto_id === l.id).reduce((s, m) => s + (m.capi_morti || 0), 0);
+    const usc = uscite.filter(u => u.lotto_id === l.id).reduce((s, u) => s + (u.capi || 0), 0);
+    const tr = uscTrasf.filter(t => t.lotto_id === l.id && t.tipo === 'TRASFERIMENTO').reduce((s, t) => s + (t.capi || 0), 0);
+    const arrivi = ing.filter(i => i.capi && i.kg).map(i => ({ capi: i.capi, media: i.kg / i.capi, gg: giorniDa(i.data_ingresso || l.data_ingresso) }));
+    if (!arrivi.length && l.media_ingresso) arrivi.push({ capi: 1, media: +l.media_ingresso, gg: giorniDa(l.data_ingresso) });
+    if (!arrivi.length && l.capi_entrati && l.kg_totali_ingresso) arrivi.push({ capi: 1, media: l.kg_totali_ingresso / l.capi_entrati, gg: giorniDa(l.data_ingresso) });
+    const tot = arrivi.reduce((s, r) => s + r.capi, 0);
+    const arrivo = tot ? arrivi.reduce((s, r) => s + r.capi * r.media, 0) / tot : null;
+    const inc = l.incremento_giornaliero;
+    const oggi = tot && inc ? arrivi.reduce((s, r) => s + r.capi * (r.media + inc * r.gg), 0) / tot : null;
+    return { l, entrati, morti, usciti: usc + tr, presenti: Math.max(0, entrati - morti - usc - tr), arrivo, oggi, inc, gg: giorniDa(l.data_ingresso) };
+  });
+  const presenti = righe.reduce((s, r) => s + r.presenti, 0);
+  const conPeso = righe.filter(r => r.oggi != null && r.presenti > 0);
+  const capiPeso = conPeso.reduce((s, r) => s + r.presenti, 0);
+  const pesoMedio = capiPeso ? conPeso.reduce((s, r) => s + r.presenti * r.oggi, 0) / capiPeso : null;
+  const conInc = righe.filter(r => r.inc && r.presenti > 0);
+  const capiInc = conInc.reduce((s, r) => s + r.presenti, 0);
+  const incMedio = capiInc ? conInc.reduce((s, r) => s + r.presenti * r.inc, 0) / capiInc : null;
+  return { righe, presenti, pesoMedio, incMedio, morti: righe.reduce((s, r) => s + r.morti, 0), entrati: righe.reduce((s, r) => s + r.entrati, 0) };
+}
+
+function vistaPresenti(nome, el) {
+  const P = presentiSoccida(nome);
+  const c0 = colore(nome);
+  if (!P.righe.length) { el.innerHTML = `<div class="empty">Nessun lotto aperto in questo momento.</div>`; return; }
+  let h = `<div class="dkpi p4">
+    <div class="kpi big" style="background:linear-gradient(135deg,#1F2A24,${c0})"><img class="pig" src="img/piglet-running.png" alt="">
+      <div class="kpi-l">Capi presenti oggi</div><div class="kpi-v">${num(P.presenti)}</div><div class="kpi-s">${P.righe.length} ${P.righe.length === 1 ? 'lotto aperto' : 'lotti aperti'}</div></div>
+    <div class="kpi" style="--c:var(--gold)"><div class="kpi-l">Peso medio stimato</div><div class="kpi-v">${num(P.pesoMedio, 1, ' kg')}</div><div class="kpi-s">ponderato sui capi presenti</div></div>
+    <div class="kpi" style="--c:var(--green)"><div class="kpi-l">Incremento ponderato</div><div class="kpi-v">${P.incMedio != null ? num(P.incMedio * 1000, 0, ' g/gg') : '—'}</div><div class="kpi-s">media dei lotti sui presenti</div></div>
+    <div class="kpi" style="--c:var(--red)"><div class="kpi-l">Mortalità</div><div class="kpi-v">${num(P.morti)}</div><div class="kpi-s">${P.entrati ? fmt(P.morti / P.entrati * 100, 1) + ' % dei capi entrati' : ''}</div></div>
+  </div><div class="lotti-grid">`;
+  P.righe.forEach(r => {
+    const max = 180, perc = r.oggi != null ? Math.min(100, r.oggi / max * 100) : 0;
+    h += `<div class="lcard" style="--c:${c0}">
+      <div class="lcard-h"><div><div class="lcard-c">Lotto ${escHtml(r.l.codice)}</div><div class="lcard-p">${escHtml(r.l.provenienza || '')}</div></div>
+        <div style="text-align:right"><div class="lcard-d">${fmtDate(r.l.data_ingresso)}</div>${r.l.lettera_dop ? `<div class="lcard-p" style="color:#FFF;font-weight:700">LETTERA ${escHtml(r.l.lettera_dop)}</div>` : ''}</div></div>
+      <div class="lstat">
+        <div><div class="ms-l">Entrati</div><div class="ms-v">${num(r.entrati)}</div></div>
+        <div class="hl"><div class="ms-l">Presenti</div><div class="ms-v" style="color:var(--green)">${num(r.presenti)}</div></div>
+        <div><div class="ms-l">Giorni</div><div class="ms-v">${num(r.gg)}</div></div>
+        <div><div class="ms-l">Peso arrivo</div><div class="ms-v">${r.arrivo != null ? num(r.arrivo, 1, ' kg') : '—'}</div></div>
+        <div class="hl"><div class="ms-l">Peso stimato</div><div class="ms-v" style="color:var(--green)">${r.oggi != null ? num(r.oggi, 1, ' kg') : '—'}</div></div>
+        <div><div class="ms-l">Mortalità</div><div class="ms-v" style="color:${r.morti ? 'var(--red)' : 'inherit'}">${num(r.morti)} <small style="font-size:11px;color:var(--ink3)">${r.entrati ? fmt(r.morti / r.entrati * 100, 1) + ' %' : ''}</small></div></div>
+      </div>
+      <div class="lbar"><div class="lbar-l"><span>Incremento ponderato ${r.inc ? '+' + fmt(r.inc, 3) + ' kg/gg' : 'non impostato'}</span><span>${r.oggi != null ? fmt(r.oggi, 0) + ' / ' + max + ' kg' : ''}</span></div>
+        <div class="share"><div data-w="${perc.toFixed(1)}"></div></div></div>
+    </div>`;
+  });
+  h += `</div><div class="note">Presenti = entrati − morti − uscite − trasferimenti. Peso stimato = peso medio d'arrivo + incremento ponderato del lotto × giorni (per ogni arrivo, media pesata sui capi). La barra arriva al peso di carico di riferimento (180 kg).</div>`;
+  el.innerHTML = h;
+  animaNumeri(el);
+  if (typeof gsap !== 'undefined') {
+    gsap.from('#alleva-view .dkpi .kpi', { opacity: 0, y: 16, duration: .45, stagger: .06, ease: 'power3.out', delay: .1 });
+    gsap.from('#alleva-view .lcard', { opacity: 0, y: 24, scale: .97, duration: .5, stagger: .08, ease: 'power3.out', delay: .2 });
   }
 }
 
