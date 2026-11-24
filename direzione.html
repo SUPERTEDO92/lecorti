@@ -178,6 +178,10 @@
   .switch-n { font-family: var(--mono); font-size: 12px; padding: 2px 8px; border-radius: 20px; background: rgba(31,42,36,.07); }
   .switch-btn.on .switch-n { background: rgba(255,255,255,.18); }
   .dkpi.p4 { grid-template-columns: 1.4fr repeat(3, 1fr); }
+  .dkpi.p1 { grid-template-columns: 1fr; }
+  .dkpi.p1 .kpi.big { grid-column: auto; }
+  .lstat.l2 { grid-template-columns: repeat(2, 1fr); }
+  .lstat.l2 .ms-v { font-size: 20px; }
   .lotti-grid { margin-bottom: 8px; display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; }
   .lcard { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--sh-sm); overflow: hidden; transition: transform .25s, box-shadow .25s; }
   .lcard:hover { transform: translateY(-3px); box-shadow: var(--sh-md); }
@@ -814,31 +818,24 @@ function vistaPresenti(nome, el) {
   const P = presentiSoccida(nome);
   const c0 = colore(nome);
   if (!P.righe.length) { el.innerHTML = `<div class="empty">Nessun lotto aperto in questo momento.</div>`; return; }
-  let h = `<div class="dkpi p4">
+  let h = `<div class="dkpi p1">
     <div class="kpi big" style="background:linear-gradient(135deg,#1F2A24,${c0})"><img class="pig" src="img/piglet-running.png" alt="">
       <div class="kpi-l">Capi presenti oggi</div><div class="kpi-v">${num(P.presenti)}</div><div class="kpi-s">${P.righe.length} ${P.righe.length === 1 ? 'lotto aperto' : 'lotti aperti'}</div></div>
-    <div class="kpi" style="--c:var(--gold)"><div class="kpi-l">Peso medio stimato</div><div class="kpi-v">${num(P.pesoMedio, 1, ' kg')}</div><div class="kpi-s">ponderato sui capi presenti</div></div>
-    <div class="kpi" style="--c:var(--green)"><div class="kpi-l">Incremento ponderato</div><div class="kpi-v">${P.incMedio != null ? num(P.incMedio * 1000, 0, ' g/gg') : '—'}</div><div class="kpi-s">media dei lotti sui presenti</div></div>
-    <div class="kpi" style="--c:var(--red)"><div class="kpi-l">Mortalità</div><div class="kpi-v">${num(P.morti)}</div><div class="kpi-s">${P.entrati ? fmt(P.morti / P.entrati * 100, 1) + ' % dei capi entrati' : ''}</div></div>
   </div><div class="lotti-grid">`;
   P.righe.forEach(r => {
     const max = 180, perc = r.oggi != null ? Math.min(100, r.oggi / max * 100) : 0;
     h += `<div class="lcard" style="--c:${c0}">
       <div class="lcard-h"><div><div class="lcard-c">Lotto ${escHtml(r.l.codice)}</div><div class="lcard-p">${escHtml(r.l.provenienza || '')}</div></div>
         <div style="text-align:right"><div class="lcard-d">${fmtDate(r.l.data_ingresso)}</div>${r.l.lettera_dop ? `<div class="lcard-p" style="color:#FFF;font-weight:700">LETTERA ${escHtml(r.l.lettera_dop)}</div>` : ''}</div></div>
-      <div class="lstat">
-        <div><div class="ms-l">Entrati</div><div class="ms-v">${num(r.entrati)}</div></div>
+      <div class="lstat l2">
         <div class="hl"><div class="ms-l">Presenti</div><div class="ms-v" style="color:var(--green)">${num(r.presenti)}</div></div>
-        <div><div class="ms-l">Giorni</div><div class="ms-v">${num(r.gg)}</div></div>
-        <div><div class="ms-l">Peso arrivo</div><div class="ms-v">${r.arrivo != null ? num(r.arrivo, 1, ' kg') : '—'}</div></div>
         <div class="hl"><div class="ms-l">Peso stimato</div><div class="ms-v" style="color:var(--green)">${r.oggi != null ? num(r.oggi, 1, ' kg') : '—'}</div></div>
-        <div><div class="ms-l">Mortalità</div><div class="ms-v" style="color:${r.morti ? 'var(--red)' : 'inherit'}">${num(r.morti)} <small style="font-size:11px;color:var(--ink3)">${r.entrati ? fmt(r.morti / r.entrati * 100, 1) + ' %' : ''}</small></div></div>
       </div>
-      <div class="lbar"><div class="lbar-l"><span>Incremento ponderato ${r.inc ? '+' + fmt(r.inc, 3) + ' kg/gg' : 'non impostato'}</span><span>${r.oggi != null ? fmt(r.oggi, 0) + ' / ' + max + ' kg' : ''}</span></div>
+      <div class="lbar"><div class="lbar-l"><span>Peso stimato verso il carico</span><span>${r.oggi != null ? fmt(r.oggi, 0) + ' / ' + max + ' kg' : ''}</span></div>
         <div class="share"><div data-w="${perc.toFixed(1)}"></div></div></div>
     </div>`;
   });
-  h += `</div><div class="note">Presenti = entrati − morti − uscite − trasferimenti. Peso stimato = peso medio d'arrivo + incremento ponderato del lotto × giorni (per ogni arrivo, media pesata sui capi). La barra arriva al peso di carico di riferimento (180 kg).</div>`;
+  h += `</div><div class="note">Presenti = entrati − morti − uscite − trasferimenti. Peso stimato come nel gestionale (peso d\'arrivo + incremento del lotto × giorni). La barra arriva al peso di carico di riferimento (180 kg).</div>`;
   el.innerHTML = h;
   animaNumeri(el);
   if (typeof gsap !== 'undefined') {
