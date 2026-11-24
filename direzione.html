@@ -395,6 +395,7 @@ function gruppoPenale(c) {
 }
 
 let CARICHI = [];      // uscite arricchite
+let ACQUISTI = [];     // righe ACQUISTO di trasferimenti
 let SOCCIDE = [];
 let ANNO = 'tutti';
 let PAGINA = 'home';
@@ -408,12 +409,16 @@ function colore(nome) {
 }
 
 async function loadAll() {
-  const [soccide, lotti, uscite, penali] = await Promise.all([
+  const [soccide, lotti, uscite, penali, acquisti] = await Promise.all([
     sb('soccide', '?select=id,nome,tipo,attiva&order=nome'),
     sb('lotti', '?select=id,soccida_id,codice'),
     sb('uscite', '?select=id,lotto_id,soccida_nome,data_uscita,numero_ddt,macello,cessionario,capi,kg_totali,prezzo_kg,liquidazione,mancata_resa_kg,ddt_documento_id,liquidazione_documento_id&order=data_uscita'),
     sb('uscite_penali', '?select=uscita_id,causale,numero,valore'),
+    sb('trasferimenti', '?select=lotto_id,data_trasferimento,soccida_destinazione,capi,kg,costo_acquisto&tipo=eq.ACQUISTO'),
   ]);
+  // Ingressi nei lotti (acquisti da fornitori + trasferimenti tra soccide, lato ACQUISTO:
+  // la riga gemella TRASFERIMENTO non si conta per non raddoppiare)
+  ACQUISTI = acquisti.filter(a => a.capi > 0 && !ESCLUSE.includes((a.soccida_destinazione || '').toUpperCase()));
   SOCCIDE = soccide;
   const socById = Object.fromEntries(soccide.map(s => [s.id, s]));
   const lottoById = Object.fromEntries(lotti.map(l => [l.id, l]));
@@ -540,7 +545,11 @@ function renderHome() {
   const lista = carichi();
   const T = somma(lista, () => 'tot').tot || { capi: 0, kg: 0, n: 0, capiP: 0, kgP: 0, liq: 0 };
   const perAll = somma(lista, c => c.alleva);
-  const nMacelli = new Set(lista.map(c => c.macelloN)).size;
+  const acq = ANNO === 'tutti' ? ACQUISTI : ACQUISTI.filter(a => a.data_trasferimento.startsWith(ANNO));
+  const capiAcq = acq.reduce((s, a) => s + a.capi, 0);
+  const conPrezzo = acq.filter(a => a.costo_acquisto > 0);
+  const capiPrezzo = conPrezzo.reduce((s, a) => s + a.capi, 0);
+  const acqCapo = capiPrezzo ? conPrezzo.reduce((s, a) => s + a.costo_acquisto, 0) / capiPrezzo : null;
   document.getElementById('brand-s').textContent = `Carichi al macello e pagato a capo · ${periodo()}`;
 
   let h = `<div class="hero">
@@ -548,10 +557,10 @@ function renderHome() {
       <div class="kpi-l">Capi venduti fino ad oggi</div>
       <div class="kpi-v">${num(T.capi)}</div>
       <div class="kpi-s">${fmt(T.n)} carichi al macello · ${periodo()}</div></div>
-    <div class="kpi" style="--c:var(--terra)"><div class="kpi-l">Pagato medio a capo</div><div class="kpi-v">${num(eurCapo(T), 2, ' €')}</div><div class="kpi-s">IVA inclusa, sui carichi liquidati</div></div>
-    <div class="kpi" style="--c:var(--gold)"><div class="kpi-l">Peso medio</div><div class="kpi-v">${num(pesoMedio(T), 1, ' kg')}</div><div class="kpi-s">${fmt(T.kg)} kg caricati</div></div>
-    <div class="kpi" style="--c:var(--blue)"><div class="kpi-l">Pagato al kg</div><div class="kpi-v">${num(eurKg(T), 3, ' €')}</div><div class="kpi-s">liquidato ÷ kg caricati</div></div>
-    <div class="kpi" style="--c:var(--green)"><div class="kpi-l">Allevamenti · Macelli</div><div class="kpi-v">${num(Object.keys(perAll).length)} · ${num(nMacelli)}</div><div class="kpi-s">con almeno un carico</div></div>
+    <div class="kpi" style="--c:var(--green)"><div class="kpi-l">Prezzo medio vendita a capo</div><div class="kpi-v">${num(eurCapo(T), 2, ' €')}</div><div class="kpi-s">IVA inclusa, sui carichi liquidati</div></div>
+    <div class="kpi" style="--c:var(--terra)"><div class="kpi-l">Prezzo medio acquisto suinetto</div><div class="kpi-v">${num(acqCapo, 2, ' €')}</div><div class="kpi-s">${fmt(capiAcq)} capi acquistati e trasferiti</div></div>
+    <div class="kpi" style="--c:var(--blue)"><div class="kpi-l">Euro al kg medio</div><div class="kpi-v">${num(eurKg(T), 3, ' €')}</div><div class="kpi-s">liquidato ÷ kg caricati</div></div>
+    <div class="kpi" style="--c:var(--gold)"><div class="kpi-l">Peso medio carico</div><div class="kpi-v">${num(pesoMedio(T), 1, ' kg')}</div><div class="kpi-s">${fmt(T.kg)} kg caricati</div></div>
   </div>`;
 
   const ordinati = Object.entries(perAll).sort((a, b) =>
@@ -595,7 +604,7 @@ function renderHome() {
       ${s.tipo ? `<span class="tag ${s.tipo}">${s.tipo}</span>` : ''}</div></div>
       <div class="acard-f" style="margin-top:14px"><span>Nessun carico al macello ${ANNO === 'tutti' ? 'registrato' : 'nel ' + ANNO}</span></div></div></div>`;
   });
-  h += `</div><div class="note">€ a capo = liquidazione pagata (IVA inclusa) ÷ capi del carico, solo sui carichi con la liquidazione registrata. Fiorenzuola esclusa (suini di Gruppo Ciemme).</div>`;
+  h += `</div><div class="note">€ a capo = liquidazione pagata (IVA inclusa) ÷ capi del carico, solo sui carichi con la liquidazione registrata. Prezzo medio acquisto = costo d'acquisto ÷ capi, media su tutti gli ingressi nei lotti (acquisti da fornitori e trasferimenti tra soccide) con il prezzo registrato${capiPrezzo < capiAcq ? ` (${fmt(capiPrezzo)} capi su ${fmt(capiAcq)})` : ''}. Fiorenzuola esclusa (suini di Gruppo Ciemme).</div>`;
 
   const el = document.getElementById('page-home');
   el.innerHTML = h;
