@@ -1519,6 +1519,7 @@ function teschio(fatto) {   // (nome storico) animazione del maiale dottore all'
   fx.classList.add('on');
   const q = sel => fx.querySelectorAll(sel);
   const tl = gsap.timeline({ onComplete: () => fx.classList.remove('on') });
+  tl.timeScale(2.2);   // Ruben 25/11/2026: più veloce (circa 1,2 secondi in tutto)
   tl.set(q('.sfx-bg'), { opacity: 0 })
     .set(q('.sfx-croce'), { y: 0, opacity: 0, rotate: 0 })
     .set(q('.sfx-ring'), { scale: .4, opacity: 0 })
