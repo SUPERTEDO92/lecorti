@@ -694,14 +694,19 @@ const pesoMedio = a => a.capi ? a.kg / a.capi : null;
 const iniziali = n => n.split(/\s+/).map(w => w[0]).join('').slice(0, 2);
 
 // ── Navigazione con transizione ──
-function apriAlleva(nome, vista) { VISTA_ALLEVA = vista || 'carichi'; SAN_LOTTO = 'tutti'; vai('alleva', nome); }
+let ORIGINE = 'home';   // da quale pagina si è aperta la scheda (home o svezz)
+function apriAlleva(nome, vista) { ORIGINE = 'home'; VISTA_ALLEVA = vista || 'carichi'; SAN_LOTTO = 'tutti'; vai('alleva', nome); }
+function apriSvezz(nome) { ORIGINE = 'svezz'; VISTA_ALLEVA = 'presenti'; SAN_LOTTO = 'tutti'; vai('alleva', nome); }
 function vai(p, arg) {
   if (p === 'alleva') ALLEVA_APERTO = arg;
   const da = PAGINA;
   PAGINA = p;
-  document.getElementById('nav-home').classList.toggle('active', p === 'home' || p === 'alleva');
+  if (p === 'home' || p === 'macelli') ORIGINE = 'home';
+  if (p === 'svezz') ORIGINE = 'svezz';
+  const daSvezz = p === 'svezz' || (p === 'alleva' && ORIGINE === 'svezz');
+  document.getElementById('nav-home').classList.toggle('active', (p === 'home' || p === 'alleva') && !daSvezz);
   document.getElementById('nav-macelli').classList.toggle('active', p === 'macelli');
-  document.getElementById('nav-svezz').classList.toggle('active', p === 'svezz');
+  document.getElementById('nav-svezz').classList.toggle('active', daSvezz);
   transizione(da, p);
 }
 function transizione(da, a) {
@@ -837,12 +842,15 @@ function renderAlleva(nome) {
   const c0 = colore(nome);
   const [nominativo, indirizzo] = NOMINATIVI[nome] || ['', ''];
   const pres = presentiSoccida(nome);
-  el.innerHTML = `<button class="back-btn" onclick="vai('home')">← Tutti gli allevamenti</button>
+  const sv = isSvezz(nome);
+  const rSv = sv ? datiSvezz().find(r => r.soc.nome.toUpperCase() === nome) : null;
+  el.innerHTML = `<button class="back-btn" onclick="vai('${ORIGINE === 'svezz' ? 'svezz' : 'home'}')">← ${ORIGINE === 'svezz' ? 'Tutti gli svezzamenti' : 'Tutti gli allevamenti'}</button>
     <div class="dhead" style="--c:${c0}"><div class="dhead-n">${escHtml(nome)}</div>
     ${nominativo ? `<div class="dhead-p">${escHtml(nominativo)}</div>` : ''}${indirizzo ? `<div class="dhead-a">${escHtml(indirizzo)}</div>` : ''}</div>
     <div class="switch" id="alleva-switch" style="--c:${c0}">
       <div class="switch-pill"></div>
-      <button class="switch-btn" data-v="carichi" onclick="setVista('carichi')">🚚 Carichi e liquidazioni <span class="switch-n">${fmt(lista.reduce((s, c) => s + c.capi, 0))}</span></button>
+      ${sv ? `<button class="switch-btn" data-v="carichi" onclick="setVista('carichi')">🍼 Entrati e usciti <span class="switch-n">${fmt(rSv ? rSv.entrati : 0)}</span></button>`
+           : `<button class="switch-btn" data-v="carichi" onclick="setVista('carichi')">🚚 Carichi e liquidazioni <span class="switch-n">${fmt(lista.reduce((s, c) => s + c.capi, 0))}</span></button>`}
       <button class="switch-btn" data-v="presenti" onclick="setVista('presenti')">🐷 Capi presenti <span class="switch-n">${fmt(pres.presenti)}</span></button>
     </div>
     <div id="alleva-view"></div>`;
@@ -882,6 +890,7 @@ function disegnaVista(cambio) {
   const box = document.getElementById('alleva-view');
   if (VISTA_ALLEVA === 'presenti') vistaPresenti(ALLEVA_APERTO, box);
   else if (VISTA_ALLEVA === 'sanitario') vistaSanitario(ALLEVA_APERTO, box);
+  else if (isSvezz(ALLEVA_APERTO)) vistaEntratiUsciti(ALLEVA_APERTO, box);
   else vistaCarichi(ALLEVA_APERTO, box);
 }
 
@@ -1187,11 +1196,10 @@ function apriCard(id) {
 // Per ogni soccida di tipo svezzamento: capi entrati nei lotti, capi usciti
 // (trasferimenti/vendite dal lotto + uscite), morti e presenti.
 // Filtro anno = lotti entrati in quell'anno. Uscite senza lotto collegato non contate.
-function renderSvezz() {
-  const el = document.getElementById('page-svezz');
+function datiSvezz() {
   const { lotti, ingressi, uscTrasf, uscite, mortalita } = SVEZZ;
   // Ruben 24/11/2026: niente FIORENZUOLA e MINERBIO, conteggi dal 1 gennaio 2026, lotti aperti e chiusi
-  const socSv = SOCCIDE.filter(s => s.tipo === 'svezzamento' && !['FIORENZUOLA', 'MINERBIO'].includes(s.nome.toUpperCase()));
+  const socSv = SOCCIDE.filter(s => s.tipo === 'svezzamento' && !SVEZZ_ESCLUSE.includes(s.nome.toUpperCase()));
   const SV_DAL = '2026-01-01';
   const ingPer = {}, uscPer = {}, mortPer = {};
   ingressi.forEach(i => { const a = ingPer[i.lotto_id] ||= { capi: 0, kg: 0 }; a.capi += i.capi || 0; a.kg += Number(i.kg) || 0; });
@@ -1219,6 +1227,14 @@ function renderSvezz() {
       { entrati: 0, usciti: 0, morti: 0, presenti: 0, attivi: 0 });
     return { soc, ls, ...t };
   }).sort((a, b) => b.entrati - a.entrati);
+  return righe;
+}
+const SVEZZ_ESCLUSE = ['FIORENZUOLA', 'MINERBIO'];
+function isSvezz(nome) { const s = SOCCIDE.find(x => x.nome.toUpperCase() === nome); return !!s && s.tipo === 'svezzamento' && !SVEZZ_ESCLUSE.includes(nome); }
+
+function renderSvezz() {
+  const el = document.getElementById('page-svezz');
+  const righe = datiSvezz();
 
   const T = righe.reduce((a, r) => ({ entrati: a.entrati + r.entrati, usciti: a.usciti + r.usciti, morti: a.morti + r.morti, presenti: a.presenti + r.presenti, n: a.n + (r.ls.length ? 1 : 0) }),
     { entrati: 0, usciti: 0, morti: 0, presenti: 0, n: 0 });
@@ -1232,28 +1248,26 @@ function renderSvezz() {
     <div class="kpi" style="--c:var(--red)"><div class="kpi-l">Morti</div><div class="kpi-v">${num(T.morti)}</div><div class="kpi-s">mortalità ${pct(T.morti, T.entrati)}</div></div>
     <div class="kpi" style="--c:var(--blue)"><div class="kpi-l">Presenti oggi</div><div class="kpi-v">${num(T.presenti)}</div><div class="kpi-s">nei lotti ancora aperti</div></div>
   </div>
-  <div class="sec-h"><div><div class="sec-t">I nostri svezzamenti</div><div class="sec-s">Clicca uno svezzamento per vedere i suoi lotti</div></div></div>
-  <div class="mlist" id="svlist">`;
+  <div class="sec-h"><div><div class="sec-t">I nostri svezzamenti</div><div class="sec-s">Clicca uno svezzamento per vedere lotti, capi presenti, referti e note</div></div></div>
+  <div class="grid" id="svlist">`;
 
-  righe.forEach((r, i) => {
+  righe.forEach(r => {
     const nome = r.soc.nome.toUpperCase();
     const [nominativo] = NOMINATIVI[nome] || [''];
-    const c = PALETTE[(i + 2) % PALETTE.length];
-    const ciemme = nome === 'FIORENZUOLA';
-    h += `<div class="mcard ${r.ls.length ? '' : 'vuota'}" id="sv-${i}" style="--c:${c}">
-      <div class="mhead" ${r.ls.length ? `onclick="apriCard('sv-${i}')"` : ''}>
-        <div class="mrank">${escHtml(iniziali(nome))}</div>
-        <div><div class="mname">${escHtml(nome)}${!r.soc.attiva ? ' <span class="pill n">chiuso</span>' : ''}${ciemme ? ' <span class="pill n">suini Gruppo Ciemme</span>' : ''}</div>
-          <div class="msub">${escHtml([nominativo, r.ls.length ? r.ls.length + (r.ls.length === 1 ? ' lotto' : ' lotti') + (r.attivi ? ', ' + r.attivi + ' aperti' : '') : 'nessun lotto' + (ANNO === 'tutti' ? '' : ' nel ' + ANNO)].filter(Boolean).join(' · '))}</div></div>
-        <div><div class="ms-l">Entrati</div><div class="ms-v">${fmt(r.entrati)}</div></div>
-        <div><div class="ms-l">Usciti</div><div class="ms-v eur">${fmt(r.usciti)}</div></div>
-        <div class="hide-s"><div class="ms-l">Morti</div><div class="ms-v" style="color:var(--red)">${fmt(r.morti)} <small style="font-size:11px;color:var(--ink3)">${pct(r.morti, r.entrati)}</small></div></div>
-        <div class="hide-m"><div class="ms-l">Presenti</div><div class="ms-v">${fmt(r.presenti)}</div></div>
-        <div class="hide-m"></div>
-        <div class="mchev">${r.ls.length ? '›' : ''}</div>
-      </div>
-      <div class="mbody"><div style="padding:16px 18px 20px;border-top:1px solid var(--line);overflow-x:auto">${tabellaLottiSvezz(r)}</div></div>
-    </div>`;
+    const pieno = r.ls.length > 0;
+    h += `<div class="acard ${pieno ? '' : 'vuota'}" style="--c:${pieno ? colore(nome) : '#C9C3B6'}" ${pieno ? `onclick="apriSvezz('${escHtml(nome)}')"` : ''}>
+      <div class="acard-top"></div><div class="acard-b">
+        <div class="acard-h"><div class="avatar">${escHtml(iniziali(nome))}</div>
+          <div><div class="acard-n">${escHtml(nome)}</div><div class="acard-p">${escHtml(nominativo)}</div>
+          <span class="tag svezzamento">svezzamento</span>${!r.soc.attiva ? ' <span class="pill n">chiuso</span>' : ''}</div></div>
+        <div class="acard-stats">
+          <div><div class="ms-l">Entrati</div><div class="ms-v">${num(r.entrati)}</div></div>
+          <div><div class="ms-l">Usciti</div><div class="ms-v eur">${num(r.usciti)}</div></div>
+          <div><div class="ms-l">Presenti</div><div class="ms-v">${num(r.presenti)}</div></div>
+        </div>
+        <div class="acard-f" style="margin-top:12px"><span>${pieno ? r.ls.length + (r.ls.length === 1 ? ' lotto' : ' lotti') + (r.attivi ? ' · ' + r.attivi + ' aperti' : '') : 'nessun lotto dal 1° gennaio'}</span>
+          <span style="color:${r.morti ? 'var(--red)' : 'inherit'}">${pieno ? '☠ ' + fmt(r.morti) + ' morti · ' + pct(r.morti, r.entrati) : ''}</span></div>
+      </div></div>`;
   });
   h += `</div><div class="note">Dal 1° gennaio 2026, lotti aperti e chiusi. Entrati = capi arrivati nel lotto (somma degli arrivi). Usciti = trasferimenti e vendite dal lotto più le uscite registrate. Presenti = entrati − usciti − morti, solo per i lotti ancora aperti. Le uscite registrate senza lotto non sono contate.</div>`;
 
@@ -1261,7 +1275,44 @@ function renderSvezz() {
   animaNumeri(el.querySelector('.hero')); animaNumeri(el.querySelector('#svlist'));
   if (typeof gsap !== 'undefined') {
     gsap.from('#page-svezz .hero .kpi', { opacity: 0, y: 14, duration: .5, stagger: .07, ease: 'power3.out' });
-    gsap.from('#svlist .mcard', { opacity: 0, x: -24, duration: .45, stagger: .05, ease: 'power3.out', delay: .2 });
+    gsap.from('#svlist .acard', { opacity: 0, y: 24, scale: .97, duration: .5, stagger: .05, ease: 'power3.out', delay: .15, clearProps: 'transform,opacity' });
+  }
+}
+
+function vistaEntratiUsciti(nome, el) {
+  const r = datiSvezz().find(x => x.soc.nome.toUpperCase() === nome);
+  const c0 = colore(nome);
+  if (!r || !r.ls.length) { el.innerHTML = '<div class="empty">Nessun lotto entrato dal 1° gennaio 2026.</div>'; return; }
+  const pct = (a, b) => b ? fmt(a / b * 100, 1) + ' %' : '—';
+  let h = `<div class="dkpi p4">
+    <div class="kpi big" style="background:linear-gradient(135deg,#1F2A24,${c0})"><img class="pig" src="img/piglet-running.png" alt="">
+      <div class="kpi-l">Capi entrati</div><div class="kpi-v">${num(r.entrati)}</div><div class="kpi-s">${r.ls.length} ${r.ls.length === 1 ? 'lotto' : 'lotti'} dal 1° gennaio 2026</div></div>
+    <div class="kpi" style="--c:var(--green)"><div class="kpi-l">Capi usciti</div><div class="kpi-v">${num(r.usciti)}</div><div class="kpi-s">trasferiti all'ingrasso o venduti</div></div>
+    <div class="kpi" style="--c:var(--red)"><div class="kpi-l">Morti</div><div class="kpi-v">${num(r.morti)}</div><div class="kpi-s">mortalità ${pct(r.morti, r.entrati)}</div></div>
+    <div class="kpi" style="--c:var(--blue)"><div class="kpi-l">Presenti oggi</div><div class="kpi-v">${num(r.presenti)}</div><div class="kpi-s">nei lotti aperti</div></div>
+  </div><div class="lotti-grid">`;
+  r.ls.forEach(x => {
+    const gg = x.fine && !x.l.attivo ? Math.round((new Date(x.fine) - new Date(x.l.data_ingresso)) / 86400000) : giorniDa(x.l.data_ingresso);
+    h += `<div class="lcard" style="--c:${c0}">
+      <div class="lcard-h"><div><div class="lcard-c">Lotto ${escHtml(x.l.codice)}</div><div class="lcard-p">${escHtml(x.l.provenienza || '')}</div></div>
+        <div style="text-align:right"><div class="lcard-d">${fmtDate(x.l.data_ingresso)}</div><div class="lcard-p" style="color:#FFF;font-weight:700">${x.l.attivo ? 'APERTO' : 'CHIUSO'}</div></div></div>
+      <div class="lstat">
+        <div><div class="ms-l">Entrati</div><div class="ms-v">${num(x.entrati)}</div></div>
+        <div class="hl"><div class="ms-l">Usciti</div><div class="ms-v" style="color:var(--green)">${num(x.usciti)}</div></div>
+        <div><div class="ms-l">Morti</div><div class="ms-v" style="color:${x.morti ? 'var(--red)' : 'inherit'}">${num(x.morti)} <small style="font-size:11px;color:var(--ink3)">${pct(x.morti, x.entrati)}</small></div></div>
+        <div><div class="ms-l">Peso ingresso</div><div class="ms-v">${x.entrati && x.kgIn ? fmt(x.kgIn / x.entrati, 1) + ' kg' : '—'}</div></div>
+        <div class="hl"><div class="ms-l">Peso uscita</div><div class="ms-v" style="color:var(--green)">${x.usciti && x.kgOut ? fmt(x.kgOut / x.usciti, 1) + ' kg' : '—'}</div></div>
+        <div><div class="ms-l">Giorni</div><div class="ms-v">${num(gg)}</div></div>
+      </div>
+      <div class="lbar"><div class="lbar-l"><span>${x.dest.length ? 'Destinazione: ' + escHtml(x.dest.join(', ')) : 'Nessuna uscita ancora'}</span>${x.l.attivo ? `<span>${fmt(Math.max(0, x.presenti))} presenti</span>` : ''}</div></div>
+    </div>`;
+  });
+  h += `</div><div class="note">Dal 1° gennaio 2026, lotti aperti e chiusi. Usciti = trasferimenti e vendite dal lotto più le uscite registrate. Presenti = entrati − usciti − morti.</div>`;
+  el.innerHTML = h;
+  animaNumeri(el);
+  if (typeof gsap !== 'undefined') {
+    gsap.from('#alleva-view .dkpi .kpi', { opacity: 0, y: 16, duration: .45, stagger: .06, ease: 'power3.out', delay: .1 });
+    gsap.from('#alleva-view .lcard', { opacity: 0, y: 24, scale: .97, duration: .5, stagger: .08, ease: 'power3.out', delay: .2, clearProps: 'transform,opacity' });
   }
 }
 
