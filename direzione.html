@@ -810,7 +810,9 @@ function apriCard(id) {
 function renderSvezz() {
   const el = document.getElementById('page-svezz');
   const { lotti, ingressi, uscTrasf, uscite, mortalita } = SVEZZ;
-  const socSv = SOCCIDE.filter(s => s.tipo === 'svezzamento');
+  // Ruben 24/11/2026: niente FIORENZUOLA, conteggi dal 1 gennaio 2026, lotti aperti e chiusi
+  const socSv = SOCCIDE.filter(s => s.tipo === 'svezzamento' && s.nome.toUpperCase() !== 'FIORENZUOLA');
+  const SV_DAL = '2026-01-01';
   const ingPer = {}, uscPer = {}, mortPer = {};
   ingressi.forEach(i => { const a = ingPer[i.lotto_id] ||= { capi: 0, kg: 0 }; a.capi += i.capi || 0; a.kg += Number(i.kg) || 0; });
   uscTrasf.forEach(t => (uscPer[t.lotto_id] ||= []).push({ data: t.data_trasferimento, capi: t.capi || 0, kg: Number(t.kg) || 0, dest: t.soccida_destinazione || '—', tipo: t.tipo }));
@@ -818,7 +820,7 @@ function renderSvezz() {
   mortalita.forEach(m => { mortPer[m.lotto_id] = (mortPer[m.lotto_id] || 0) + (m.capi_morti || 0); });
 
   const righe = socSv.map(soc => {
-    const ls = lotti.filter(l => l.soccida_id === soc.id && l.data_ingresso && (ANNO === 'tutti' || l.data_ingresso.startsWith(ANNO)))
+    const ls = lotti.filter(l => l.soccida_id === soc.id && l.data_ingresso && l.data_ingresso >= SV_DAL && (ANNO === 'tutti' || l.data_ingresso.startsWith(ANNO)))
       .sort((a, b) => b.data_ingresso.localeCompare(a.data_ingresso))
       .map(l => {
         const ing = ingPer[l.id];
@@ -845,7 +847,7 @@ function renderSvezz() {
   let h = `<div class="hero">
     <div class="kpi big"><img class="pig" src="img/piglet-running.png" alt="">
       <div class="kpi-l">Capi entrati in svezzamento</div><div class="kpi-v">${num(T.entrati)}</div>
-      <div class="kpi-s">${T.n} svezzamenti · ${ANNO === 'tutti' ? 'tutti i lotti registrati' : 'lotti entrati nel ' + ANNO}</div></div>
+      <div class="kpi-s">${T.n} svezzamenti · lotti aperti e chiusi entrati dal 1° gennaio 2026</div></div>
     <div class="kpi" style="--c:var(--green)"><div class="kpi-l">Capi usciti</div><div class="kpi-v">${num(T.usciti)}</div><div class="kpi-s">trasferiti all'ingrasso o venduti</div></div>
     <div class="kpi" style="--c:var(--red)"><div class="kpi-l">Morti</div><div class="kpi-v">${num(T.morti)}</div><div class="kpi-s">mortalità ${pct(T.morti, T.entrati)}</div></div>
     <div class="kpi" style="--c:var(--blue)"><div class="kpi-l">Presenti oggi</div><div class="kpi-v">${num(T.presenti)}</div><div class="kpi-s">nei lotti ancora aperti</div></div>
@@ -874,7 +876,7 @@ function renderSvezz() {
       <div class="mbody"><div style="padding:16px 18px 20px;border-top:1px solid var(--line);overflow-x:auto">${tabellaLottiSvezz(r)}</div></div>
     </div>`;
   });
-  h += `</div><div class="note">Entrati = capi arrivati nel lotto (somma degli arrivi). Usciti = trasferimenti e vendite dal lotto più le uscite registrate. Presenti = entrati − usciti − morti, solo per i lotti ancora aperti. Le uscite registrate senza lotto non sono contate.</div>`;
+  h += `</div><div class="note">Dal 1° gennaio 2026, lotti aperti e chiusi. Entrati = capi arrivati nel lotto (somma degli arrivi). Usciti = trasferimenti e vendite dal lotto più le uscite registrate. Presenti = entrati − usciti − morti, solo per i lotti ancora aperti. Le uscite registrate senza lotto non sono contate.</div>`;
 
   el.innerHTML = h;
   animaNumeri(el.querySelector('.hero')); animaNumeri(el.querySelector('#svlist'));
