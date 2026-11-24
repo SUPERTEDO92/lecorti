@@ -808,7 +808,9 @@ function renderHome() {
     <div class="kpi" style="--c:var(--gold)"><div class="kpi-l">Peso medio carico</div><div class="kpi-v">${num(pesoMedio(T), 1, ' kg')}</div><div class="kpi-s">${fmt(T.kg)} kg caricati</div></div>
   </div>`;
 
-  const ordinati = Object.entries(perAll).sort((a, b) =>
+  // Ruben 25/11/2026: in Allevamenti solo l'ingrasso, gli svezzamenti hanno la loro pagina
+  const tipoDi = n => SOCCIDE.find(x => x.nome.toUpperCase() === n)?.tipo;
+  const ordinati = Object.entries(perAll).filter(([n]) => tipoDi(n) !== 'svezzamento').sort((a, b) =>
     ORDINE === 'nome' ? a[0].localeCompare(b[0]) :
     ORDINE === 'eur' ? (eurCapo(b[1]) || 0) - (eurCapo(a[1]) || 0) : b[1].capi - a[1].capi);
   const maxCapi = Math.max(1, ...ordinati.map(([, a]) => a.capi));
@@ -840,7 +842,7 @@ function renderHome() {
   });
 
   // allevamenti attivi senza carichi nel periodo
-  const senza = SOCCIDE.filter(s => s.attiva && !perAll[s.nome.toUpperCase()] && !ESCLUSE.includes(s.nome.toUpperCase()));
+  const senza = SOCCIDE.filter(s => s.attiva && s.tipo !== 'svezzamento' && !perAll[s.nome.toUpperCase()] && !ESCLUSE.includes(s.nome.toUpperCase()));
   senza.forEach(s => {
     const [nominativo] = NOMINATIVI[s.nome.toUpperCase()] || [''];
     const pres = presentiSoccida(s.nome.toUpperCase()).presenti;
