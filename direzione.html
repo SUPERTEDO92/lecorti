@@ -783,7 +783,7 @@ function apriMacello(i) {
 }
 
 // ══════════════ Password (stessa della pagina Direzione) ══════════════
-const PW_HASH_TARGET = '54363d1e1514f3d07555f682436d041260f01ecf5955eb689df60f1ac306c0b3';
+const PW_HASH_TARGET = '0e77daaea7ab6edef5db41e25f91b03b44f82f3a16ad34e80e827fc869eff256';
 async function pwHash(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
