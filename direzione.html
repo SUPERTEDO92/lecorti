@@ -810,8 +810,8 @@ function apriCard(id) {
 function renderSvezz() {
   const el = document.getElementById('page-svezz');
   const { lotti, ingressi, uscTrasf, uscite, mortalita } = SVEZZ;
-  // Ruben 24/11/2026: niente FIORENZUOLA, conteggi dal 1 gennaio 2026, lotti aperti e chiusi
-  const socSv = SOCCIDE.filter(s => s.tipo === 'svezzamento' && s.nome.toUpperCase() !== 'FIORENZUOLA');
+  // Ruben 24/11/2026: niente FIORENZUOLA e MINERBIO, conteggi dal 1 gennaio 2026, lotti aperti e chiusi
+  const socSv = SOCCIDE.filter(s => s.tipo === 'svezzamento' && !['FIORENZUOLA', 'MINERBIO'].includes(s.nome.toUpperCase()));
   const SV_DAL = '2026-01-01';
   const ingPer = {}, uscPer = {}, mortPer = {};
   ingressi.forEach(i => { const a = ingPer[i.lotto_id] ||= { capi: 0, kg: 0 }; a.capi += i.capi || 0; a.kg += Number(i.kg) || 0; });
