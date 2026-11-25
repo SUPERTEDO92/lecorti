@@ -2752,7 +2752,7 @@ function renderDetail(socId) {
 
   let html = renderMangimeRow(soc.id);
 
-  if(soc.nome === 'VEZZOLI') {
+  if(SOCCIDE_VENDITE_DIRETTE.includes(soc.nome)) {
     html += `<button onclick="apriVenditeDirette(${soc.id})" type="button" style="width:100%;margin-bottom:10px;padding:10px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);font-size:12px;font-family:var(--font);font-weight:500;cursor:pointer;text-align:left;display:flex;align-items:center;justify-content:space-between;color:var(--text);">
       <span>📋 Vendite dirette</span>
       <span style="color:var(--text2);">${allVenditeDirette.filter(v=>v.soccida_id===soc.id).length} voci ›</span>
@@ -5028,7 +5028,9 @@ async function salvaIncr() {
   }
 }
 
-// ── VENDITE DIRETTE (VEZZOLI) ──
+// ── VENDITE DIRETTE (VEZZOLI, BARONCHELLI dal 25/11/2026) ──
+// Soccide con il bottone "📋 Vendite dirette" nella scheda: stesso modale, stessa tabella, filtrate per soccida_id
+const SOCCIDE_VENDITE_DIRETTE = ['VEZZOLI', 'BARONCHELLI'];
 let _vdSoccidaId = null;
 let _vdMeseFiltro = null; // 'YYYY-MM' oppure null = conto aperto
 let _vdModalitaChiusura = false;
@@ -5092,6 +5094,8 @@ async function salvaScortaVendita(id, valore) {
 
 function apriVenditeDirette(socId) {
   _vdSoccidaId = socId;
+  const _vdSoc = allSoccide.find(s => s.id === socId);
+  document.getElementById('vd-titolo').textContent = 'Vendite dirette — ' + (_vdSoc ? _vdSoc.nome : '');
   _vdMeseFiltro = null;
   _vdModalitaChiusura = false;
   _vdSelezionate = new Set();
@@ -5709,11 +5713,11 @@ loadAll();
   </div>
 </div>
 
-<!-- VENDITE DIRETTE (VEZZOLI) -->
+<!-- VENDITE DIRETTE (VEZZOLI, BARONCHELLI) -->
 <div id="modal-vendite" class="modal-overlay">
   <div style="background:#FFF;border-radius:16px 16px 0 0;padding:0;width:100%;max-width:560px;max-height:92vh;max-height:92dvh;display:flex;flex-direction:column;overflow:hidden;">
     <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 18px 14px;border-bottom:0.5px solid var(--border);flex-shrink:0;">
-      <div style="font-size:16px;font-weight:600;font-family:var(--mono);">Vendite dirette — VEZZOLI</div>
+      <div id="vd-titolo" style="font-size:16px;font-weight:600;font-family:var(--mono);">Vendite dirette — VEZZOLI</div>
       <button onclick="chiudiVenditeDirette()" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:50%;width:32px;height:32px;font-size:20px;color:var(--text2);cursor:pointer;flex-shrink:0;">×</button>
     </div>
 
