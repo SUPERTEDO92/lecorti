@@ -856,6 +856,7 @@ function render() {
         <input type="date" id="n-data-${lotto.id}" class="field-input">
         <div class="field-label">NOTA</div>
         <textarea id="n-testo-${lotto.id}" class="field-input" rows="3" style="resize:vertical;font-family:var(--font);" placeholder="Scrivi qui la nota..."></textarea>
+        <div id="nm-box-${lotto.id}" class="nm-box" style="display:flex;flex-direction:column;gap:10px;margin:10px 0;"></div>
         <button class="btn-mort" style="margin-bottom:0;background:var(--accent);" onclick="salvaNota(${lotto.id}, this)">✓ Salva</button>
       </div>`;
     if (noteLotto.length) {
@@ -910,7 +911,15 @@ function apriModulo(formId, dataId, focusId) {
   if (f) setTimeout(() => f.focus(), 50);
 }
 function apriFormMortalita(id) { apriModulo(`form-mortalita-${id}`, `m-data-${id}`, `m-capi-${id}`); }
-function apriFormNota(id) { apriModulo(`form-nota-${id}`, `n-data-${id}`, `n-testo-${id}`); }
+// foto e note vocali come in index.html (modulo NotaMedia di lecorti-shared.js, 26/11/2026):
+// il modulo usa id fissi, quindi i pulsanti stanno solo nel modulo nota aperto in quel momento
+function apriFormNota(id) {
+  document.querySelectorAll('.nm-box').forEach(b => { b.innerHTML = ''; });
+  notaMediaReset();
+  apriModulo(`form-nota-${id}`, `n-data-${id}`, `n-testo-${id}`);
+  if (document.getElementById(`form-nota-${id}`).style.display !== 'none') document.getElementById(`nm-box-${id}`).innerHTML = notaMediaHtml();
+  else notaMediaStop();
+}
 function apriFormIncremento(id) { apriModulo(`form-incremento-${id}`, null, `i-val-${id}`); }
 
 // salvataggio con il bottone bloccato finché il server non risponde (niente righe doppie col doppio tocco)
@@ -951,12 +960,19 @@ function salvaMortalita(lottoId, btn) {
 function salvaNota(lottoId, btn) {
   const data = document.getElementById(`n-data-${lottoId}`).value;
   const testo = document.getElementById(`n-testo-${lottoId}`).value.trim();
-  if (!data || !testo) { showToast('Inserisci data e testo della nota', false); return; }
+  if (!data) { showToast('Inserisci la data della nota', false); return; }
+  if (!testo && !notaMediaHasContent()) { showToast('Scrivi un testo o allega foto / nota vocale', false); return; }
   const lotto = allLotti.find(l => l.id === lottoId);
   const soc = allSoccide.find(s => s.id === lotto.soccida_id);
   return invia(btn, async () => {
-    const nuova = await postRiga('note_veterinario', { lotto_id: lottoId, soccida: soc.nome, data_nota: data, testo });
+    const media = await notaMediaUpload();
+    const nuova = await postRiga('note_veterinario', {
+      lotto_id: lottoId, soccida: soc.nome, data_nota: data, testo,
+      foto_documento_ids: media.foto_documento_ids, audio_documento_id: media.audio_documento_id,
+    });
+    notaMediaReset();
     allNoteVet.push(nuova);
+    await notaMediaPreload([nuova]);
     tabAttiva[lottoId] = 'note';
     render();
     showToast(`✓ Nota registrata — ${fmtDate(data)}`, true);
