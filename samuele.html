@@ -430,9 +430,9 @@ async function loadAll() {
       sb('uscite', `?lotto_id=in.(${ids})&order=data_uscita.asc&select=id,lotto_id,data_uscita,numero_ddt,capi,kg_totali,giorni_permanenza,incremento,ddt_documento_id`),
       sb('mortalita', `?lotto_id=in.(${ids})&order=data_evento.desc,id.desc`),
       sb('lotti_ingressi', `?lotto_id=in.(${ids})&order=data_ingresso.asc`),
-      sb('note_veterinario', `?lotto_id=in.(${ids})&order=data_nota.desc,id.desc`),
+      sb('v_note_lotti', `?lotto_id=in.(${ids})&order=data_nota.desc,id.desc`),
       sb('trasferimenti', `?lotto_id=in.(${ids})&tipo=eq.TRASFERIMENTO&select=id,lotto_id,capi,data_trasferimento`),
-      sb('sanitario', `?lotto_id=in.(${ids})&select=id,lotto_id,data_referto,patologia,referto_documento_id&order=data_referto.desc,id.desc`),
+      sb('v_sanitario_lotti', `?lotto_id=in.(${ids})&select=id,lotto_id,data_referto,patologia,referto_documento_id,origine&order=data_referto.desc,id.desc`),
     ]) : [[], [], [], [], [], []];
     // consegne mangime delle soccide mostrate (stessa vista di index.html, solo righe in kg)
     try {
@@ -838,6 +838,7 @@ function render() {
     html += `<div id="ltab-referti-${lotto.id}"${vis('referti')}>`;
     if (refLotto.length) {
       html += `<div class="lista-scroll note">` + refLotto.map(r => `<div style="padding:8px 10px;background:var(--bg2);border-radius:var(--radius);margin-bottom:4px;border:0.5px solid var(--border);">
+          ${etichettaEreditata(r, 'Referto')}
           <div style="font-size:10px;color:var(--text2);font-family:var(--mono);">${fmtDate(r.data_referto)}</div>
           <div style="font-size:12px;margin-top:2px;overflow-wrap:anywhere;">${esc(r.patologia || '—')}</div>
           ${r.referto_documento_id ? `<button onclick="apriDocumento(${r.referto_documento_id})" style="margin-top:6px;background:#FFF;border:0.5px solid var(--border);border-radius:10px;padding:3px 10px;font-size:11px;color:var(--text2);cursor:pointer;font-family:var(--font);">📄 Apri referto PDF</button>` : ''}
@@ -859,6 +860,7 @@ function render() {
       </div>`;
     if (noteLotto.length) {
       html += `<div class="simple-container lista-scroll note">` + noteLotto.map(n => `<div class="simple-row" style="display:block;">
+          ${etichettaEreditata(n, 'Nota')}
           <div class="simple-date">${fmtDate(n.data_nota)}</div>
           ${n.testo ? `<div style="font-size:12px;color:var(--text);margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere;">${esc(n.testo)}</div>` : ''}
           ${notaMediaRender(n)}

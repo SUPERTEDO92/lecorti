@@ -287,9 +287,9 @@ async function loadAll() {
     lottiIds.length ? sb('uscite', `?lotto_id=in.(${lottiIds.join(',')})`) : [],
     lottiIds.length ? sb('trasferimenti', `?lotto_id=in.(${lottiIds.join(',')})`) : [],
     lottiIds.length ? sb('mortalita', `?lotto_id=in.(${lottiIds.join(',')})&order=data_evento.desc`) : [],
-    lottiIds.length ? sb('sanitario', `?lotto_id=in.(${lottiIds.join(',')})&order=data_referto.desc`) : [],
+    lottiIds.length ? sb('v_sanitario_lotti', `?lotto_id=in.(${lottiIds.join(',')})&order=data_referto.desc`) : [],
     lottiIds.length ? sb('lotti_ingressi', `?lotto_id=in.(${lottiIds.join(',')})&order=data_ingresso.asc`) : [],
-    lottiIds.length ? sb('note_veterinario', `?lotto_id=in.(${lottiIds.join(',')})&order=data_nota.desc`) : [],
+    lottiIds.length ? sb('v_note_lotti', `?lotto_id=in.(${lottiIds.join(',')})&order=data_nota.desc`) : [],
   ]);
   renderHome();
 }
@@ -768,6 +768,7 @@ function renderReferti(lottoId) {
           <span class="referto-lotto">Lotto ${lotto?.codice || '—'}</span>
         </div>
         <div class="referto-body">
+          ${etichettaEreditata(r, 'Referto')}
           <div class="referto-patologia">${r.patologia}</div>
           ${r.referto_documento_id ? `<button onclick="apriDocumento(${r.referto_documento_id})" style="margin-top:6px;background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:3px 10px;font-size:11px;color:var(--text2);cursor:pointer;font-family:var(--font);">📄 Apri referto PDF</button>` : ''}
         </div>
@@ -814,6 +815,7 @@ function renderNote(lottoId) {
           <span class="referto-lotto">Lotto ${lotto?.codice || '—'}</span>
         </div>
         <div class="referto-body">
+          ${etichettaEreditata(n, 'Nota')}
           ${n.testo ? `<div style="font-size:13px;color:var(--text);white-space:pre-wrap;">${n.testo}</div>` : ''}
           ${notaMediaRender(n)}
         </div>

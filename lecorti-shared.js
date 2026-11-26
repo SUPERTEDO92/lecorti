@@ -505,3 +505,11 @@ function toggleTopbarNav() {
 function isUscitaVenditaDiretta(u) {
   return /^VENDITA DIRETTA/i.test(u?.cessionario || '');
 }
+
+// Referti/note ereditati dal lotto di provenienza (viste v_sanitario_lotti / v_note_lotti, 26/11/2026):
+// etichetta evidenziata "Nota ereditata · da CASTELDAIANO 04/26". Vuota per le righe del lotto stesso.
+function etichettaEreditata(x, cosa) {
+  if (!x || !x.origine) return '';
+  const fem = cosa === 'Nota';
+  return `<div style="display:inline-block;margin:0 0 6px;padding:3px 9px;border-radius:10px;background:#E6EEFA;border:0.5px solid #AFC3E6;color:#244A86;font-size:11px;font-weight:600;font-family:var(--font);">📎 ${cosa} ereditat${fem ? 'a' : 'o'} · da ${escHtml(x.origine)}</div>`;
+}

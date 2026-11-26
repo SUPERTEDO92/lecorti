@@ -3692,6 +3692,7 @@ function renderAnalisi(lottoId) {
           <span class="referto-lotto">${r.origine ? 'da ' + escHtml(r.origine) : 'Lotto ' + (lotto?.codice || '—')}</span>
         </div>
         <div class="referto-body">
+          ${etichettaEreditata(r, 'Referto')}
           <div class="referto-patologia">${r.patologia}</div>
           ${r.referto_documento_id ? `<button onclick="apriDocumento(${r.referto_documento_id})" style="margin-top:6px;background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:3px 10px;font-size:11px;color:var(--text2);cursor:pointer;font-family:var(--font);">📄 Apri referto PDF</button>` : ''}
         </div>
@@ -4145,6 +4146,7 @@ function renderNote(id, isSoccida) {
           <span class="referto-lotto">${isSoccida ? (soc?.nome || '—') : (n.origine ? 'da ' + escHtml(n.origine) : `Lotto ${lotto?.codice || '—'}`)}</span>
         </div>
         <div class="referto-body">
+          ${etichettaEreditata(n, 'Nota')}
           ${n.testo ? `<div style="font-size:13px;color:var(--text);white-space:pre-wrap;">${n.testo}</div>` : ''}
           ${notaMediaRender(n)}
         </div>

@@ -1497,14 +1497,14 @@ function itemsSan(lista, lot, vuoto) {
       const [lab, cls, col] = ESITO[e.esito];
       h += `<div class="tl-item" style="--k:${col}"><div class="tl-dot">${e.esito === 'pos' ? '⚠️' : '🧪'}</div>
         <div class="tl-top"><span class="tl-tit">Referto di laboratorio</span><span class="pill ${cls}">${lab}</span>${lt}<span class="tl-data">${fmtDate(e.data)}</span></div>
-        <div class="tl-txt">${escHtml(e.r.patologia || '—')}</div>
+        ${etichettaEreditata(e.r, 'Referto')}<div class="tl-txt">${escHtml(e.r.patologia || '—')}</div>
         <div class="tl-act">${e.r.referto_documento_id ? `<button class="tl-btn" onclick="apriDocumento(${e.r.referto_documento_id})">📄 Referto PDF</button>` : ''}
           ${e.r.note_trattamento ? `<button class="tl-btn" onclick="this.parentNode.nextElementSibling.classList.toggle('on')">🔎 Dettagli</button>` : ''}</div>
         ${e.r.note_trattamento ? `<div class="tl-det">${escHtml(e.r.note_trattamento)}</div>` : ''}</div>`;
     } else if (e.tipo === 'nota') {
       h += `<div class="tl-item" style="--k:var(--terra)"><div class="tl-dot">📝</div>
         <div class="tl-top"><span class="op"><i>🧑‍🌾</i>Operatore</span><span class="tl-tit">Nota dal campo</span>${lt}<span class="tl-data">${fmtDate(e.data)}</span></div>
-        ${e.n.testo ? `<div class="tl-txt">${escHtml(e.n.testo)}</div>` : ''}
+        ${etichettaEreditata(e.n, 'Nota')}${e.n.testo ? `<div class="tl-txt">${escHtml(e.n.testo)}</div>` : ''}
         ${e.foto.length ? `<div class="foto-grid">${e.foto.map(d => `<img loading="lazy" src="${urlDoc(d)}" alt="Foto" onclick="apriFoto(this.src)">`).join('')}</div>` : ''}
         ${e.audio && urlDoc(e.audio) ? `<audio controls preload="none" src="${urlDoc(e.audio)}"></audio>` : ''}</div>`;
     } else {
