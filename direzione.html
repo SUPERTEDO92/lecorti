@@ -1375,8 +1375,9 @@ let SAN_LOTTO = 'tutti';
 async function caricaSanitario() {
   if (SAN) return SAN;
   const [referti, note, visite] = await Promise.all([
-    sb('sanitario', '?select=id,lotto_id,soccida,data_referto,patologia,note_trattamento,referto_documento_id&order=data_referto.desc'),
-    sb('note_veterinario', '?select=id,lotto_id,soccida,data_nota,testo,created_at,foto_documento_id,foto_documento_ids,audio_documento_id&order=data_nota.desc,id.desc'),
+    // viste con referti e note ereditati dai lotti di provenienza (trasferimenti tra soccide, 26/11/2026)
+    sb('v_sanitario_lotti', '?select=id,lotto_id,soccida,data_referto,patologia,note_trattamento,referto_documento_id,origine&order=data_referto.desc'),
+    sb('v_note_lotti', '?select=id,lotto_id,soccida,data_nota,testo,created_at,foto_documento_id,foto_documento_ids,audio_documento_id,origine&order=data_nota.desc,id.desc'),
     Promise.resolve([]), // visite GPS non mostrate
   ]);
   const ids = new Set();
@@ -1490,7 +1491,8 @@ function itemsSan(lista, lot, vuoto) {
   lista.slice(0, 250).forEach((e, i) => {
     const m = (e.data || '').slice(0, 7);
     if (m !== mese) { mese = m; h += `<div class="tl-mese">${MESI[+m.slice(5) - 1] || ''} ${m.slice(0, 4)}</div>`; }
-    const lt = e.lotto && lot[e.lotto] ? `<span class="lot-tag">Lotto ${escHtml(lot[e.lotto].codice)}</span>` : '';
+    const orig = (e.r && e.r.origine) || (e.n && e.n.origine);
+    const lt = e.lotto && lot[e.lotto] ? `<span class="lot-tag">Lotto ${escHtml(lot[e.lotto].codice)}${orig ? ' · da ' + escHtml(orig) : ''}</span>` : '';
     if (e.tipo === 'referto') {
       const [lab, cls, col] = ESITO[e.esito];
       h += `<div class="tl-item" style="--k:${col}"><div class="tl-dot">${e.esito === 'pos' ? '⚠️' : '🧪'}</div>

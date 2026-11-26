@@ -1311,11 +1311,11 @@ async function loadAll() {
     sb('uscite', '?order=data_uscita.desc'),
     sb('trasferimenti', '?order=data_trasferimento.desc'),
     sb('mortalita', '?order=data_evento.desc'),
-    sb('sanitario', '?order=data_referto.desc'),
+    sb('v_sanitario_lotti', '?order=data_referto.desc'), // con i referti ereditati dai lotti di provenienza (26/11/2026)
     sb('vendite_dirette', '?order=data_vendita.desc'),
     sb('uscite_categorie', '?order=id'),
     sb('vendite_dirette_categorie', '?order=id'),
-    sb('note_veterinario', '?order=data_nota.desc'),
+    sb('v_note_lotti', '?order=data_nota.desc'), // con le note ereditate dai lotti di provenienza (26/11/2026)
     sb('archivio_documenti', '?order=titolo.asc'),
   ]);
   allIngressi = await sb('lotti_ingressi', '?order=data_ingresso.asc');
@@ -3689,7 +3689,7 @@ function renderAnalisi(lottoId) {
       <div class="referto-card">
         <div class="referto-head">
           <span class="referto-data">${fmtDateFull(r.data_referto)}</span>
-          <span class="referto-lotto">Lotto ${lotto?.codice || '—'}</span>
+          <span class="referto-lotto">${r.origine ? 'da ' + escHtml(r.origine) : 'Lotto ' + (lotto?.codice || '—')}</span>
         </div>
         <div class="referto-body">
           <div class="referto-patologia">${r.patologia}</div>
@@ -4142,7 +4142,7 @@ function renderNote(id, isSoccida) {
       <div class="referto-card">
         <div class="referto-head" style="background:var(--amber-bg);border-bottom:0.5px solid #F0DC8A;">
           <span class="referto-data" style="color:var(--amber);">${fmtDateFull(n.data_nota)}</span>
-          <span class="referto-lotto">${isSoccida ? (soc?.nome || '—') : `Lotto ${lotto?.codice || '—'}`}</span>
+          <span class="referto-lotto">${isSoccida ? (soc?.nome || '—') : (n.origine ? 'da ' + escHtml(n.origine) : `Lotto ${lotto?.codice || '—'}`)}</span>
         </div>
         <div class="referto-body">
           ${n.testo ? `<div style="font-size:13px;color:var(--text);white-space:pre-wrap;">${n.testo}</div>` : ''}
@@ -6195,7 +6195,7 @@ function renderArchivioSoccida(socId) {
         return `<div style="padding:10px 14px;border-bottom:0.5px solid var(--border);background:var(--red-bg,#FCEAEA);">
           <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;color:var(--red);margin-bottom:6px;">⚠ Problemi sanitari (${referti.length})</div>
           ${referti.map(r => `<div style="padding:5px 0;border-bottom:0.5px solid rgba(0,0,0,0.06);">
-            <div style="font-size:12px;"><strong>${fmtDateFull(r.data_referto)}</strong></div>
+            <div style="font-size:12px;"><strong>${fmtDateFull(r.data_referto)}</strong>${r.origine ? ` <span style="color:var(--text3);">· da ${escHtml(r.origine)}</span>` : ''}</div>
             <div style="font-size:12px;color:var(--text);margin-top:2px;">${r.patologia || '—'}</div>
             ${r.referto_documento_id ? `<button onclick="apriDocumento(${r.referto_documento_id})" style="margin-top:4px;background:#FFF;border:0.5px solid var(--border);border-radius:10px;padding:2px 8px;font-size:10px;color:var(--text2);cursor:pointer;font-family:var(--font);">📄 PDF</button>` : ''}
           </div>`).join('')}
