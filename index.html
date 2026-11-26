@@ -2804,7 +2804,9 @@ function renderDetail(socId) {
     // in testa mostriamo il/i capannone/i invece di "Lotto XX/AA" (stesso trattamento di fiorenzuola.html)
     const isFiorenzuola = soc.nome === 'FIORENZUOLA';
     const capannoniLotto = isFiorenzuola
-      ? (ingLotto.length ? [...new Set(ingLotto.map(i => (i.capannone || '—').toUpperCase()))] : (lotto.capannone ? [lotto.capannone.toUpperCase()] : []))
+      // capannone ATTUALE (lotti.capannone, aggiornato quando i capi vengono spostati, es. 26/11/2026 cap 2·4 → 3·5);
+      // i capannoni d'arrivo restano nel dettaglio arrivi qui sotto
+      ? (lotto.capannone ? [lotto.capannone.toUpperCase()] : (ingLotto.length ? [...new Set(ingLotto.map(i => (i.capannone || '—').toUpperCase()))] : []))
       : [];
 
     // Header standard del lotto (numero, provenienza, data ingresso, DDT, presenti) — SEMPRE mostrato uguale,
