@@ -162,7 +162,7 @@ async function loadAll() {
   [allLotti, allMortalita, allSanitario] = await Promise.all([
     sb('lotti', `?soccida_id=eq.${soccidaId}&attivo=eq.true&order=data_ingresso.asc`),
     sb('mortalita', `?order=data_evento.desc`),
-    sb('sanitario', `?order=data_referto.desc`),
+    sb('v_sanitario_lotti', `?order=data_referto.desc`), // con i referti ereditati dal lotto di provenienza
   ]);
 
   // Filtra per i lotti di questa soccida
@@ -273,6 +273,7 @@ function render() {
     <div class="tab-content" id="tab-izs-${lotto.id}">
       ${sanLotto.length ? sanLotto.map(r => `
         <div class="referto-card">
+          ${etichettaEreditata(r, 'Referto')}
           <div class="referto-data">${fmtDate(r.data_referto)}</div>
           <div class="referto-pat">${r.patologia || '—'}</div>
           ${r.referto_documento_id ? `<button onclick="apriDocumento(${r.referto_documento_id})" style="margin-top:6px;background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:3px 10px;font-size:11px;color:var(--text2);cursor:pointer;font-family:var(--font);">📄 Apri referto PDF</button>` : ''}
