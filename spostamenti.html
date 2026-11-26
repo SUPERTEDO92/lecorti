@@ -93,7 +93,7 @@
   <button class="back-btn" onclick="window.location.href='index.html'">← Gestionale</button>
   <div class="filter-bar" id="spost-tabs">
     <div class="chip active" onclick="setVista('visite', this)">🚗 Visite</div>
-    <div class="chip" onclick="setVista('pranzi', this)">🧾 Spese</div>
+    <div class="chip" onclick="setVista('pranzi', this)">🧾 Pranzi</div>
   </div>
   <div class="summary-bar" id="spost-summary"></div>
   <div id="spost-content"><div class="loading">Caricamento...</div></div>
@@ -160,17 +160,16 @@ async function loadSpostamenti() {
   document.getElementById('spost-content').innerHTML = html;
 }
 
-// Sottosezione Spese in trasferta (pranzi: scontrino + ricevuta del bancomat in una foto, carburante dal 26/11/2026): tocco sulla riga = apre la foto
+// Sottosezione Pranzi in trasferta (scontrino + ricevuta del bancomat, foto unica): tocco sulla riga = apre la foto
 async function loadPranzi() {
   const dati = await sb('spese_trasferta', '?select=*&order=data_spesa.desc,ora.desc.nullslast&limit=500');
   const summary = document.getElementById('spost-summary');
   if (!Array.isArray(dati) || dati.length === 0) {
-    document.getElementById('spost-content').innerHTML = `<div class="empty">Nessuna spesa registrata. Manda a Claude in chat la foto dello scontrino e della ricevuta del bancomat.</div>`;
+    document.getElementById('spost-content').innerHTML = `<div class="empty">Nessun pranzo registrato. Manda a Claude in chat la foto dello scontrino e della ricevuta del bancomat.</div>`;
     summary.textContent = '';
     return;
   }
-  const nPr = dati.filter(p => p.tipo !== 'CARBURANTE').length, nCa = dati.length - nPr;
-  summary.textContent = [nPr ? `${nPr} pranz${nPr === 1 ? 'o' : 'i'}` : '', nCa ? `${nCa} rifornimento${nCa === 1 ? '' : 'i'} di carburante` : ''].filter(Boolean).join(' · ');
+  summary.textContent = `${dati.length} pranz${dati.length === 1 ? 'o' : 'i'} registrat${dati.length === 1 ? 'o' : 'i'}`;
   const gruppi = {}, ordineMesi = [];
   dati.forEach(p => {
     const key = p.data_spesa.slice(0, 7);
@@ -185,7 +184,7 @@ async function loadPranzi() {
       html += `<div class="spost-row${p.documento_id ? ' cliccabile' : ''}"${p.documento_id ? ` onclick="apriDocumento(${p.documento_id})"` : ''}>
         <div class="spost-time">${fmtOra(p.ora) || '—'}</div>
         <div class="spost-main">
-          <div class="spost-luogo">${fmtDate(p.data_spesa)} · ${p.tipo === 'CARBURANTE' ? '⛽ Carburante' : '🍽️ Pranzo'} · ${escHtml(p.locale || '')}</div>
+          <div class="spost-luogo">${fmtDate(p.data_spesa)} · ${escHtml(p.locale || 'Pranzo')}</div>
           <div class="spost-meta">
             ${p.paese ? `<span class="spost-badge">${escHtml(p.paese)}</span>` : ''}
             ${p.tipo_pagamento ? `<span class="spost-badge">${escHtml(p.tipo_pagamento)}</span>` : ''}
