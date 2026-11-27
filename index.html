@@ -3076,7 +3076,7 @@ function renderDetail(socId) {
         html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--bg2);border-radius:var(--radius);margin-bottom:4px;border:0.5px solid var(--border);">
           <div>
             <div style="font-size:12px;font-weight:500;">${fmtDate(m.data_evento)}</div>
-            <div style="font-size:10px;color:var(--text2);margin-top:2px;">${m.lettera_dop ? 'Lettera ' + m.lettera_dop + ' · ' : ''}${m.trattamento ? 'Tratt. ' + m.trattamento : ''}${m.note ? ' · ' + m.note : ''}</div>
+            <div style="font-size:10px;color:var(--text2);margin-top:2px;">${m.capannone ? '📍 ' + escHtml(m.capannone) + ' · ' : ''}${m.lettera_dop ? 'Lettera ' + m.lettera_dop + ' · ' : ''}${m.trattamento ? 'Tratt. ' + m.trattamento : ''}${m.note ? ' · ' + m.note : ''}</div>
           </div>
           <div style="text-align:right;">
             <div style="font-size:18px;font-weight:500;color:var(--red);font-family:var(--mono);">${m.capi_morti || 0}</div>
@@ -4043,12 +4043,19 @@ function switchLottoTab(lottoId, tab, btn) {
 // ── MORTALITÀ ──
 let _mortLottoId = null;
 
-function apriInserisciMortalita(lottoId) {
-  _mortLottoId = lottoId;
+function _mortInfo(lottoId) {
   const lotto = allLotti.find(l => l.id === lottoId);
   const soc = allSoccide.find(s => s.id === lotto?.soccida_id);
   document.getElementById('modal-mort-info').textContent =
     `${soc?.nome || '—'} · Lotto ${lotto?.codice || '—'}${lotto?.lettera_dop ? ' · ' + lotto.lettera_dop : ''}`;
+}
+
+function apriInserisciMortalita(lottoId) {
+  _mortLottoId = lottoId;
+  const lotto = allLotti.find(l => l.id === lottoId);
+  _mortInfo(lottoId);
+  // bottoni delle stalle (solo soccide con stalle in soccide_stalle): la stalla scelta cambia il lotto
+  StalleMort.apri(lottoId, lotto?.soccida_id, nuovo => { _mortLottoId = nuovo; _mortInfo(nuovo); });
   ['mort-capi','mort-note','mort-trattamento'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('mort-data').value = new Date().toISOString().split('T')[0];
   const overlay = document.getElementById('modal-mort');
@@ -4085,10 +4092,11 @@ async function salvaMortalita() {
         lotto_id: _mortLottoId,
         soccida: soc?.nome || '',
         data_evento: data,
-        lettera_dop: lotto?.lettera_dop || null,
+        lettera_dop: StalleMort.lettera() || lotto?.lettera_dop || null,
         capi_morti: capi,
         trattamento: tratt,
-        note
+        note,
+        capannone: StalleMort.capannone()
       })
     });
     if(!r.ok) throw new Error(await r.text());
@@ -5773,10 +5781,11 @@ loadAll();
     </div>
     <div id="modal-mort-info" style="font-size:11px;color:var(--text2);background:var(--bg2);padding:8px 10px;border-radius:var(--radius);margin-bottom:14px;font-family:var(--mono);"></div>
     <div style="display:flex;flex-direction:column;gap:10px;">
+      <div id="mort-stalle" style="display:none;"></div>
       <div class="grid-2">
         <div>
           <div class="field-label">DATA</div>
-          <input type="date" id="mort-data" class="input-std">
+          <input type="date" id="mort-data" class="input-std" onchange="StalleMort.render()">
         </div>
         <div>
           <div class="field-label">N° CAPI MORTI</div>
