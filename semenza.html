@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Le Corti — Semenza</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Semenza">
+<meta name="theme-color" content="#1A1A18">
+<!-- Pagina del soccidario SEMENZA (bozza 27/11/2026): solo inserimento dei morti.
+     Sceglie la stalla (soccide_stalle), il lotto si prende da solo da stalle_movimenti
+     (StalleMort in lecorti-shared.js), niente totali né presenti. Stesso stile di vezzoli.html. -->
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --mono: 'SF Mono', 'Fira Code', monospace;
+    --bg: #F5F3EE; --bg2: #EDEAE3;
+    --text: #1A1A18; --text2: #6B6860; --text3: #A0A090;
+    --border: #D8D4CB;
+    --green: #2A7A4B; --green-bg: #EBF5EF;
+    --red: #C0392B; --red-bg: #FDECEA;
+    --accent: #2A6B8A;
+    --radius: 8px; --radius-lg: 12px;
+  }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 40px; }
+  .header { background: var(--text); color: #FFF; padding: 14px 16px 12px; position: sticky; top: 0; z-index: 10; }
+  .header-title { font-size: 18px; font-weight: 600; }
+  .header-sub { font-size: 11px; color: #AAA; margin-top: 2px; font-family: var(--mono); }
+  .container { max-width: 480px; margin: 0 auto; padding: 12px; }
+  .section-title { font-size: 12px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .07em; color: var(--text2); margin: 18px 2px 6px; }
+
+  .btn-mort { width: 100%; padding: 22px 13px; background: var(--red); color: #FFF; border: none; border-radius: var(--radius-lg); font-size: 19px; font-family: var(--font); font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn-mort:active { opacity: .85; }
+
+  .mort-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #FFF; border-radius: var(--radius); margin-bottom: 5px; border: 0.5px solid var(--border); }
+  .mort-data { font-size: 15px; font-weight: 700; font-family: var(--mono); }
+  .mort-info { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .mort-capi { font-size: 22px; font-weight: 600; color: var(--red); font-family: var(--mono); text-align: right; }
+  .mort-capi-label { font-size: 10px; color: var(--text2); text-align: right; }
+
+  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-end; justify-content: center; }
+  .modal-box { background: #FFF; border-radius: 16px 16px 0 0; padding: 20px 16px 28px; width: 100%; max-width: 480px; max-height: 92vh; overflow-y: auto; }
+  .modal-title { font-size: 16px; font-weight: 600; }
+  .field-label { font-size: 11px; font-family: var(--mono); color: var(--text2); margin-bottom: 4px; }
+  .field-input { width: 100%; padding: 11px 10px; border: 0.5px solid var(--border); border-radius: var(--radius); font-size: 15px; font-family: var(--font); background: var(--bg); }
+  .btn-primary { width: 100%; padding: 15px; background: var(--red); color: #FFF; border: none; border-radius: var(--radius-lg); font-size: 16px; font-family: var(--font); font-weight: 700; cursor: pointer; margin-top: 16px; }
+  .btn-primary:disabled { opacity: .4; }
+
+  .capi-box { display: flex; align-items: center; gap: 10px; }
+  .capi-btn { width: 52px; height: 52px; border-radius: 50%; border: 1px solid var(--border); background: var(--bg); font-size: 26px; font-weight: 600; cursor: pointer; color: var(--text); }
+  .capi-val { flex: 1; text-align: center; font-size: 34px; font-weight: 700; font-family: var(--mono); color: var(--red); }
+
+  .empty { text-align: center; color: var(--text3); font-size: 13px; padding: 18px 0; }
+  .toast { display: none; padding: 12px 14px; border-radius: var(--radius); margin-bottom: 12px; font-size: 14px; }
+  .toast.ok { background: var(--green-bg); color: var(--green); border: 0.5px solid #B8DECA; }
+  .toast.err { background: var(--red-bg); color: var(--red); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">Le Corti — Semenza</div>
+  <div class="header-sub" id="header-agg">Caricamento…</div>
+</div>
+
+<div class="container">
+  <div id="toast" class="toast"></div>
+  <button class="btn-mort" onclick="apriMorto()">🔴 Registra morto</button>
+  <div class="section-title">Ultimi inseriti</div>
+  <div id="ultimi"><div class="empty">Caricamento…</div></div>
+</div>
+
+<!-- TENDINA: stalla → quanti → salva -->
+<div class="modal" id="modal-mort">
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div class="modal-title">Registra morto</div>
+      <button onclick="chiudiMorto()" style="background:none;border:none;font-size:24px;color:var(--text2);cursor:pointer;">×</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div id="mort-stalle"></div>
+      <div>
+        <div class="field-label">QUANTI</div>
+        <div class="capi-box">
+          <button type="button" class="capi-btn" onclick="cambiaCapi(-1)">−</button>
+          <div class="capi-val" id="m-capi">1</div>
+          <button type="button" class="capi-btn" onclick="cambiaCapi(1)">+</button>
+        </div>
+      </div>
+      <div>
+        <div class="field-label">GIORNO</div>
+        <input type="date" id="mort-data" class="field-input" onchange="StalleMort.render(); aggiornaSalva()">
+      </div>
+      <div>
+        <div class="field-label">COSA HAI VISTO (facoltativo)</div>
+        <input type="text" id="m-note" class="field-input" placeholder="es. fibrina, polmoni brutti, scartino…">
+      </div>
+    </div>
+    <button class="btn-primary" id="btn-salva" onclick="salvaMorto()" disabled>Scegli la stalla</button>
+  </div>
+</div>
+
+<script src="lecorti-shared.js"></script>
+<script>
+const NOME_SOCCIDA = 'SEMENZA';
+let soccidaId = null, allLotti = [], ultimi = [], capi = 1;
+
+async function loadAll() {
+  const soc = await sb('soccide', `?nome=eq.${encodeURIComponent(NOME_SOCCIDA)}`);
+  if (!soc.length) { document.getElementById('ultimi').innerHTML = '<div class="empty">Allevamento non trovato.</div>'; return; }
+  soccidaId = soc[0].id;
+  allLotti = await sb('lotti', `?soccida_id=eq.${soccidaId}&attivo=eq.true&select=id,codice,lettera_dop,attivo`);
+  await caricaUltimi();
+  document.getElementById('header-agg').textContent = 'agg. ' + new Date().toLocaleDateString('it-IT');
+}
+
+// solo gli ultimi inserimenti, per vedere che il morto è stato registrato (niente totali)
+async function caricaUltimi() {
+  ultimi = await sb('mortalita', `?soccida=eq.${NOME_SOCCIDA}&order=data_evento.desc,id.desc&limit=6&select=id,data_evento,capi_morti,capannone,note`);
+  document.getElementById('ultimi').innerHTML = ultimi.length ? ultimi.map(m => `
+    <div class="mort-row">
+      <div>
+        <div class="mort-data">${fmtDate(m.data_evento)}${m.capannone ? ' · ' + escHtml(m.capannone) : ''}</div>
+        ${m.note ? `<div class="mort-info">${escHtml(m.note)}</div>` : ''}
+      </div>
+      <div><div class="mort-capi">${m.capi_morti || 0}</div><div class="mort-capi-label">${m.capi_morti === 1 ? 'capo' : 'capi'}</div></div>
+    </div>`).join('') : '<div class="empty">Nessun morto registrato.</div>';
+}
+
+function apriMorto() {
+  capi = 1; document.getElementById('m-capi').textContent = capi;
+  document.getElementById('m-note').value = '';
+  document.getElementById('mort-data').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('modal-mort').style.display = 'flex';
+  StalleMort.apri(null, soccidaId, () => aggiornaSalva()).then(aggiornaSalva);
+}
+function chiudiMorto() { document.getElementById('modal-mort').style.display = 'none'; }
+function cambiaCapi(d) { capi = Math.max(1, Math.min(50, capi + d)); document.getElementById('m-capi').textContent = capi; aggiornaSalva(); }
+
+// il bottone si accende solo quando è scelta una stalla
+function aggiornaSalva() {
+  const b = document.getElementById('btn-salva'), st = StalleMort.capannone();
+  b.disabled = !st;
+  b.textContent = st ? `✓ Salva ${capi} mort${capi === 1 ? 'o' : 'i'} · ${st}` : 'Scegli la stalla';
+}
+document.addEventListener('click', e => { if (e.target.closest('#mort-stalle')) setTimeout(aggiornaSalva, 0); });
+
+async function salvaMorto() {
+  const stalla = StalleMort.capannone(), lottoId = StalleMort.lottoId;
+  const data = document.getElementById('mort-data').value;
+  if (!stalla || !lottoId || !data) return;
+  const lotto = allLotti.find(l => l.id === lottoId);
+  const b = document.getElementById('btn-salva'); b.disabled = true;
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/mortalita`, {
+      method: 'POST', headers: SB_H,
+      body: JSON.stringify({
+        lotto_id: lottoId, soccida: NOME_SOCCIDA, data_evento: data, capi_morti: capi, capannone: stalla,
+        lettera_dop: StalleMort.lettera() || lotto?.lettera_dop || null,
+        note: document.getElementById('m-note').value.trim() || null,
+      })
+    });
+    if (!r.ok) throw new Error(await r.text());
+    chiudiMorto();
+    showToast(`✓ Registrato: ${capi} mort${capi === 1 ? 'o' : 'i'} · ${stalla} · ${fmtDate(data)}`, true);
+    await caricaUltimi();
+  } catch (e) {
+    showToast('Errore, riprova: ' + e.message, false);
+    aggiornaSalva();
+  }
+}
+
+document.getElementById('modal-mort').addEventListener('click', function (e) { if (e.target === this) chiudiMorto(); });
+loadAll();
+</script>
+</body>
+</html>
