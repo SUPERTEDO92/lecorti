@@ -513,3 +513,116 @@ function etichettaEreditata(x, cosa) {
   const fem = cosa === 'Nota';
   return `<div style="display:inline-block;margin:0 0 6px;padding:3px 9px;border-radius:10px;background:#E6EEFA;border:0.5px solid #AFC3E6;color:#244A86;font-size:11px;font-weight:600;font-family:var(--font);">📎 ${cosa} ereditat${fem ? 'a' : 'o'} · da ${escHtml(x.origine)}</div>`;
 }
+
+// ══════════════════════════════════════════════════════════════
+// STALLE nella registrazione mortalità (27/11/2026, prima soccida SEMENZA)
+// Tabelle soccide_stalle (stalle di una soccida: nome, posti, alias) e stalle_movimenti
+// (entrate/spostamenti/uscite per stalla e lotto). Nella tendina mortalità compaiono le stalle
+// come bottoni: toccandone una il lotto si sceglie da solo (quello presente lì alla data),
+// la stalla va in mortalita.capannone e, se la stalla ha una sola lettera DOP, in lettera_dop.
+// Soccide senza stalle in tabella: niente bottoni, tutto come prima.
+// ══════════════════════════════════════════════════════════════
+const StalleMort = {
+  _cache: {}, socId: null, lottoId: null, sel: null, onLotto: null, boxId: 'mort-stalle', dataId: 'mort-data',
+
+  async _dati(socId) {
+    if (!this._cache[socId]) {
+      const [stalle, mov] = await Promise.all([
+        sb('soccide_stalle', `?soccida_id=eq.${socId}&attiva=eq.true&order=ordine.asc,nome.asc`),
+        sb('stalle_movimenti', `?soccida_id=eq.${socId}&order=data_movimento.asc,id.asc`),
+      ]);
+      this._cache[socId] = { stalle, mov };
+    }
+    return this._cache[socId];
+  },
+
+  // Lotti presenti in ogni stalla alla data: entrati − usciti dai movimenti, solo lotti attivi.
+  _occupazione(d, data) {
+    const occ = {};
+    for (const s of d.stalle) occ[s.id] = {};
+    for (const m of d.mov) {
+      if (m.data_movimento > data) continue;
+      if (m.stalla_a_id && occ[m.stalla_a_id]) {
+        const o = occ[m.stalla_a_id][m.lotto_id] ||= { capi: 0, lettere: new Set() };
+        o.capi += m.capi; if (m.lettera_dop) o.lettere.add(m.lettera_dop); else o.lettere.add('?');
+      }
+      if (m.stalla_da_id && occ[m.stalla_da_id]) {
+        const o = occ[m.stalla_da_id][m.lotto_id] ||= { capi: 0, lettere: new Set() };
+        o.capi -= m.capi;
+      }
+    }
+    const lotti = (typeof allLotti !== 'undefined' ? allLotti : []);
+    const out = {};
+    for (const [sid, perLotto] of Object.entries(occ)) {
+      out[sid] = Object.entries(perLotto)
+        .filter(([lid, o]) => o.capi > 0 && lotti.some(l => l.id === Number(lid) && l.attivo !== false))
+        .map(([lid, o]) => ({ lotto_id: Number(lid), capi: o.capi, lettera: (o.lettere.size === 1 && !o.lettere.has('?')) ? [...o.lettere][0] : null }));
+    }
+    return out;
+  },
+
+  // Da chiamare all'apertura della tendina mortalità. onLotto(nuovoLottoId) quando la stalla scelta cambia lotto.
+  async apri(lottoId, socId, onLotto) {
+    this.socId = socId; this.lottoId = lottoId; this.sel = null; this.onLotto = onLotto;
+    const box = document.getElementById(this.boxId);
+    if (!box) return;
+    box.innerHTML = ''; box.style.display = 'none';
+    if (!socId) return;
+    const d = await this._dati(socId);
+    if (!d.stalle.length || this.socId !== socId) return;
+    this.render();
+  },
+
+  render() {
+    const box = document.getElementById(this.boxId);
+    const d = this._cache[this.socId];
+    if (!box || !d || !d.stalle.length) return;
+    const data = document.getElementById(this.dataId)?.value || new Date().toISOString().slice(0, 10);
+    const occ = this._occupazione(d, data);
+    const lotti = (typeof allLotti !== 'undefined' ? allLotti : []);
+    const codice = id => lotti.find(l => l.id === id)?.codice || '?';
+    // se la stalla scelta non contiene più il lotto alla nuova data, si toglie la scelta
+    if (this.sel && !(occ[this.sel] || []).length) this.sel = null;
+    box.style.display = 'block';
+    box.innerHTML = `<div class="field-label">STALLA (tocca dove è morto)</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">` +
+      d.stalle.map(s => {
+        const pres = occ[s.id] || [];
+        const attivo = this.sel === s.id;
+        const vuota = !pres.length;
+        const sotto = vuota ? 'vuota' : pres.map(p => codice(p.lotto_id) + (p.lettera ? ' ' + p.lettera : '')).join(' · ');
+        return `<button type="button" onclick="StalleMort.scegli(${s.id})" ${vuota ? 'disabled' : ''}
+          style="flex:1 1 calc(33% - 6px);min-width:92px;padding:7px 6px;border-radius:10px;cursor:${vuota ? 'default' : 'pointer'};
+          font-family:var(--font);text-align:center;line-height:1.25;opacity:${vuota ? .45 : 1};
+          border:1px solid ${attivo ? 'var(--red)' : 'var(--border)'};background:${attivo ? 'var(--red)' : '#FFF'};color:${attivo ? '#FFF' : 'var(--text)'};">
+          <div style="font-size:12px;font-weight:600;">${escHtml(s.nome)}</div>
+          <div style="font-size:10px;opacity:.8;">${escHtml(sotto)}</div></button>`;
+      }).join('') + `</div>`;
+  },
+
+  scegli(stallaId) {
+    const d = this._cache[this.socId];
+    const data = document.getElementById(this.dataId)?.value || new Date().toISOString().slice(0, 10);
+    const pres = this._occupazione(d, data)[stallaId] || [];
+    if (this.sel === stallaId) { this.sel = null; this.render(); return; }
+    this.sel = stallaId;
+    // un solo lotto nella stalla → lo sceglie; più lotti → resta quello aperto se è lì, altrimenti il primo
+    if (pres.length && !pres.some(p => p.lotto_id === this.lottoId)) {
+      this.lottoId = pres[0].lotto_id;
+      if (this.onLotto) this.onLotto(this.lottoId);
+    }
+    this.render();
+  },
+
+  // Valori da salvare in mortalita (null se nessuna stalla scelta)
+  capannone() {
+    const s = this._cache[this.socId]?.stalle.find(x => x.id === this.sel);
+    return s ? s.nome : null;
+  },
+  lettera() {
+    if (!this.sel) return null;
+    const d = this._cache[this.socId];
+    const data = document.getElementById(this.dataId)?.value || new Date().toISOString().slice(0, 10);
+    return (this._occupazione(d, data)[this.sel] || []).find(p => p.lotto_id === this.lottoId)?.lettera || null;
+  },
+};
