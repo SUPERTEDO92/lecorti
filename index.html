@@ -2843,7 +2843,11 @@ function renderDetail(socId) {
 
     // Dettaglio lettere DOP (da lotti_lettere_dop, se presenti) — riquadro aggiuntivo, non sostitutivo
     const lettereLotto = (allLettereDop||[]).filter(x => x.lotto_id === lotto.id);
-    if(lettereLotto.length) {
+    // Una sola lettera senza dati AT = è già scritta nell'header ("LETTERA: E"): niente riquadro in più,
+    // così tutti i lotti si leggono allo stesso modo (Ruben 27/11/2026)
+    const soloLetteraHeader = lettereLotto.length && new Set(lettereLotto.map(x => x.lettera)).size === 1
+      && lettereLotto.every(x => !x.numero_at && !x.data_at) && lotto.lettera_dop;
+    if(lettereLotto.length && !soloLetteraHeader) {
       const perLettera = {};
       lettereLotto.forEach(x => { perLettera[x.lettera] = (perLettera[x.lettera]||0) + (x.capi||0); });
       const totLettere = Object.values(perLettera).reduce((a,b)=>a+b,0);
